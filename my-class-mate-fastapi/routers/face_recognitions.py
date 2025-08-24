@@ -7,13 +7,16 @@ from psycopg2 import connect
 from collections import defaultdict
 import statistics
 import logging
+import sys, os
+import contextlib
 
 router = APIRouter()
 
+logging.basicConfig(level=logging.INFO)
 MODEL_NAME = "Facenet512"  # Change to "ArcFace" for comparison
 EUCLIDEAN_THRESHOLD = 23.56 # Need to adjust to match with Model https://github.com/serengil/deepface/blob/master/deepface/config/threshold.py (Facenet512=23.56, ArcFace=4.15)
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png"}
-logging.basicConfig(level=logging.INFO)
+DETECTOR = "mtcnn" # or mtcnn, retinaface
 
 def get_db_conn():
     conn = connect(
@@ -26,6 +29,17 @@ def get_db_conn():
     )
     pgvector.psycopg2.register_vector(conn)  # register vector type
     return conn
+
+@contextlib.contextmanager
+def suppress_tf_logs():
+    """Suppress stdout/stderr temporarily to hide DeepFace/TensorFlow logs."""
+    with open(os.devnull, "w") as fnull:
+        old_stdout, old_stderr = sys.stdout, sys.stderr
+        sys.stdout, sys.stderr = fnull, fnull
+        try:
+            yield
+        finally:
+            sys.stdout, sys.stderr = old_stdout, old_stderr
 
 @router.post("/face-register")
 async def post_face_register(user_id: str = Form(...), files: list[UploadFile] = File(...)):
@@ -55,12 +69,29 @@ async def post_face_register(user_id: str = Form(...), files: list[UploadFile] =
                 image_np = np.frombuffer(image_bytes, np.uint8)
                 image = cv2.imdecode(image_np, cv2.IMREAD_COLOR)
 
-                # Extract embedding
-                embedding = np.array(
-                    DeepFace.represent(image, model_name=MODEL_NAME, enforce_detection=False)[0]["embedding"]
-                )
+                # Extract faces from image
+                with suppress_tf_logs():
+                    faces = DeepFace.extract_faces(
+                        image,
+                        detector_backend=DETECTOR,
+                        enforce_detection=False
+                    )
 
-                embeddings.append(embedding)
+                    if not faces:
+                        raise HTTPException(
+                            status_code=400,
+                            detail={"code": "ERR005", "message": f"No face detected in {file.filename}"}
+                        )
+
+                    face_img = faces[0]["face"]
+
+                    embedding = np.array(
+                        DeepFace.represent(
+                            face_img,
+                            model_name=MODEL_NAME,
+                            enforce_detection=False
+                        )[0]["embedding"]
+                    )
 
                 # Convert NumPy array to Python list (vector type)
                 embedding_list = embedding.tolist()
@@ -76,7 +107,7 @@ async def post_face_register(user_id: str = Form(...), files: list[UploadFile] =
     return {
         "status": "success",
         "user_id": user_id,
-        "num_faces_registered": len(embeddings),
+        "num_faces_registered": len(files),
         "files": [file.filename for file in files]
     }
 
@@ -88,10 +119,32 @@ async def post_face_recognition(file: UploadFile = File(...)):
     image_np = np.frombuffer(image_bytes, np.uint8)
     image = cv2.imdecode(image_np, cv2.IMREAD_COLOR)
 
+    # Extract faces from image
+    with suppress_tf_logs():
+        faces = DeepFace.extract_faces(
+            image,
+            detector_backend=DETECTOR,
+            enforce_detection=False
+        )
+
+        if not faces:
+            raise HTTPException(
+                status_code=400,
+                detail={"code": "ERR005", "message": f"No face detected in {file.filename}"}
+            )
+
+        face_img = faces[0]["face"]
+
+        embedding = np.array(
+            DeepFace.represent(
+                face_img,
+                model_name=MODEL_NAME,
+                enforce_detection=False
+            )[0]["embedding"]
+        )
+
     # 2. Extract embedding
-    target_embedding = np.array(
-        DeepFace.represent(image, model_name=MODEL_NAME, enforce_detection=False)[0]["embedding"]
-    ).tolist()  # convert to Python list (512-d)
+    target_embedding = embedding.tolist()  # convert to Python list (512-d)
 
     # 3. Threshold for Euclidean distance
     conn = get_db_conn()

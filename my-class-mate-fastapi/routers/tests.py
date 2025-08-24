@@ -7,7 +7,7 @@ import logging
 router = APIRouter()
 logging.basicConfig(level=logging.INFO)
 
-@router.post("/test/face-recognition")
+@router.post("/test/face-recognition-valdation")
 async def post_test_face_recognition():
     folder_path = Path("/Users/pongthanat/Pictures/test-my-class-mate/users/")
     if not folder_path.exists():
@@ -33,7 +33,6 @@ async def post_test_face_recognition():
         try:
             user_id_str = file_path.name.split("-")[0]
             expected_user_id = int(user_id_str)
-            logging.info(f"post_test_face_recognition, expected_user_id: {expected_user_id}, file: {file_path.name}")
         except Exception:
             errors.append({"file": file_path.name, "error": "Cannot extract user_id from filename"})
             continue
@@ -48,6 +47,10 @@ async def post_test_face_recognition():
                 continue
 
         # Compare
+        logging.info(
+                f"post_test_face_recognition, file: {file_path.name}, "
+                f"expected_user_id: {expected_user_id}, result_user_id: {result['user_id']}"
+            )
         if result["user_id"] != expected_user_id:
             errors.append({
                 "file": file_path.name,
