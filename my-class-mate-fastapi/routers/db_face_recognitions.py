@@ -109,8 +109,8 @@ async def post_face_register(user_id: str = Form(...), files: list[UploadFile] =
         "files": [file.filename for file in files]
     }
 
-@router.post("/face-recognition")
-async def post_face_recognition(file: UploadFile = File(...)):
+@router.post("/face-recognition-1")
+async def post_face_recognition_1(file: UploadFile = File(...)):
     logging.info(f"start post_face_recognition")
     # 1. Read file
     image_bytes = await file.read()
@@ -215,74 +215,3 @@ async def post_face_recognition(file: UploadFile = File(...)):
         "distance": best_distance,
         "threshold": EUCLIDEAN_THRESHOLD
     }
-
-    # ChatGPT 2
-    # 5. Analyze confidence per user
-    # HIGH_CONFIDENCE_THRESHOLD = 5.0
-    # MEDIUM_CONFIDENCE_THRESHOLD = 15.0
-
-    # users_analysis = {}
-    # for user_id, distances in user_distances.items():
-    #     min_distance = min(distances)
-    #     avg_distance = sum(distances) / len(distances)
-    #     count = len(distances)
-    #     high_conf_count = sum(1 for d in distances if d <= HIGH_CONFIDENCE_THRESHOLD)
-    #     medium_conf_count = sum(1 for d in distances if d <= MEDIUM_CONFIDENCE_THRESHOLD)
-
-    #     # เก็บเฉพาะ user ที่มี high/medium confidence ≥ 1
-    #     if high_conf_count >= 1 or medium_conf_count >= 1:
-    #         users_analysis[user_id] = {
-    #             "min_distance": min_distance,
-    #             "avg_distance": avg_distance,
-    #             "count": count,
-    #             "high_conf_count": high_conf_count,
-    #             "medium_conf_count": medium_conf_count
-    #         }
-    #         logging.info(f"User {user_id}: {users_analysis[user_id]}")
-
-    # # 6. เลือก user ที่ดีที่สุด
-    # if not users_analysis:
-    #     raise HTTPException(
-    #         status_code=404,
-    #         detail={"code": "ERR004", "message": "No suitable match found"}
-    #     )
-
-    # # priority: exact match > high confidence > medium confidence > min distance
-    # best_user = None
-    # best_data = None
-
-    # # 1. exact match (min_distance = 0.0)
-    # exact_matches = {uid: data for uid, data in users_analysis.items() if data["min_distance"] == 0.0}
-    # if exact_matches:
-    #     # เลือก exact match ที่มี count มากที่สุด
-    #     best_user = max(exact_matches.keys(), key=lambda uid: exact_matches[uid]["count"])
-    #     best_data = exact_matches[best_user]
-    #     logging.info(f"Found exact match: User {best_user}")
-    # else:
-    #     # 2. high confidence
-    #     high_conf_users = {uid: data for uid, data in users_analysis.items() if data["high_conf_count"] > 0}
-    #     if high_conf_users:
-    #         best_user = min(high_conf_users.keys(), key=lambda uid: (-high_conf_users[uid]["high_conf_count"], high_conf_users[uid]["min_distance"]))
-    #         best_data = high_conf_users[best_user]
-    #         logging.info(f"Selected high confidence user: {best_user}")
-    #     else:
-    #         # 3. medium confidence
-    #         medium_conf_users = {uid: data for uid, data in users_analysis.items() if data["medium_conf_count"] > 0}
-    #         if medium_conf_users:
-    #             best_user = min(medium_conf_users.keys(), key=lambda uid: (-medium_conf_users[uid]["medium_conf_count"], medium_conf_users[uid]["min_distance"]))
-    #             best_data = medium_conf_users[best_user]
-    #             logging.info(f"Selected medium confidence user: {best_user}")
-    #         else:
-    #             # fallback: user ที่มี min_distance ต่ำสุด
-    #             best_user = min(users_analysis.keys(), key=lambda uid: users_analysis[uid]["min_distance"])
-    #             best_data = users_analysis[best_user]
-    #             logging.info(f"Selected user by min distance: {best_user}")
-
-    # return {
-    #     "status": "success",
-    #     "threshold": EUCLIDEAN_THRESHOLD,
-    #     "user": {
-    #         "user_id": best_user,
-    #         **best_data
-    #     }
-    # }

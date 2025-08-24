@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request
 import time
 import logging
 
-from .routers import tests, face_recognitions
+from .routers import tests, db_face_recognitions
 
 app = FastAPI(title = "FastAPI My Class Mate Service",
               description = "Backend Service using for Face Recognition Part in My Class Mate Application",
@@ -30,8 +30,8 @@ app.include_router(
 )
 
 app.include_router(
-    face_recognitions.router,
+    db_face_recognitions.router,
     prefix="/myclassmate/v1",
-    tags=["face_recognitions"],
+    tags=["db_face_recognitions"],
     responses={404: {"message": "Not found"}},
 )
