@@ -21,7 +21,7 @@ METHOD_MAP = {
     # 4: post_face_recognition_4
 }
 
-@router.post("/test/face-recognition-validation/{method_number}")
+@router.post("/test/db-face-recognition-validation/{method_number}")
 async def post_test_face_recognition(method_number: int):
     if method_number not in METHOD_MAP:
         raise HTTPException(status_code=400, detail=f"Invalid method_number: {method_number}, must be 1-4")

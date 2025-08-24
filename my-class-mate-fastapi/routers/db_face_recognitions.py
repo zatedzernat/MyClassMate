@@ -18,6 +18,17 @@ EUCLIDEAN_THRESHOLD = 23.56 # Need to adjust to match with Model https://github.
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png"}
 DETECTOR = "mtcnn" # or mtcnn, retinaface
 
+@contextlib.contextmanager
+def suppress_tf_logs():
+    """Suppress stdout/stderr temporarily to hide DeepFace/TensorFlow logs."""
+    with open(os.devnull, "w") as fnull:
+        old_stdout, old_stderr = sys.stdout, sys.stderr
+        sys.stdout, sys.stderr = fnull, fnull
+        try:
+            yield
+        finally:
+            sys.stdout, sys.stderr = old_stdout, old_stderr
+
 def get_db_conn():
     conn = connect(
         dbname="postgres",
@@ -29,17 +40,6 @@ def get_db_conn():
     )
     pgvector.psycopg2.register_vector(conn)  # register vector type
     return conn
-
-@contextlib.contextmanager
-def suppress_tf_logs():
-    """Suppress stdout/stderr temporarily to hide DeepFace/TensorFlow logs."""
-    with open(os.devnull, "w") as fnull:
-        old_stdout, old_stderr = sys.stdout, sys.stderr
-        sys.stdout, sys.stderr = fnull, fnull
-        try:
-            yield
-        finally:
-            sys.stdout, sys.stderr = old_stdout, old_stderr
 
 @router.post("/face-register")
 async def post_face_register(user_id: str = Form(...), files: list[UploadFile] = File(...)):
