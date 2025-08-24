@@ -1,4 +1,3 @@
-# image_face_recognitions.py
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from pathlib import Path
 from deepface import DeepFace
@@ -10,6 +9,8 @@ import sys, os
 import contextlib
 
 router = APIRouter()
+
+# TODO: try base64 image
 
 logging.basicConfig(level=logging.INFO)
 BASE_STORAGE_PATH = Path("/Users/pongthanat/Pictures/face_database")  # images path
@@ -249,6 +250,6 @@ async def post_find_similar_face(file: UploadFile = File(...)):
 
     return {
     "status": "success",
-    "closest_match_user_id": int(match_user_id),
+    "user_id": int(match_user_id),
     "confidence": float(confidence) if confidence is not None else None
 }
