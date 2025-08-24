@@ -47,8 +47,6 @@ async def post_face_register(user_id: str = Form(...), files: list[UploadFile] =
     if len(files) > 4:
         raise HTTPException(status_code=400, detail={"code": "ERR001", "message": "Maximum 4 images allowed"})
 
-    embeddings = []
-
     for file in files:
         ext = file.filename.rsplit(".", 1)[-1].lower()
         if ext not in ALLOWED_EXTENSIONS:
@@ -158,7 +156,7 @@ async def post_face_recognition(file: UploadFile = File(...)):
                         FROM identities i
                     ) a
                     WHERE distance < {EUCLIDEAN_THRESHOLD}
-                    ORDER BY distance asc
+                    ORDER BY distance ASC
                     LIMIT 100
                 """
             )
@@ -176,12 +174,11 @@ async def post_face_recognition(file: UploadFile = File(...)):
     user_distances = defaultdict(list)
     for row in results:
         logging.info(f"post_face_recognition, row: {row}")
-        user_id = row[0]
-        distance = row[-1]
+        user_id, distance = row[0], row[1]
         user_distances[user_id].append(distance)
 
     # ChatGPT 1 
-    # # 5. find best user
+    # 5. Find best user by nearest distance
     best_user = None
     best_distance = float("inf")
     exact_match = 0.0
@@ -211,8 +208,13 @@ async def post_face_recognition(file: UploadFile = File(...)):
             }
         )
 
-    logging.info(f"post_face_register, best_user: {best_user}, distance: {best_distance}")
-    return {"status": "success", "user_id": best_user, "distance": best_distance, "threshold": EUCLIDEAN_THRESHOLD}
+    logging.info(f"post_face_recognition, best_user: {best_user}, distance: {best_distance}")
+    return {
+        "status": "success",
+        "user_id": best_user,
+        "distance": best_distance,
+        "threshold": EUCLIDEAN_THRESHOLD
+    }
 
     # ChatGPT 2
     # 5. Analyze confidence per user

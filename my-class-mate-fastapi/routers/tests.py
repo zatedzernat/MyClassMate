@@ -47,10 +47,12 @@ async def post_test_face_recognition():
                 continue
 
         # Compare
+        match_status = "Correct ✅" if result["user_id"] == expected_user_id else "Wrong ❌"
+
         logging.info(
-                f"post_test_face_recognition, file: {file_path.name}, "
-                f"expected_user_id: {expected_user_id}, result_user_id: {result['user_id']}"
-            )
+            f"post_test_face_recognition, file: {file_path.name}, "
+            f"expected_user_id: {expected_user_id}, result_user_id: {result['user_id']} - {match_status}"
+        )
         if result["user_id"] != expected_user_id:
             errors.append({
                 "file": file_path.name,
