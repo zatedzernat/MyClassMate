@@ -1,6 +1,8 @@
 'use client';
 
 import type { User } from '@/types/user';
+import { login } from '@/api.js';
+import { logout } from '@/api.js';
 
 function generateToken(): string {
   const arr = new Uint8Array(12);
@@ -56,6 +58,20 @@ class AuthClient {
 
     // Make API request
 
+    // const request = {
+    //   email: email,
+    //   password: password,
+    // };
+
+    // try {
+    //   await login(request)
+    // } catch (error: any) {
+    //   const message =
+    //     error?.message || "Something went wrong while signing in.";
+    //   return { error: message };
+    // }
+
+
     // We do not handle the API, so we'll check if the credentials match with the hardcoded ones.
     if (email !== 'sofia@devias.io' || password !== 'Secret1') {
       return { error: 'Invalid credentials' };
@@ -89,8 +105,8 @@ class AuthClient {
   }
 
   async signOut(): Promise<{ error?: string }> {
+    logout()
     localStorage.removeItem('custom-auth-token');
-
     return {};
   }
 }
