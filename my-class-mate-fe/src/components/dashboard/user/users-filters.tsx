@@ -10,7 +10,7 @@ export function UsersFilters(): React.JSX.Element {
       <OutlinedInput
         defaultValue=""
         fullWidth
-        placeholder="Search customer"
+        placeholder="ค้นหาผู้ใช้งาน"
         startAdornment={
           <InputAdornment position="start">
             <MagnifyingGlassIcon fontSize="var(--icon-fontSize-md)" />
