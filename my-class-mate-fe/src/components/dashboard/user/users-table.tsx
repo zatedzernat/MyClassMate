@@ -22,25 +22,28 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
 
 function noop(): void {
   // do nothing
 }
 
-export interface Customer {
+export interface User {
   id: string;
+  password: string;
   avatar: string;
   name: string;
   email: string;
   address: { city: string; state: string; country: string; street: string };
   phone: string;
-  createdAt: Date;
+  role: string;
 }
 
 interface UsersTableProps {
   count?: number;
   page?: number;
-  rows?: Customer[];
+  rows?: User[];
   rowsPerPage?: number;
 }
 
@@ -51,11 +54,11 @@ export function UsersTable({
   rowsPerPage = 0,
 }: UsersTableProps): React.JSX.Element {
   const [openEditDialog, setOpenEditDialog] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<Customer | null>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
-  const [userToDelete, setUserToDelete] = useState<Customer | null>(null);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
 
   // Calculate selectedAll and selectedSome
@@ -83,7 +86,7 @@ export function UsersTable({
     });
   };
 
-  const handleOpenEditDialog = (user: Customer) => {
+  const handleOpenEditDialog = (user: User) => {
     setSelectedUser(user);
     setOpenEditDialog(true);
   };
@@ -99,7 +102,7 @@ export function UsersTable({
     handleEditDialogClose();
   };
 
-  const handleDeleteDialogOpen = (user: Customer) => {
+  const handleDeleteDialogOpen = (user: User) => {
     setUserToDelete(user);
     setOpenDeleteDialog(true);
   };
@@ -121,7 +124,7 @@ export function UsersTable({
         <Table sx={{ minWidth: '900px' }}>
           <TableHead>
             <TableRow>
-              <TableCell padding="checkbox">
+              {/* <TableCell padding="checkbox">
                 <Checkbox
                   checked={selectedAll}
                   indeterminate={selectedSome}
@@ -133,11 +136,10 @@ export function UsersTable({
                     }
                   }}
                 />
-              </TableCell>
-              <TableCell>ชื่อ-นามสกุล</TableCell>
+              </TableCell> */}
+              <TableCell sx={{ paddingLeft: '48px' }}>ชื่อ-นามสกุล</TableCell>
               <TableCell>ชื่อบัญชีผู้ใช้</TableCell>
               <TableCell>อีเมล</TableCell>
-              <TableCell>Phone</TableCell>
               <TableCell>บทบาท</TableCell>
               <TableCell></TableCell>
             </TableRow>
@@ -148,7 +150,7 @@ export function UsersTable({
 
               return (
                 <TableRow hover key={row.id} selected={isSelected}>
-                  <TableCell padding="checkbox">
+                  {/* <TableCell padding="checkbox">
                     <Checkbox
                       checked={isSelected}
                       onChange={(event) => {
@@ -159,19 +161,25 @@ export function UsersTable({
                         }
                       }}
                     />
-                  </TableCell>
-                  <TableCell>
+                  </TableCell> */}
+                  <TableCell sx={{ paddingLeft: '40px' }}>
                     <Stack sx={{ alignItems: 'center' }} direction="row" spacing={2}>
                       <Avatar src={row.avatar} />
                       <Typography variant="subtitle2">{row.name}</Typography>
                     </Stack>
                   </TableCell>
                   <TableCell>
-                    {row.address.city}, {row.address.state}, {row.address.country}
+                    {row.id}
+                    {/* {row.address.city}, {row.address.state}, {row.address.country} */}
                   </TableCell>
                   <TableCell>{row.email}</TableCell>
-                  <TableCell>{row.phone}</TableCell>
-                  <TableCell>{dayjs(row.createdAt).format('MMM D, YYYY')}</TableCell>
+                  <TableCell><Typography
+                    variant="body2"
+                    sx={{ fontWeight: row.role === 'ADMIN' ? 'bold' : 'normal' }}
+                  >
+                    {row.role}
+                  </Typography></TableCell>
+                  {/* <TableCell>{dayjs(row.createdAt).format('MMM D, YYYY')}</TableCell> */}
                   <TableCell align="right">
                     <Stack direction="row" spacing={1} justifyContent="flex-end">
                       <IconButton
@@ -228,6 +236,24 @@ export function UsersTable({
               sx={{ marginTop: '8px' }}
             />
             <TextField
+              label="ชื่อบัญชีผู้ใช้"
+              value={selectedUser?.id || ''}
+              onChange={(e) =>
+                setSelectedUser((prev) => (prev ? { ...prev, name: e.target.value } : null))
+              }
+              fullWidth
+              sx={{ marginTop: '8px' }}
+            />
+            <TextField
+              label="รหัสผู้ใช้"
+              value={selectedUser?.password || ''}
+              onChange={(e) =>
+                setSelectedUser((prev) => (prev ? { ...prev, name: e.target.value } : null))
+              }
+              fullWidth
+              sx={{ marginTop: '8px' }}
+            />
+            <TextField
               label="อีเมล"
               value={selectedUser?.email || ''}
               onChange={(e) =>
@@ -235,26 +261,29 @@ export function UsersTable({
               }
               fullWidth
             />
-            <TextField
+            <Select
               label="บทบาท"
-              value={selectedUser?.phone || ''}
+              value={selectedUser?.role || ''}
               onChange={(e) =>
-                setSelectedUser((prev) => (prev ? { ...prev, phone: e.target.value } : null))
+                setSelectedUser((prev) => (prev ? { ...prev, role: e.target.value } : null))
               }
               fullWidth
-            />
+            >
+              <MenuItem value="ADMIN">ADMIN</MenuItem>
+              <MenuItem value="USER">USER</MenuItem>
+            </Select>
           </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleEditDialogClose}>ยกเลิก</Button>
           <Button variant="contained" onClick={handleSave}>
-            บันทึก
+            เเก้ไข
           </Button>
         </DialogActions>
       </Dialog>
 
-       {/* Delete Confirmation Dialog */}
-       <Dialog open={openDeleteDialog} onClose={handleDeleteDialogClose} fullWidth maxWidth="xs">
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={openDeleteDialog} onClose={handleDeleteDialogClose} fullWidth maxWidth="xs">
         <DialogTitle>ยืนยันการลบ</DialogTitle>
         <DialogContent>
           <Typography>
