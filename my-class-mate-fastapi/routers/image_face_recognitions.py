@@ -144,7 +144,7 @@ async def post_store_face_image_2(
     if not candidate_files:
         raise HTTPException(
             status_code=400,
-            detail={"code": "ERR006", "message": f"No files found for pattern {pattern}"}
+            detail={"code": "ERR006", "message": f"No files found for pattern {allowed_extensions}"}
         )
 
     def extract_index(path: Path):
@@ -170,7 +170,7 @@ async def post_store_face_image_2(
         if not faces:
             raise HTTPException(
             status_code=400,
-            detail={"code": "ERR004", "message": f"No face detected in image: {file.filename}"}
+            detail={"code": "ERR004", "message": f"No face detected in image: {file_path}"}
             )
 
         face_img = faces[0]["face"]
