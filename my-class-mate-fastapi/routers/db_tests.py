@@ -5,7 +5,6 @@ from .db_face_recognitions import (
     post_face_recognition_1,
     # post_face_recognition_2,
     # post_face_recognition_3,
-    # post_face_recognition_4
 )
 import logging
 
@@ -18,7 +17,6 @@ METHOD_MAP = {
     1: post_face_recognition_1,
     # 2: post_face_recognition_2,
     # 3: post_face_recognition_3,
-    # 4: post_face_recognition_4
 }
 
 @router.post("/test/db-face-recognition-validation/{method_number}")

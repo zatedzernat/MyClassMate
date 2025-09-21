@@ -3,6 +3,8 @@ import numpy as np
 import cv2
 from deepface import DeepFace
 import pgvector.psycopg2
+from pgvector.psycopg2 import register_vector
+from pgvector import Vector
 from psycopg2 import connect
 from collections import defaultdict
 import statistics
@@ -40,6 +42,7 @@ def get_db_conn():
         options="-c search_path=myclassmate"
     )
     pgvector.psycopg2.register_vector(conn)  # register vector type
+    register_vector(conn) # register vector type
     return conn
 
 @router.post("/face-register")
@@ -88,6 +91,7 @@ async def post_face_register(user_id: str = Form(...), files: list[UploadFile] =
                         DeepFace.represent(
                             face_img,
                             model_name=MODEL_NAME,
+                            detector_backend="skip",
                             enforce_detection=False
                         )[0]["embedding"]
                     )
@@ -98,7 +102,7 @@ async def post_face_register(user_id: str = Form(...), files: list[UploadFile] =
 
                 cur.execute(
                     "INSERT INTO identities (user_id, file_name, embedding) VALUES (%s, %s, %s)",
-                    (user_id, file.filename, embedding_list)
+                    (user_id, file.filename, Vector(embedding_list))
                 )
         conn.commit()
     finally:
@@ -139,29 +143,27 @@ async def post_face_recognition_1(file: UploadFile = File(...)):
             DeepFace.represent(
                 face_img,
                 model_name=MODEL_NAME,
+                detector_backend="skip",
                 enforce_detection=False
             )[0]["embedding"]
         )
 
     # 2. Extract embedding
     embedding = embedding / norm(embedding)
-    target_embedding = embedding.tolist()  # convert to Python list (512-d)
+    target_embedding = Vector(embedding.tolist())  # convert to Python list (512-d)
 
     # 3. Threshold for Euclidean distance
     conn = get_db_conn()
     try:
         with conn.cursor() as cur:
             cur.execute(
-                f"""
-                    SELECT *
-                    FROM (
-                        SELECT user_id, embedding <-> '{str(target_embedding)}' as distance
-                        FROM identities i
-                    ) a
-                    WHERE distance < {EUCLIDEAN_THRESHOLD}
-                    ORDER BY distance ASC
-                    LIMIT 100
                 """
+                SELECT user_id, file_name, embedding <-> %s AS distance
+                FROM identities
+                ORDER BY distance ASC
+                LIMIT 200
+                """,
+                (target_embedding,)
             )
             results = cur.fetchall()
     finally:
@@ -178,33 +180,41 @@ async def post_face_recognition_1(file: UploadFile = File(...)):
     for row in results:
         logging.info(f"post_face_recognition, row: {row}")
         user_id, file_name, distance = row[0], row[1], row[2]
-        user_distances[user_id].append((file_name, distance))
+        user_distances[user_id].append(distance)
+    
+    # --- RULE 1: Exact match check (min == 0.0) ---
+    for user_id, distances in user_distances.items():
+        if min(distances) <= 1e-6:
+            logging.info(f"Exact match found: {user_id}")
+            return {
+                "status": "success",
+                "user_id": user_id,
+                "distance": 0.0,
+                "threshold": EUCLIDEAN_THRESHOLD
+            }
 
-    # ChatGPT 1 
-    # 5. Find best user by nearest distance
-    best_user = None
-    best_distance = float("inf")
-    exact_match = 0.0
+    # --- RULE 2: Top-K majority vote ---
+    K = 5
+    top_k = results[:K]
+    user_counts = defaultdict(int)
+    topk_distances = defaultdict(list)
 
-    for user_id, values in user_distances.items():
-        distances = [v[1] for v in values] 
-        
-        if exact_match in distances:
-            best_user = user_id
-            best_distance = 0.0
-            break
+    for user_id, file_name, distance in top_k:
+        user_counts[user_id] += 1
+        topk_distances[user_id].append(distance)
 
-        stat_dist = statistics.median(distances)
+    majority_user = max(user_counts.items(), key=lambda x: x[1])[0]
+    tied_users = [u for u, c in user_counts.items() if c == user_counts[majority_user]]
 
-        if stat_dist < best_distance:
-            best_distance = stat_dist
-            best_user = user_id
-        elif stat_dist == best_distance:
-            if min(distances) < best_distance:
-                best_user = user_id
-                best_distance = min(distances)
+    if len(tied_users) > 1:
+        # tie → median ตัดสิน
+        majority_user = min(tied_users, key=lambda u: statistics.median(topk_distances[u]))
 
-    if best_user is None or best_distance > EUCLIDEAN_THRESHOLD:
+    best_user = majority_user
+    best_distance = statistics.median(topk_distances[best_user])
+
+    # --- RULE 3: threshold check ---
+    if best_distance > EUCLIDEAN_THRESHOLD:
         raise HTTPException(
             status_code=404,
             detail={
@@ -212,7 +222,31 @@ async def post_face_recognition_1(file: UploadFile = File(...)):
                 "message": f"Closest face distance exceeds threshold: {best_distance:.4f}"
             }
         )
+    
+    # --- RULE 4: Confidence margin check ---
+    sorted_all = sorted(
+        [(uid, statistics.median(dists)) for uid, dists in user_distances.items()],
+        key=lambda x: x[1]
+    )
 
+    if len(sorted_all) > 1:
+        _, second_distance = sorted_all[1]
+        margin_ratio = (second_distance - best_distance) / max(best_distance, 1e-6)
+
+        if margin_ratio < 0.05:
+            if user_counts[best_user] <= 1:
+                # ไม่มี majority → reject
+                raise HTTPException(
+                    status_code=400,
+                    detail={
+                        "code": "ERR004",
+                        "message": f"No confident match (best={best_distance:.4f}, second={second_distance:.4f})"
+                    }
+                )
+            else:
+                logging.info(f"Margin close but majority vote favors {best_user}")
+
+    # --- SUCCESS ---
     logging.info(f"post_face_recognition, best_user: {best_user}, distance: {best_distance}")
     return {
         "status": "success",
