@@ -1,5 +1,6 @@
 'use client';
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import type { Metadata } from 'next';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
@@ -15,23 +16,22 @@ import { DownloadIcon } from '@phosphor-icons/react/dist/ssr/Download';
 import { PlusIcon } from '@phosphor-icons/react/dist/ssr/Plus';
 import { UploadIcon } from '@phosphor-icons/react/dist/ssr/Upload';
 import dayjs from 'dayjs';
+import { createUser, getUsers } from '@/api.js'; // Import the API function
 
 import { config } from '@/config';
-import type { User } from '@/components/dashboard/user/users-table';
-import { UsersFilters} from '@/components/dashboard/user/users-filters';
+import type { User, UserRequest } from '@/components/dashboard/user/users-table';
+import { UsersFilters } from '@/components/dashboard/user/users-filters';
 import { UsersTable } from '@/components/dashboard/user/users-table';
 
 // export const metadata = { title: `Customers | Dashboard | ${config.site.name}` } satisfies Metadata;
 
-const customers = [
+const mockUsers = [
   {
     id: 'USR-010',
     password: '123456',
     name: 'Alcides Antonio',
     avatar: '/assets/avatar-10.png',
     email: 'alcides.antonio@devias.io',
-    phone: '908-691-3242',
-    address: { city: 'Madrid', country: 'Spain', state: 'Comunidad de Madrid', street: '4158 Hedge Street' },
     // createdAt: dayjs().subtract(2, 'hours').toDate(),
     role: 'USER',
   },
@@ -41,8 +41,6 @@ const customers = [
     name: 'Marcus Finn',
     avatar: '/assets/avatar-9.png',
     email: 'marcus.finn@devias.io',
-    phone: '415-907-2647',
-    address: { city: 'Carson City', country: 'USA', state: 'Nevada', street: '2188 Armbrester Drive' },
     // createdAt: dayjs().subtract(2, 'hours').toDate(),
     role: 'USER',
   },
@@ -52,8 +50,6 @@ const customers = [
     name: 'Jie Yan',
     avatar: '/assets/avatar-8.png',
     email: 'jie.yan.song@devias.io',
-    phone: '770-635-2682',
-    address: { city: 'North Canton', country: 'USA', state: 'Ohio', street: '4894 Lakeland Park Drive' },
     // createdAt: dayjs().subtract(2, 'hours').toDate(),
     role: 'USER',
   },
@@ -63,8 +59,6 @@ const customers = [
     name: 'Nasimiyu Danai',
     avatar: '/assets/avatar-7.png',
     email: 'nasimiyu.danai@devias.io',
-    phone: '801-301-7894',
-    address: { city: 'Salt Lake City', country: 'USA', state: 'Utah', street: '368 Lamberts Branch Road' },
     // createdAt: dayjs().subtract(2, 'hours').toDate(),
     role: 'USER',
   },
@@ -74,8 +68,6 @@ const customers = [
     name: 'Iulia Albu',
     avatar: '/assets/avatar-6.png',
     email: 'iulia.albu@devias.io',
-    phone: '313-812-8947',
-    address: { city: 'Murray', country: 'USA', state: 'Utah', street: '3934 Wildrose Lane' },
     // createdAt: dayjs().subtract(2, 'hours').toDate(),
     role: 'USER',
   },
@@ -85,8 +77,6 @@ const customers = [
     name: 'Fran Perez',
     avatar: '/assets/avatar-5.png',
     email: 'fran.perez@devias.io',
-    phone: '712-351-5711',
-    address: { city: 'Atlanta', country: 'USA', state: 'Georgia', street: '1865 Pleasant Hill Road' },
     // createdAt: dayjs().subtract(2, 'hours').toDate(),
     role: 'ADMIN',
   },
@@ -97,8 +87,6 @@ const customers = [
     name: 'Penjani Inyene',
     avatar: '/assets/avatar-4.png',
     email: 'penjani.inyene@devias.io',
-    phone: '858-602-3409',
-    address: { city: 'Berkeley', country: 'USA', state: 'California', street: '317 Angus Road' },
     // createdAt: dayjs().subtract(2, 'hours').toDate(),
     role: 'USER',
   },
@@ -108,8 +96,6 @@ const customers = [
     name: 'Carson Darrin',
     avatar: '/assets/avatar-3.png',
     email: 'carson.darrin@devias.io',
-    phone: '304-428-3097',
-    address: { city: 'Cleveland', country: 'USA', state: 'Ohio', street: '2849 Fulton Street' },
     // createdAt: dayjs().subtract(2, 'hours').toDate(),
     role: 'USER',
   },
@@ -119,8 +105,6 @@ const customers = [
     name: 'Siegbert Gottfried',
     avatar: '/assets/avatar-2.png',
     email: 'siegbert.gottfried@devias.io',
-    phone: '702-661-1654',
-    address: { city: 'Los Angeles', country: 'USA', state: 'California', street: '1798 Hickory Ridge Drive' },
     // createdAt: dayjs().subtract(2, 'hours').toDate(),
     role: 'ADMIN',
   },
@@ -130,8 +114,6 @@ const customers = [
     name: 'Miron Vitold',
     avatar: '/assets/avatar-1.png',
     email: 'miron.vitold@devias.io',
-    phone: '972-333-4106',
-    address: { city: 'San Diego', country: 'USA', state: 'California', street: '75247' },
     // createdAt: dayjs().subtract(2, 'hours').toDate(),
     role: 'ADMIN',
   },
@@ -141,19 +123,42 @@ export default function Page(): React.JSX.Element {
   const page = 0;
   const rowsPerPage = 5;
 
-  const paginatedCustomers = applyPagination(customers, page, rowsPerPage);
-
+  const [users, setUsers] = useState<User[]>([]); // State to store users
+  const paginatedCustomers = applyPagination(users, page, rowsPerPage);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
-  const [newUser, setNewUser] = useState({
+  const [newUser, setNewUser] = useState<UserRequest>({
     id: '',
+    password: '',
     name: '',
     email: '',
-    role: 'USER',
-    avatar: '',
-    phone: '',
-    address: { city: '', state: '', country: '', street: '' },
-    createdAt: dayjs().toDate(),
+    role
+    : 'USER',
   });
+
+  const fetchUsers = async () => {
+    try {
+      const response = await getUsers(); // Call the API to fetch users
+      const user: User = {
+        id: response.userId,
+        password: response.password,
+        name: response.name,
+        email: response.email,
+        role: response.role,
+        avatar: ''
+      };
+      setUsers([user]); // Update the state with the fetched users
+    } catch (error) {
+      // In case of error, you might want to set an empty array or some default users
+      setUsers(mockUsers);
+      console.error('Error fetching users:', error);
+    }
+  };
+
+  // Fetch users when the component mounts
+  useEffect(() => {
+
+    fetchUsers();
+  }, []);
 
   const handleOpenCreateDialog = () => {
     setOpenCreateDialog(true);
@@ -163,20 +168,22 @@ export default function Page(): React.JSX.Element {
     setOpenCreateDialog(false);
     setNewUser({
       id: '',
+      password: '',
       name: '',
       email: '',
       role: 'USER',
-      avatar: '',
-      phone: '',
-      address: { city: '', state: '', country: '', street: '' },
-      createdAt: dayjs().toDate(),
     });
   };
 
-  const handleSaveNewUser = () => {
-    console.log('New user created:', newUser);
-    // Add logic to save the new user (e.g., API call)
-    handleCloseCreateDialog();
+  const handleSaveNewUser = async () => {
+    try {
+      const createdUser = await createUser(newUser); // Call the createUser API
+      fetchUsers(); // Refresh the user list after creating a new user
+      console.log('New user created:', createdUser);
+      handleCloseCreateDialog(); // Close the dialog
+    } catch (error: any) {
+      console.error('Error creating user:', error.message);
+    }
   };
 
   return (
@@ -194,7 +201,7 @@ export default function Page(): React.JSX.Element {
           </Stack> */}
         </Stack>
         <div>
-        <Button
+          <Button
             startIcon={<PlusIcon fontSize="var(--icon-fontSize-md)" />}
             variant="contained"
             onClick={handleOpenCreateDialog}
@@ -205,16 +212,30 @@ export default function Page(): React.JSX.Element {
       </Stack>
       {/* <UsersFilters /> */}
       <UsersTable
-        count={customers.length} // Pass the total count of customers
+        count={users.length} // Pass the total count of customers
         page={0} // No pagination, so page is irrelevant
-        rows={customers} // Pass all customers directly
-        rowsPerPage={customers.length} // Set rowsPerPage to the total number of customers
+        rows={users} // Pass all customers directly
+        rowsPerPage={users.length} // Set rowsPerPage to the total number of customers
+        onUpdateSuccess={fetchUsers} // Refresh the user list after an update
+        onDeleteSuccess={fetchUsers} // Refresh the user list after a delete
       />
       {/* Create User Dialog */}
       <Dialog open={openCreateDialog} onClose={handleCloseCreateDialog} fullWidth maxWidth="sm">
         <DialogTitle>เพิ่มผู้ใช้งาน</DialogTitle>
         <DialogContent>
           <Stack spacing={2}>
+            <TextField
+              label="บัญชีผู้ใช้งาน"
+              value={newUser.id}
+              onChange={(e) => setNewUser({ ...newUser, id: e.target.value })}
+              fullWidth
+            />
+            <TextField
+              label="รหัสผ่าน"
+              value={newUser.password}
+              onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+              fullWidth
+            />
             <TextField
               label="ชื่อ-นามสกุล"
               value={newUser.name}
@@ -225,12 +246,6 @@ export default function Page(): React.JSX.Element {
               label="อีเมล"
               value={newUser.email}
               onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-              fullWidth
-            />
-            <TextField
-              label="เบอร์โทรศัพท์"
-              value={newUser.phone}
-              onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
               fullWidth
             />
             <Select
