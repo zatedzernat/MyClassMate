@@ -52,6 +52,13 @@ public class UserService {
         }
     }
 
+    public UserResponse getUser(Long userId) {
+        var user = userRepository.findByIdAndIsDeletedFalse(userId)
+                .orElseThrow(() -> new AppException(ERROR_USER_NOT_FOUND.getCode(), ERROR_USER_NOT_FOUND.getMessage()));
+
+        return mapToUserResponse(user);
+    }
+
     public List<UserResponse> getUsers(RoleEnum role) {
         var users = userRepository.findByIsDeletedFalse();
         List<User> filteredUsers = new ArrayList<>();
@@ -111,7 +118,7 @@ public class UserService {
 
     @Transactional
     public UserResponse updateUser(Long userId, UpdateUserRequest request) {
-        var user = userRepository.findById(userId)
+        var user = userRepository.findByIdAndIsDeletedFalse(userId)
                 .orElseThrow(() -> new AppException(ERROR_USER_NOT_FOUND.getCode(), ERROR_USER_NOT_FOUND.getMessage()));
 
         user.setNameTh(request.getNameTh());
@@ -126,7 +133,7 @@ public class UserService {
 
     @Transactional
     public UserResponse deleteUser(Long userId) {
-        var user = userRepository.findById(userId)
+        var user = userRepository.findByIdAndIsDeletedFalse(userId)
                 .orElseThrow(() -> new AppException(ERROR_USER_NOT_FOUND.getCode(), ERROR_USER_NOT_FOUND.getMessage()));
 
         user.setIsDeleted(true);
