@@ -1,6 +1,5 @@
-package com.bill.model.response;
+package com.bill.model.request;
 
-import com.bill.constant.RoleEnum;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -9,13 +8,9 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class LoginResponse {
-    Long userId;
-    String username;
+public class UpdateUserRequest {
     String nameTh;
     String surnameTh;
     String nameEn;
     String surnameEn;
-    String email;
-    RoleEnum role;
 }

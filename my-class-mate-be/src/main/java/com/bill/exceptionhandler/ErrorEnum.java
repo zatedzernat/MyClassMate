@@ -10,6 +10,11 @@ public enum ErrorEnum {
     ERROR_ACCESS_DENIED("ERR004", "your role does not have permission to perform this action"),
     ERROR_MISSING_HEADER_ROLE("ERR005", "missing role header"),
     ERROR_INVALID_ROLE("ERR005", "invalid role"),
+    ERROR_USER_DEACTIVATED("ERR006", "user is deactivated"),
+    ERROR_DUPLICATE_STUDENT_NO("ERR007", "found duplicate student no"),
+    ERROR_INVALID_REQUEST("ERR008", "invalid fields: %s"),
+    ERROR_MISSING_STUDENT_NO("ERR009", "missing studentNo for student role"),
+    ERROR_USER_NOT_FOUND("ERR010", "user not found"),
     ;
 
     private final String code;

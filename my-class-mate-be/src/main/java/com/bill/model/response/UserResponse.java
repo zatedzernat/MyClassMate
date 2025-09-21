@@ -4,16 +4,19 @@ import com.bill.constant.RoleEnum;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.time.LocalDateTime;
-
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CreateUserResponse {
+public class UserResponse {
     Long userId;
     String username;
+    String nameTh;
+    String surnameTh;
+    String nameEn;
+    String surnameEn;
+    String email;
     RoleEnum role;
-    LocalDateTime createdAt;
+    Boolean isDeleted;
 }

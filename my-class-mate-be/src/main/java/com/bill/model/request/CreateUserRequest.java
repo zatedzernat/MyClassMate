@@ -30,4 +30,6 @@ public class CreateUserRequest {
     String email;
     @NotNull
     RoleEnum role;
+    // for student
+    String studentNo;
 }

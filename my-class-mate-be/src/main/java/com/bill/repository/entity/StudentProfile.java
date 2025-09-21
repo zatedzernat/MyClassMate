@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 public class StudentProfile {
     @Id
     Long studentId;
+    String studentNo;
     String address;
     String phoneNumber;
     String remark;

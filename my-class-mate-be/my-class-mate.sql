@@ -88,9 +88,10 @@ CREATE INDEX "course_lecturers_index_1" ON myclassmate."course_lecturers" ("lect
 
 CREATE TABLE myclassmate."student_profiles" (
   "student_id" BIGINT UNIQUE NOT NULL,
-  "address" VARCHAR(255) NOT NULL,
-  "phone_number" VARCHAR(10) NOT NULL,
-  "remark" VARCHAR(255) NOT NULL,
+  "student_no" UNIQUE VARCHAR(50) NOT NULL,
+  "address" VARCHAR(255) NULL,
+  "phone_number" VARCHAR(10) NULL,
+  "remark" VARCHAR(255) NULL,
   "created_at" TIMESTAMP NOT NULL,
   "updated_at" TIMESTAMP NOT NULL,
   PRIMARY KEY ("student_id")
