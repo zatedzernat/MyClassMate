@@ -20,8 +20,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
 
 import static com.bill.exceptionhandler.ErrorEnum.*;
 
@@ -51,18 +53,22 @@ public class UserService {
     }
 
     public List<UserResponse> getUsers(RoleEnum role) {
-        List<User> userList;
+        var users = userRepository.findByIsDeletedFalse();
+        List<User> filteredUsers = new ArrayList<>();
+
         if (role != null) {
-            userList = userRepository.findByRole(role);
-        } else {
-            var users = userRepository.findAll();
-            userList = users.stream()
-                    .filter(Objects::nonNull)
-                    .filter(user -> !RoleEnum.ADMIN.equals(user.getRole()))
-                    .collect(Collectors.toList());
+            filteredUsers = users.stream()
+                    .filter(user -> role.equals(user.getRole()))
+                    .toList();
         }
-        userList.sort(Comparator.comparing(User::getRole).thenComparing(User::getId));
-        return mapToUserResponse(userList);
+
+        var usersResponse = filteredUsers.stream()
+                .filter(Objects::nonNull)
+                .filter(user -> !RoleEnum.ADMIN.equals(user.getRole()))
+                .sorted(Comparator.comparing(User::getRole).thenComparing(User::getId))
+                .toList();
+
+        return mapToUserResponse(usersResponse);
     }
 
     @Transactional
