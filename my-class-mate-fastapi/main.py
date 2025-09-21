@@ -24,28 +24,28 @@ async def root():
 
 app.include_router(
     db_tests.router,
-    prefix="/myclassmate/v1",
+    prefix="/my-class-mate/v1",
     tags=["db_tests"],
     responses={404: {"message": "Not found"}},
 )
 
 app.include_router(
     image_tests.router,
-    prefix="/myclassmate/v1",
+    prefix="/my-class-mate/v1",
     tags=["image_tests"],
     responses={404: {"message": "Not found"}},
 )
 
 app.include_router(
     db_face_recognitions.router,
-    prefix="/myclassmate/v1",
+    prefix="/my-class-mate/v1",
     tags=["db_face_recognitions"],
     responses={404: {"message": "Not found"}},
 )
 
 app.include_router(
     image_face_recognitions.router,
-    prefix="/myclassmate/v1",
+    prefix="/my-class-mate/v1",
     tags=["image_face_recognitions"],
     responses={404: {"message": "Not found"}},
 )
