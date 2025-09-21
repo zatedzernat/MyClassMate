@@ -162,7 +162,7 @@ async def post_face_register(user_id: str = Form(...), files: List[UploadFile] =
         conn.close()
 
     return {
-        "status": "success",
+        "status": "Success",
         "user_id": user_id,
         "num_faces_registered": len(saved_files),
         "files": saved_files
@@ -208,7 +208,7 @@ async def post_face_recognition(file: UploadFile = File(...)):
     for user_id, distances in user_distances.items():
         if min(distances) <= 1e-6:
             logger.info(f"[face-recognition] Exact match: {user_id}")
-            return {"status": "success", "user_id": user_id, "distance": 0.0, "threshold": EUCLIDEAN_THRESHOLD}
+            return {"status": "Success", "user_id": user_id, "distance": 0.0, "threshold": EUCLIDEAN_THRESHOLD}
 
     # Rule 2: Top-K majority
     K = 5
@@ -238,11 +238,11 @@ async def post_face_recognition(file: UploadFile = File(...)):
         _, second_distance = sorted_all[1]
         margin_ratio = (second_distance - best_distance) / max(best_distance, 1e-6)
         if margin_ratio < CONFIDENCE_MARGIN and user_counts[best_user] <= 1:
-            raise HTTPException(status_code=400, detail={"code": "ERR004", "message": f"No confident match (best={best_distance:.4f}, second={second_distance:.4f})"})
+            raise HTTPException(status_code=404, detail={"code": "ERR004", "message": f"No confident match (best={best_distance:.4f}, second={second_distance:.4f})"})
 
     logger.info(f"[face-recognition] SUCCESS: user={best_user}, distance={best_distance:.4f}")
     return {
-        "status": "success", 
+        "status": "Success", 
         "user_id": best_user, 
         "distance": best_distance, 
         "threshold": EUCLIDEAN_THRESHOLD
