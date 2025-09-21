@@ -9,12 +9,13 @@ import statistics
 import logging
 import sys, os
 import contextlib
+from numpy.linalg import norm
 
 router = APIRouter()
 
 logging.basicConfig(level=logging.INFO)
 MODEL_NAME = "Facenet512"  # Change to "ArcFace" for comparison
-EUCLIDEAN_THRESHOLD = 23.56 # Need to adjust to match with Model https://github.com/serengil/deepface/blob/master/deepface/config/threshold.py (Facenet512=23.56, ArcFace=4.15)
+EUCLIDEAN_THRESHOLD = 1.04 # Need to adjust to match with Model https://github.com/serengil/deepface/blob/master/deepface/config/threshold.py
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png"}
 DETECTOR = "mtcnn" # or mtcnn, retinaface
 
@@ -90,6 +91,7 @@ async def post_face_register(user_id: str = Form(...), files: list[UploadFile] =
                             enforce_detection=False
                         )[0]["embedding"]
                     )
+                embedding = embedding / norm(embedding)
 
                 # Convert NumPy array to Python list (vector type)
                 embedding_list = embedding.tolist()
@@ -142,6 +144,7 @@ async def post_face_recognition_1(file: UploadFile = File(...)):
         )
 
     # 2. Extract embedding
+    embedding = embedding / norm(embedding)
     target_embedding = embedding.tolist()  # convert to Python list (512-d)
 
     # 3. Threshold for Euclidean distance
@@ -174,8 +177,8 @@ async def post_face_recognition_1(file: UploadFile = File(...)):
     user_distances = defaultdict(list)
     for row in results:
         logging.info(f"post_face_recognition, row: {row}")
-        user_id, distance = row[0], row[1]
-        user_distances[user_id].append(distance)
+        user_id, file_name, distance = row[0], row[1], row[2]
+        user_distances[user_id].append((file_name, distance))
 
     # ChatGPT 1 
     # 5. Find best user by nearest distance
@@ -183,7 +186,9 @@ async def post_face_recognition_1(file: UploadFile = File(...)):
     best_distance = float("inf")
     exact_match = 0.0
 
-    for user_id, distances in user_distances.items():
+    for user_id, values in user_distances.items():
+        distances = [v[1] for v in values] 
+        
         if exact_match in distances:
             best_user = user_id
             best_distance = 0.0
