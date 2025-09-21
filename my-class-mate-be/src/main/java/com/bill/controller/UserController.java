@@ -15,6 +15,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Slf4j
 @RestController
 @RequestMapping("/v1/users")
@@ -26,6 +28,12 @@ public class UserController {
     @PostMapping(value = "/login", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public UserResponse postLogin(@RequestBody @Valid LoginRequest request) {
         return userService.login(request);
+    }
+
+    @RequireRole({RoleEnum.ADMIN, RoleEnum.LECTURER, RoleEnum.STAFF})
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    public List<UserResponse> getUsers(@RequestParam(required = false) RoleEnum role) {
+        return userService.getUsers(role);
     }
 
     @RequireRole({RoleEnum.ADMIN})

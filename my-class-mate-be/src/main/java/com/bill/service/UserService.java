@@ -20,6 +20,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.bill.exceptionhandler.ErrorEnum.*;
 
@@ -46,6 +48,21 @@ public class UserService {
         } else {
             throw new AppException(ERROR_LOGIN.getCode(), ERROR_LOGIN.getMessage());
         }
+    }
+
+    public List<UserResponse> getUsers(RoleEnum role) {
+        List<User> userList;
+        if (role != null) {
+            userList = userRepository.findByRole(role);
+        } else {
+            var users = userRepository.findAll();
+            userList = users.stream()
+                    .filter(Objects::nonNull)
+                    .filter(user -> !RoleEnum.ADMIN.equals(user.getRole()))
+                    .collect(Collectors.toList());
+        }
+        userList.sort(Comparator.comparing(User::getRole).thenComparing(User::getId));
+        return mapToUserResponse(userList);
     }
 
     @Transactional
@@ -117,5 +134,15 @@ public class UserService {
         var userResponse = modelMapper.map(user, UserResponse.class);
         userResponse.setUserId(user.getId());
         return userResponse;
+    }
+
+    private List<UserResponse> mapToUserResponse(List<User> users) {
+        var response = new ArrayList<UserResponse>();
+        for (var user : users) {
+            var userResponse = modelMapper.map(user, UserResponse.class);
+            userResponse.setUserId(user.getId());
+            response.add(userResponse);
+        }
+        return response;
     }
 }
