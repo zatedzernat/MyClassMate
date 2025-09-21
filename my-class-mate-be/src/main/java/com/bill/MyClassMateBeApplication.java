@@ -1,4 +1,4 @@
-package com.bill.my_class_mate_be;
+package com.bill;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
