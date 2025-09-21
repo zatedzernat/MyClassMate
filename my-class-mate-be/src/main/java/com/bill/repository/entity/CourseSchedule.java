@@ -1,17 +1,14 @@
 package com.bill.repository.entity;
 
-import com.bill.constant.DayEnum;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
+@Data
 @Entity
 @Builder
 @NoArgsConstructor
