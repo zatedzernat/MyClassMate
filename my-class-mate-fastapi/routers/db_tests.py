@@ -2,7 +2,7 @@ from fastapi import APIRouter, UploadFile, HTTPException
 from pathlib import Path
 from io import BytesIO
 from .db_face_recognitions import (
-    post_face_recognition_1,
+    post_face_recognition,
     # post_face_recognition_2,
     # post_face_recognition_3,
 )
@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO)
 DATA_PATH = "/Users/pongthanat/Pictures/test-my-class-mate/users/"
 
 METHOD_MAP = {
-    1: post_face_recognition_1,
+    1: post_face_recognition,
     # 2: post_face_recognition_2,
     # 3: post_face_recognition_3,
 }

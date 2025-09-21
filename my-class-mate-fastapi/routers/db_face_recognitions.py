@@ -2,7 +2,6 @@ from fastapi import APIRouter, Form, File, UploadFile, HTTPException
 import numpy as np
 import cv2
 from deepface import DeepFace
-import pgvector.psycopg2
 from pgvector.psycopg2 import register_vector
 from pgvector import Vector
 from psycopg2 import connect
@@ -12,18 +11,36 @@ import logging
 import sys, os
 import contextlib
 from numpy.linalg import norm
+from typing import List, Dict
+import shutil
 
+# ---------------- CONFIG ---------------- #
+MODEL_NAME = "Facenet512"       # หรือ "ArcFace"
+EUCLIDEAN_THRESHOLD = 1.04      # อ้างอิงจาก DeepFace (https://github.com/serengil/deepface/blob/master/deepface/config/threshold.py)
+CONFIDENCE_MARGIN = 0.05        # ใช้สำหรับ confidence margin rule
+ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png"}
+DETECTOR = "mtcnn"              # หรือ retinaface
+
+SAVE_IMAGE_FILES = True         # จะ save รูปไหม
+IMAGE_SAVE_DIR = os.path.join(os.path.dirname(__file__), "..", "storage", "upload")
+
+# Router
 router = APIRouter()
 
-logging.basicConfig(level=logging.INFO)
-MODEL_NAME = "Facenet512"  # Change to "ArcFace" for comparison
-EUCLIDEAN_THRESHOLD = 1.04 # Need to adjust to match with Model https://github.com/serengil/deepface/blob/master/deepface/config/threshold.py
-ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png"}
-DETECTOR = "mtcnn" # or mtcnn, retinaface
+# Logging
+logger = logging.getLogger("face_recognition")
+logger.setLevel(logging.INFO) # เปลี่ยนเป็น logging.DEBUG ได้
+handler = logging.StreamHandler(sys.stdout)
+formatter = logging.Formatter("[%(asctime)s] %(levelname)s: %(message)s")
+handler.setFormatter(formatter)
+if not logger.handlers:
+    logger.addHandler(handler)
+logger.propagate = False
 
+# ---------------- UTILS ---------------- #
 @contextlib.contextmanager
 def suppress_tf_logs():
-    """Suppress stdout/stderr temporarily to hide DeepFace/TensorFlow logs."""
+    """Suppress DeepFace/TensorFlow logs (stdout/stderr)."""
     with open(os.devnull, "w") as fnull:
         old_stdout, old_stderr = sys.stdout, sys.stderr
         sys.stdout, sys.stderr = fnull, fnull
@@ -41,69 +58,105 @@ def get_db_conn():
         port="5432",
         options="-c search_path=myclassmate"
     )
-    pgvector.psycopg2.register_vector(conn)  # register vector type
-    register_vector(conn) # register vector type
+    register_vector(conn)  # register pgvector type
     return conn
 
+
+def normalize_embedding(embedding: np.ndarray) -> np.ndarray:
+    """Normalize vector safely (prevent division by zero)."""
+    n = norm(embedding)
+    return embedding / n if n > 0 else embedding
+
+
+def validate_extension(filename: str):
+    ext = filename.rsplit(".", 1)[-1].lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail={"code": "ERR002", "message": f"Invalid extension '{ext}'. Allowed: {ALLOWED_EXTENSIONS}"}
+        )
+    
+def get_face_embedding(image) -> np.ndarray:
+    """Extract normalized embedding from an image using DeepFace."""
+    try:
+        with suppress_tf_logs():
+            faces = DeepFace.extract_faces(image, detector_backend=DETECTOR, enforce_detection=False)
+        if not faces:
+            raise ValueError("No face detected")
+        face_img = faces[0]["face"]
+
+        with suppress_tf_logs():
+            embedding = np.array(
+                DeepFace.represent(face_img, model_name=MODEL_NAME, detector_backend="skip", enforce_detection=False)[0]["embedding"]
+            )
+        return normalize_embedding(embedding)
+    except Exception as e:
+        logger.error(f"DeepFace error: {e}")
+        raise HTTPException(status_code=500, detail={"code": "ERR006", "message": "Face embedding failed"})
+    
+def save_uploaded_file(user_id: str, file: UploadFile, image_bytes: bytes) -> str:
+    """Save uploaded image to disk and return saved path."""
+    user_dir = os.path.join(IMAGE_SAVE_DIR, str(user_id))
+    os.makedirs(user_dir, exist_ok=True)
+
+    save_path = os.path.join(user_dir, file.filename)
+    with open(save_path, "wb") as f:
+        f.write(image_bytes)
+
+    logger.info(f"[face-register] Saved file: {save_path}")
+    return save_path
+
+# ---------------- ROUTES ---------------- #
 @router.post("/face-register")
-async def post_face_register(user_id: str = Form(...), files: list[UploadFile] = File(...)):
-    logging.info(f"start post_face_register, user_id: {user_id}")
+async def post_face_register(user_id: str = Form(...), files: List[UploadFile] = File(...)):
+    logger.info(f"[face-register] user_id={user_id}, files={len(files)}")
+
     if len(files) > 4:
         raise HTTPException(status_code=400, detail={"code": "ERR001", "message": "Maximum 4 images allowed"})
 
     for file in files:
-        ext = file.filename.rsplit(".", 1)[-1].lower()
-        if ext not in ALLOWED_EXTENSIONS:
-            raise HTTPException(
-                status_code=400,
-                detail={"code": "ERR002", "message": f"Invalid file extension '{ext}'. Only jpg/jpeg/png allowed."}
-            )
+        validate_extension(file.filename)
+
+    saved_files = []
+    saved_paths = []
 
     conn = get_db_conn()
     try:
         with conn.cursor() as cur:
-            # step 1. delete old files
+            # --- Step 1: ลบข้อมูลเก่าใน DB ---
             cur.execute("DELETE FROM identities WHERE user_id = %s", (user_id,))
 
-            # step 2. Loop foreach file and insert to db
-            for file in files:
+            # --- Step 2: ลบไฟล์เก่าใน storage ---
+            user_dir = os.path.join(IMAGE_SAVE_DIR, str(user_id))
+            if os.path.exists(user_dir):
+                shutil.rmtree(user_dir)   # ลบทั้งโฟลเดอร์ userId
+                logger.info(f"[face-register] Deleted old files for user {user_id}")
+
+            for idx, file in enumerate(files, start=1):
                 image_bytes = await file.read()
                 image_np = np.frombuffer(image_bytes, np.uint8)
                 image = cv2.imdecode(image_np, cv2.IMREAD_COLOR)
 
-                # Extract faces from image
-                with suppress_tf_logs():
-                    faces = DeepFace.extract_faces(
-                        image,
-                        detector_backend=DETECTOR,
-                        enforce_detection=False
-                    )
+                embedding = get_face_embedding(image)
 
-                    if not faces:
-                        raise HTTPException(
-                            status_code=400,
-                            detail={"code": "ERR005", "message": f"No face detected in {file.filename}"}
-                        )
-
-                    face_img = faces[0]["face"]
-
-                    embedding = np.array(
-                        DeepFace.represent(
-                            face_img,
-                            model_name=MODEL_NAME,
-                            detector_backend="skip",
-                            enforce_detection=False
-                        )[0]["embedding"]
-                    )
-                embedding = embedding / norm(embedding)
-
-                # Convert NumPy array to Python list (vector type)
-                embedding_list = embedding.tolist()
+                # กำหนดชื่อไฟล์ใหม่เป็น running no
+                ext = file.filename.rsplit(".", 1)[-1].lower()
+                new_filename = f"{idx}.{ext}"
 
                 cur.execute(
                     "INSERT INTO identities (user_id, file_name, embedding) VALUES (%s, %s, %s)",
-                    (user_id, file.filename, Vector(embedding_list))
+                    (user_id, new_filename, Vector(embedding.tolist()))
                 )
+                saved_files.append(new_filename)
+
+                if SAVE_IMAGE_FILES:
+                    user_dir = os.path.join(IMAGE_SAVE_DIR, str(user_id))
+                    os.makedirs(user_dir, exist_ok=True)
+                    save_path = os.path.join(user_dir, new_filename)
+                    with open(save_path, "wb") as f:
+                        f.write(image_bytes)
+                    logger.info(f"[face-register] Saved file: {save_path}")
+
         conn.commit()
     finally:
         conn.close()
@@ -111,48 +164,21 @@ async def post_face_register(user_id: str = Form(...), files: list[UploadFile] =
     return {
         "status": "success",
         "user_id": user_id,
-        "num_faces_registered": len(files),
-        "files": [file.filename for file in files]
+        "num_faces_registered": len(saved_files),
+        "files": saved_files
     }
 
-@router.post("/face-recognition-1")
-async def post_face_recognition_1(file: UploadFile = File(...)):
-    logging.info(f"start post_face_recognition")
-    # 1. Read file
+@router.post("/face-recognition")
+async def post_face_recognition(file: UploadFile = File(...)):
+    logger.info(f"[face-recognition] start")
+
     image_bytes = await file.read()
     image_np = np.frombuffer(image_bytes, np.uint8)
     image = cv2.imdecode(image_np, cv2.IMREAD_COLOR)
 
-    # Extract faces from image
-    with suppress_tf_logs():
-        faces = DeepFace.extract_faces(
-            image,
-            detector_backend=DETECTOR,
-            enforce_detection=False
-        )
+    embedding = get_face_embedding(image)
+    target_embedding = Vector(embedding.tolist())
 
-        if not faces:
-            raise HTTPException(
-                status_code=400,
-                detail={"code": "ERR005", "message": f"No face detected in {file.filename}"}
-            )
-
-        face_img = faces[0]["face"]
-
-        embedding = np.array(
-            DeepFace.represent(
-                face_img,
-                model_name=MODEL_NAME,
-                detector_backend="skip",
-                enforce_detection=False
-            )[0]["embedding"]
-        )
-
-    # 2. Extract embedding
-    embedding = embedding / norm(embedding)
-    target_embedding = Vector(embedding.tolist())  # convert to Python list (512-d)
-
-    # 3. Threshold for Euclidean distance
     conn = get_db_conn()
     try:
         with conn.cursor() as cur:
@@ -168,37 +194,27 @@ async def post_face_recognition_1(file: UploadFile = File(...)):
             results = cur.fetchall()
     finally:
         conn.close()
-    
-    if not results:
-        raise HTTPException(
-            status_code=404,
-            detail={"code": "ERR003", "message": f"No face found within threshold: {EUCLIDEAN_THRESHOLD}"}
-        )
 
-    # 4. รวม distance ต่อ user
-    user_distances = defaultdict(list)
-    for row in results:
-        logging.info(f"post_face_recognition, row: {row}")
-        user_id, file_name, distance = row[0], row[1], row[2]
+    if not results:
+        raise HTTPException(status_code=404, detail={"code": "ERR003", "message": "No face found in DB"})
+
+    # Group distances per user
+    user_distances: Dict[int, List[float]] = defaultdict(list)
+    for user_id, file_name, distance in results:
+        logger.debug(f"row: uid={user_id}, file={file_name}, dist={distance:.4f}")
         user_distances[user_id].append(distance)
-    
-    # --- RULE 1: Exact match check (min == 0.0) ---
+
+    # Rule 1: Exact match
     for user_id, distances in user_distances.items():
         if min(distances) <= 1e-6:
-            logging.info(f"Exact match found: {user_id}")
-            return {
-                "status": "success",
-                "user_id": user_id,
-                "distance": 0.0,
-                "threshold": EUCLIDEAN_THRESHOLD
-            }
+            logger.info(f"[face-recognition] Exact match: {user_id}")
+            return {"status": "success", "user_id": user_id, "distance": 0.0, "threshold": EUCLIDEAN_THRESHOLD}
 
-    # --- RULE 2: Top-K majority vote ---
+    # Rule 2: Top-K majority
     K = 5
     top_k = results[:K]
     user_counts = defaultdict(int)
     topk_distances = defaultdict(list)
-
     for user_id, file_name, distance in top_k:
         user_counts[user_id] += 1
         topk_distances[user_id].append(distance)
@@ -207,50 +223,27 @@ async def post_face_recognition_1(file: UploadFile = File(...)):
     tied_users = [u for u, c in user_counts.items() if c == user_counts[majority_user]]
 
     if len(tied_users) > 1:
-        # tie → median ตัดสิน
         majority_user = min(tied_users, key=lambda u: statistics.median(topk_distances[u]))
 
     best_user = majority_user
     best_distance = statistics.median(topk_distances[best_user])
 
-    # --- RULE 3: threshold check ---
+    # Rule 3: Threshold check
     if best_distance > EUCLIDEAN_THRESHOLD:
-        raise HTTPException(
-            status_code=404,
-            detail={
-                "code": "ERR004",
-                "message": f"Closest face distance exceeds threshold: {best_distance:.4f}"
-            }
-        )
-    
-    # --- RULE 4: Confidence margin check ---
-    sorted_all = sorted(
-        [(uid, statistics.median(dists)) for uid, dists in user_distances.items()],
-        key=lambda x: x[1]
-    )
+        raise HTTPException(status_code=404, detail={"code": "ERR004", "message": f"Best distance {best_distance:.4f} exceeds threshold"})
 
+    # Rule 4: Confidence margin
+    sorted_all = sorted([(uid, statistics.median(dists)) for uid, dists in user_distances.items()], key=lambda x: x[1])
     if len(sorted_all) > 1:
         _, second_distance = sorted_all[1]
         margin_ratio = (second_distance - best_distance) / max(best_distance, 1e-6)
+        if margin_ratio < CONFIDENCE_MARGIN and user_counts[best_user] <= 1:
+            raise HTTPException(status_code=400, detail={"code": "ERR004", "message": f"No confident match (best={best_distance:.4f}, second={second_distance:.4f})"})
 
-        if margin_ratio < 0.05:
-            if user_counts[best_user] <= 1:
-                # ไม่มี majority → reject
-                raise HTTPException(
-                    status_code=400,
-                    detail={
-                        "code": "ERR004",
-                        "message": f"No confident match (best={best_distance:.4f}, second={second_distance:.4f})"
-                    }
-                )
-            else:
-                logging.info(f"Margin close but majority vote favors {best_user}")
-
-    # --- SUCCESS ---
-    logging.info(f"post_face_recognition, best_user: {best_user}, distance: {best_distance}")
+    logger.info(f"[face-recognition] SUCCESS: user={best_user}, distance={best_distance:.4f}")
     return {
-        "status": "success",
-        "user_id": best_user,
-        "distance": best_distance,
+        "status": "success", 
+        "user_id": best_user, 
+        "distance": best_distance, 
         "threshold": EUCLIDEAN_THRESHOLD
     }
