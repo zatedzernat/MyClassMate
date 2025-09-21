@@ -24,6 +24,8 @@ import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
+import { updateUser, deleteUser } from '@/api.js';
+
 
 function noop(): void {
   // do nothing
@@ -35,9 +37,15 @@ export interface User {
   avatar: string;
   name: string;
   email: string;
-  address: { city: string; state: string; country: string; street: string };
-  phone: string;
   role: string;
+}
+
+export interface UserRequest {
+  id?: string;
+  password?: string;
+  name?: string;
+  email?: string;
+  role?: string;
 }
 
 interface UsersTableProps {
@@ -45,6 +53,8 @@ interface UsersTableProps {
   page?: number;
   rows?: User[];
   rowsPerPage?: number;
+  onUpdateSuccess?: () => void; // Callback for notifying parent on update success
+  onDeleteSuccess?: () => void; // Callback for notifying parent on delete success
 }
 
 export function UsersTable({
@@ -52,6 +62,8 @@ export function UsersTable({
   rows = [],
   page = 0,
   rowsPerPage = 0,
+  onUpdateSuccess, // Destructure the callback prop
+  onDeleteSuccess, // Destructure the callback prop
 }: UsersTableProps): React.JSX.Element {
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -96,8 +108,29 @@ export function UsersTable({
     setSelectedUser(null);
   };
 
-  const handleSave = () => {
-    // Handle save logic here (e.g., API call to update user data)
+  const handleSave = async () => {
+    if (selectedUser) {
+      const userRequest: UserRequest = {
+        id: selectedUser.id,
+        password: selectedUser.password,
+        name: selectedUser.name,
+        email: selectedUser.email,
+        role: selectedUser.role,
+      };
+
+      try {
+        await updateUser(userRequest); // Call the updateUser API with the mapped request
+        console.log('User updated successfully:', userRequest);
+
+        if (onUpdateSuccess) {
+          onUpdateSuccess(); // Notify the parent component
+        }
+      } catch (error: any) {
+        console.error('Error updating user:', error);
+        const message = error?.message || "Something went wrong";
+        return { error: message };
+      }
+    }
     console.log('Updated user:', selectedUser);
     handleEditDialogClose();
   };
@@ -112,7 +145,25 @@ export function UsersTable({
     setUserToDelete(null);
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
+    if (userToDelete) {
+      const userRequest: UserRequest = {
+        id: userToDelete.id,
+      };
+
+      try {
+        await deleteUser(userRequest); // Call the updateUser API with the mapped request
+        console.log('User deleted successfully:', userRequest);
+
+        if (onDeleteSuccess) {
+          onDeleteSuccess(); // Notify the parent component
+        }
+      } catch (error: any) {
+        console.error('Error deleted user:', error);
+        const message = error?.message || "Something went wrong";
+        return { error: message };
+      }
+    }
     console.log('Deleted user:', userToDelete);
     // Add logic to delete the user (e.g., API call)
     handleDeleteDialogClose();
@@ -300,5 +351,3 @@ export function UsersTable({
     </Card>
   );
 }
-
-// ----------------------------------------------------------------------
