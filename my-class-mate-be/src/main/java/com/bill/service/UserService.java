@@ -309,70 +309,9 @@ public class UserService {
                 boolean isDeleted = "Y".equalsIgnoreCase(isDeletedStr);
 
                 if (!userIdStr.isBlank()) {
-                    // ----- UPDATE -----
-                    Long userId = Long.valueOf(userIdStr);
-                    User user = userRepository.findById(userId)
-                            .orElseThrow(() -> new AppException(ERROR_USER_NOT_FOUND.getCode(), ERROR_USER_NOT_FOUND.getMessage()));
-
-                    user.setUsername(username.trim());
-                    user.setNameTh(nameTh.trim());
-                    user.setSurnameTh(surnameTh.trim());
-                    user.setNameEn(nameEn.trim());
-                    user.setSurnameEn(surnameEn.trim());
-                    user.setEmail(email.trim());
-                    user.setIsDeleted(isDeleted);
-                    user.setRole(role);
-                    user.setUpdatedAt(LocalDateTime.now());
-                    userRepository.save(user);
-
-                    if (role == RoleEnum.STUDENT) {
-                        if (studentNo.isBlank()) {
-                            throw new AppException(ERROR_IMPORT_INVALID_EXCEL.getCode(), ERROR_IMPORT_INVALID_EXCEL.getMessage());
-                        }
-                        StudentProfile sp = studentProfileRepository.findById(userId)
-                                .orElseThrow(() -> new AppException(ERROR_STUDENT_PROFILE_NOT_FOUND.getCode(), ERROR_STUDENT_PROFILE_NOT_FOUND.getMessage()));
-
-                        sp.setStudentNo(studentNo.trim());
-                        sp.setAddress(address.trim());
-                        sp.setPhoneNumber(phone.trim());
-                        sp.setRemark(remark.trim());
-                        sp.setUpdatedAt(LocalDateTime.now());
-                        studentProfileRepository.save(sp);
-                    }
-                    updatedRow++;
+                    updatedRow = getUpdatedRow(userIdStr, username, nameTh, surnameTh, nameEn, surnameEn, email, isDeleted, role, studentNo, address, phone, remark, updatedRow);
                 } else {
-                    // ----- INSERT -----
-                    User user = User.builder()
-                            .username(username.trim())
-                            .password(passwordEncoder.encode(PASSWORD_VALUE))
-                            .nameTh(nameTh.trim())
-                            .surnameTh(surnameTh.trim())
-                            .nameEn(nameEn.trim())
-                            .surnameEn(surnameEn.trim())
-                            .email(email.trim())
-                            .isDeleted(isDeleted)
-                            .role(role)
-                            .createdAt(LocalDateTime.now())
-                            .updatedAt(LocalDateTime.now())
-                            .build();
-                    user = userRepository.save(user);
-
-                    if (role == RoleEnum.STUDENT) {
-                        if (studentNo.isBlank()) {
-                            throw new AppException(ERROR_IMPORT_INVALID_EXCEL.getCode(), ERROR_IMPORT_INVALID_EXCEL.getMessage());
-                        }
-                        StudentProfile sp = StudentProfile.builder()
-                                .studentId(user.getId())
-                                .studentNo(studentNo.trim())
-                                .address(address.trim())
-                                .phoneNumber(phone.trim())
-                                .remark(remark.trim())
-                                .createdAt(LocalDateTime.now())
-                                .updatedAt(LocalDateTime.now())
-                                .build();
-                        studentProfileRepository.save(sp);
-                    }
-                    createdRow++;
+                    createdRow = getCreatedRow(username, nameTh, surnameTh, nameEn, surnameEn, email, isDeleted, role, studentNo, address, phone, remark, createdRow);
                 }
             }
 
@@ -384,24 +323,100 @@ public class UserService {
         return ImportExcelResponse.builder().updatedRow(updatedRow).createdRow(createdRow).build();
     }
 
+    private int getUpdatedRow(String userIdStr, String username, String nameTh, String surnameTh, String nameEn, String surnameEn, String email, boolean isDeleted, RoleEnum role, String studentNo, String address, String phone, String remark, int updatedRow) {
+        // ----- UPDATE -----
+        Long userId = updateUser(userIdStr, username, nameTh, surnameTh, nameEn, surnameEn, email, isDeleted, role);
+
+        if (role == RoleEnum.STUDENT) {
+            if (studentNo.isBlank()) {
+                throw new AppException(ERROR_IMPORT_INVALID_EXCEL.getCode(), ERROR_IMPORT_INVALID_EXCEL.getMessage());
+            }
+            StudentProfile sp = studentProfileRepository.findById(userId)
+                    .orElseThrow(() -> new AppException(ERROR_STUDENT_PROFILE_NOT_FOUND.getCode(), ERROR_STUDENT_PROFILE_NOT_FOUND.getMessage()));
+
+            sp.setStudentNo(studentNo);
+            sp.setAddress(address);
+            sp.setPhoneNumber(phone);
+            sp.setRemark(remark);
+            sp.setUpdatedAt(LocalDateTime.now());
+            studentProfileRepository.save(sp);
+        }
+        updatedRow++;
+        return updatedRow;
+    }
+
+    private int getCreatedRow(String username, String nameTh, String surnameTh, String nameEn, String surnameEn, String email, boolean isDeleted, RoleEnum role, String studentNo, String address, String phone, String remark, int createdRow) {
+        // ----- INSERT -----
+        User user = User.builder()
+                .username(username.trim())
+                .password(passwordEncoder.encode(PASSWORD_VALUE))
+                .nameTh(nameTh.trim())
+                .surnameTh(surnameTh.trim())
+                .nameEn(nameEn.trim())
+                .surnameEn(surnameEn.trim())
+                .email(email.trim())
+                .isDeleted(isDeleted)
+                .role(role)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+        user = userRepository.save(user);
+
+        if (role == RoleEnum.STUDENT) {
+            if (studentNo.isBlank()) {
+                throw new AppException(ERROR_IMPORT_INVALID_EXCEL.getCode(), ERROR_IMPORT_INVALID_EXCEL.getMessage());
+            }
+            StudentProfile sp = StudentProfile.builder()
+                    .studentId(user.getId())
+                    .studentNo(studentNo)
+                    .address(address)
+                    .phoneNumber(phone)
+                    .remark(remark)
+                    .createdAt(LocalDateTime.now())
+                    .updatedAt(LocalDateTime.now())
+                    .build();
+            studentProfileRepository.save(sp);
+        }
+        createdRow++;
+        return createdRow;
+    }
+
+    private Long updateUser(String userIdStr, String username, String nameTh, String surnameTh, String nameEn, String surnameEn, String email, boolean isDeleted, RoleEnum role) {
+        Long userId = Long.valueOf(userIdStr);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ERROR_USER_NOT_FOUND.getCode(), ERROR_USER_NOT_FOUND.getMessage()));
+
+        user.setUsername(username.trim());
+        user.setNameTh(nameTh.trim());
+        user.setSurnameTh(surnameTh.trim());
+        user.setNameEn(nameEn.trim());
+        user.setSurnameEn(surnameEn.trim());
+        user.setEmail(email.trim());
+        user.setIsDeleted(isDeleted);
+        user.setRole(role);
+        user.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(user);
+        return userId;
+    }
+
     private String getCellValue(Cell cell) {
-        if (cell == null) return "";
+        if (cell == null) return null;
         switch (cell.getCellType()) {
             case STRING:
-                return cell.getStringCellValue().trim();
+                return cell.getStringCellValue().isBlank() ? null : cell.getStringCellValue().trim();
             case NUMERIC:
                 double numericValue = cell.getNumericCellValue();
                 if (numericValue == Math.floor(numericValue)) {
-                    return String.valueOf((long) numericValue);
+                    return String.valueOf((long) numericValue).trim();
                 } else {
-                    return String.valueOf(numericValue);
+                    return String.valueOf(numericValue).trim();
                 }
             case BOOLEAN:
-                return String.valueOf(cell.getBooleanCellValue());
+                return String.valueOf(cell.getBooleanCellValue()).trim();
             case FORMULA:
-                return cell.getCellFormula();
+                return cell.getCellFormula().trim();
             default:
-                return "";
+                return null;
         }
     }
 
