@@ -16,6 +16,10 @@ public enum ErrorEnum {
     ERROR_MISSING_STUDENT_NO("ERR009", "missing studentNo for student role"),
     ERROR_USER_NOT_FOUND("ERR010", "user not found"),
     ERROR_STUDENT_PROFILE_NOT_FOUND("ERR011", "student profile not found"),
+    ERROR_EXPORT_EXCEL("ERR012", "cannot export excel"),
+    ERROR_IMPORT_EXCEL("ERR013", "cannot import excel"),
+    ERROR_IMPORT_BLANK_EXCEL("ERR014", "cannot import blank excel"),
+    ERROR_IMPORT_INVALID_EXCEL("ERR014", "cannot import invalid excel"),
     ;
 
     private final String code;

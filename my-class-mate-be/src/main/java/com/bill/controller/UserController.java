@@ -5,6 +5,7 @@ import com.bill.constant.RoleEnum;
 import com.bill.model.request.CreateUserRequest;
 import com.bill.model.request.LoginRequest;
 import com.bill.model.request.UpdateUserRequest;
+import com.bill.model.response.ImportExcelResponse;
 import com.bill.model.response.UserResponse;
 import com.bill.service.UserService;
 import jakarta.validation.Valid;
@@ -12,8 +13,11 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -59,5 +63,21 @@ public class UserController {
     @DeleteMapping(value = "/{userId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public UserResponse deleteUser(@PathVariable Long userId) {
         return userService.deleteUser(userId);
+    }
+
+    @RequireRole({RoleEnum.ADMIN})
+    @GetMapping(value = "/export", produces = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    public ResponseEntity<byte[]> exportUsers(@RequestParam(required = false) RoleEnum role) {
+        byte[] excelFile = userService.exportUsers(role);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=users.xlsx")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(excelFile);
+    }
+
+    @RequireRole({RoleEnum.ADMIN})
+    @PostMapping(value = "/import", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ImportExcelResponse importUsers(@RequestParam("file") MultipartFile file) {
+        return userService.importUsers(file);
     }
 }
