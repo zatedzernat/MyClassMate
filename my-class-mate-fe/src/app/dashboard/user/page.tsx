@@ -10,155 +10,159 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import TextField from '@mui/material/TextField';
-import Select from '@mui/material/Select';
+import Select, { SelectChangeEvent } from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import { DownloadIcon } from '@phosphor-icons/react/dist/ssr/Download';
 import { PlusIcon } from '@phosphor-icons/react/dist/ssr/Plus';
-import { UploadIcon } from '@phosphor-icons/react/dist/ssr/Upload';
-import dayjs from 'dayjs';
-import { createUser, getUsers } from '@/api.js'; // Import the API function
+import { createUser, getUsers, UserRequest, UserResponse } from '@/api/user-api'; // Import the API function
+
 
 import { config } from '@/config';
-import type { User, UserRequest } from '@/components/dashboard/user/users-table';
 import { UsersFilters } from '@/components/dashboard/user/users-filters';
 import { UsersTable } from '@/components/dashboard/user/users-table';
+import ErrorDialog from '@/components/error/error-dialog';
+import { Role } from '@/util/role-enum';
+import { set } from 'react-hook-form';
 
 // export const metadata = { title: `Customers | Dashboard | ${config.site.name}` } satisfies Metadata;
 
-const mockUsers = [
-  {
-    id: 'USR-010',
-    password: '123456',
-    name: 'Alcides Antonio',
-    avatar: '/assets/avatar-10.png',
-    email: 'alcides.antonio@devias.io',
-    // createdAt: dayjs().subtract(2, 'hours').toDate(),
-    role: 'USER',
-  },
-  {
-    id: 'USR-009',
-    password: '123456',
-    name: 'Marcus Finn',
-    avatar: '/assets/avatar-9.png',
-    email: 'marcus.finn@devias.io',
-    // createdAt: dayjs().subtract(2, 'hours').toDate(),
-    role: 'USER',
-  },
-  {
-    id: 'USR-008',
-    password: '123456',
-    name: 'Jie Yan',
-    avatar: '/assets/avatar-8.png',
-    email: 'jie.yan.song@devias.io',
-    // createdAt: dayjs().subtract(2, 'hours').toDate(),
-    role: 'USER',
-  },
-  {
-    id: 'USR-007',
-    password: '123456',
-    name: 'Nasimiyu Danai',
-    avatar: '/assets/avatar-7.png',
-    email: 'nasimiyu.danai@devias.io',
-    // createdAt: dayjs().subtract(2, 'hours').toDate(),
-    role: 'USER',
-  },
-  {
-    id: 'USR-006',
-    password: '123456',
-    name: 'Iulia Albu',
-    avatar: '/assets/avatar-6.png',
-    email: 'iulia.albu@devias.io',
-    // createdAt: dayjs().subtract(2, 'hours').toDate(),
-    role: 'USER',
-  },
-  {
-    id: 'USR-005',
-    password: '123456',
-    name: 'Fran Perez',
-    avatar: '/assets/avatar-5.png',
-    email: 'fran.perez@devias.io',
-    // createdAt: dayjs().subtract(2, 'hours').toDate(),
-    role: 'ADMIN',
-  },
 
-  {
-    id: 'USR-004',
-    password: '123456',
-    name: 'Penjani Inyene',
-    avatar: '/assets/avatar-4.png',
-    email: 'penjani.inyene@devias.io',
-    // createdAt: dayjs().subtract(2, 'hours').toDate(),
-    role: 'USER',
-  },
-  {
-    id: 'USR-003',
-    password: '123456',
-    name: 'Carson Darrin',
-    avatar: '/assets/avatar-3.png',
-    email: 'carson.darrin@devias.io',
-    // createdAt: dayjs().subtract(2, 'hours').toDate(),
-    role: 'USER',
-  },
-  {
-    id: 'USR-002',
-    password: '123456',
-    name: 'Siegbert Gottfried',
-    avatar: '/assets/avatar-2.png',
-    email: 'siegbert.gottfried@devias.io',
-    // createdAt: dayjs().subtract(2, 'hours').toDate(),
-    role: 'ADMIN',
-  },
-  {
-    id: 'USR-001',
-    password: '123456',
-    name: 'Miron Vitold',
-    avatar: '/assets/avatar-1.png',
-    email: 'miron.vitold@devias.io',
-    // createdAt: dayjs().subtract(2, 'hours').toDate(),
-    role: 'ADMIN',
-  },
-] satisfies User[];
+// const mockUsers = [
+//   {
+//     username: 'USR-010',
+//     password: '123456',
+//     nameTh: 'Alcides Antonio',
+//     avatar: '/assets/avatar-10.png',
+//     email: 'alcides.antonio@devias.io',
+//     // createdAt: dayjs().subtract(2, 'hours').toDate(),
+//     role: 'USER',
+//   },
+//   {
+//     username: 'USR-009',
+//     password: '123456',
+//     nameTh: 'Marcus Finn',
+//     avatar: '/assets/avatar-9.png',
+//     email: 'marcus.finn@devias.io',
+//     // createdAt: dayjs().subtract(2, 'hours').toDate(),
+//     role: 'USER',
+//   },
+//   {
+//     username: 'USR-008',
+//     password: '123456',
+//     nameTh: 'Jie Yan',
+//     avatar: '/assets/avatar-8.png',
+//     email: 'jie.yan.song@devias.io',
+//     // createdAt: dayjs().subtract(2, 'hours').toDate(),
+//     role: 'USER',
+//   },
+//   {
+//     username: 'USR-007',
+//     password: '123456',
+//     nameTh: 'Nasimiyu Danai',
+//     avatar: '/assets/avatar-7.png',
+//     email: 'nasimiyu.danai@devias.io',
+//     // createdAt: dayjs().subtract(2, 'hours').toDate(),
+//     role: 'USER',
+//   },
+//   {
+//     username: 'USR-006',
+//     password: '123456',
+//     nameTh: 'Iulia Albu',
+//     avatar: '/assets/avatar-6.png',
+//     email: 'iulia.albu@devias.io',
+//     // createdAt: dayjs().subtract(2, 'hours').toDate(),
+//     role: 'USER',
+//   },
+//   {
+//     username: 'USR-005',
+//     password: '123456',
+//     nameTh: 'Fran Perez',
+//     avatar: '/assets/avatar-5.png',
+//     email: 'fran.perez@devias.io',
+//     // createdAt: dayjs().subtract(2, 'hours').toDate(),
+//     role: 'ADMIN',
+//   },
+
+//   {
+//     username: 'USR-004',
+//     password: '123456',
+//     nameTh: 'Penjani Inyene',
+//     avatar: '/assets/avatar-4.png',
+//     email: 'penjani.inyene@devias.io',
+//     // createdAt: dayjs().subtract(2, 'hours').toDate(),
+//     role: 'USER',
+//   },
+//   {
+//     username: 'USR-003',
+//     password: '123456',
+//     nameTh: 'Carson Darrin',
+//     avatar: '/assets/avatar-3.png',
+//     email: 'carson.darrin@devias.io',
+//     // createdAt: dayjs().subtract(2, 'hours').toDate(),
+//     role: 'USER',
+//   },
+//   {
+//     username: 'USR-002',
+//     password: '123456',
+//     nameTh: 'Siegbert Gottfried',
+//     avatar: '/assets/avatar-2.png',
+//     email: 'siegbert.gottfried@devias.io',
+//     // createdAt: dayjs().subtract(2, 'hours').toDate(),
+//     role: 'ADMIN',
+//   },
+//   {
+//     username: 'USR-001',
+//     password: '123456',
+//     nameTh: 'Miron Vitold',
+//     avatar: '/assets/avatar-1.png',
+//     email: 'miron.vitold@devias.io',
+//     // createdAt: dayjs().subtract(2, 'hours').toDate(),
+//     role: 'ADMIN',
+//   },
+// ] satisfies User[];
 
 export default function Page(): React.JSX.Element {
   const page = 0;
   const rowsPerPage = 5;
 
-  const [users, setUsers] = useState<User[]>([]); // State to store users
-  const paginatedCustomers = applyPagination(users, page, rowsPerPage);
+  const [users, setUsers] = useState<UserResponse[]>([]); // State to store users
+  const [selectedRole, setSelectedRole] = useState<Role>(Role.STUDENT); // Role filter
+
+  // const paginatedCustomers = applyPagination(users, page, rowsPerPage);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [newUser, setNewUser] = useState<UserRequest>({
-    id: '',
+    username: '',
     password: '',
-    name: '',
+    nameTh: '',
+    surnameTh: '',
+    nameEn: '',
+    surnameEn: '',
     email: '',
-    role
-    : 'USER',
+    role: Role.STUDENT,
   });
+
+  const isStudentRole = newUser.role === Role.STUDENT;
+  const isStudentNoEmpty = isStudentRole && !newUser.studentNo?.trim();
 
   const fetchUsers = async () => {
     try {
-      const response = await getUsers(); // Call the API to fetch users
-      const user: User = {
-        id: response.userId,
-        password: response.password,
-        name: response.name,
-        email: response.email,
-        role: response.role,
-        avatar: ''
-      };
-      setUsers([user]); // Update the state with the fetched users
+      const response = await getUsers(selectedRole); // Call the API to fetch users
+      setUsers(response); // Update the state with the fetched users
     } catch (error) {
       // In case of error, you might want to set an empty array or some default users
-      setUsers(mockUsers);
+      setErrorMessage((error as Error).message);
+      setUsers([]);
       console.error('Error fetching users:', error);
     }
   };
 
-  // Fetch users when the component mounts
   useEffect(() => {
-
     fetchUsers();
-  }, []);
+  }, [selectedRole]);
+
+  const handleRoleFilterChange = (event: SelectChangeEvent<Role>) => {
+    setSelectedRole(event.target.value);
+  };
 
   const handleOpenCreateDialog = () => {
     setOpenCreateDialog(true);
@@ -167,23 +171,37 @@ export default function Page(): React.JSX.Element {
   const handleCloseCreateDialog = () => {
     setOpenCreateDialog(false);
     setNewUser({
-      id: '',
+      username: '',
       password: '',
-      name: '',
+      nameTh: '',
+      surnameTh: '',
+      nameEn: '',
+      surnameEn: '',
       email: '',
-      role: 'USER',
+      role: Role.STUDENT,
     });
   };
 
   const handleSaveNewUser = async () => {
     try {
       const createdUser = await createUser(newUser); // Call the createUser API
-      fetchUsers(); // Refresh the user list after creating a new user
+      if (newUser.role !== selectedRole) {
+        setSelectedRole(newUser.role); // trigger fetchUsers via useEffect
+      }else{
+        fetchUsers(); // Refresh the user list after creation
+      }
       console.log('New user created:', createdUser);
       handleCloseCreateDialog(); // Close the dialog
     } catch (error: any) {
       console.error('Error creating user:', error.message);
+      setErrorMessage(error.message);
     }
+  };
+
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const handleCloseErrorDialog = () => {
+    setErrorMessage(null);
   };
 
   return (
@@ -211,14 +229,31 @@ export default function Page(): React.JSX.Element {
         </div>
       </Stack>
       {/* <UsersFilters /> */}
-      <UsersTable
-        count={users.length} // Pass the total count of customers
-        page={0} // No pagination, so page is irrelevant
-        rows={users} // Pass all customers directly
-        rowsPerPage={users.length} // Set rowsPerPage to the total number of customers
-        onUpdateSuccess={fetchUsers} // Refresh the user list after an update
-        onDeleteSuccess={fetchUsers} // Refresh the user list after a delete
-      />
+      {/* Role filter dropdown */}
+      <Stack direction="row" spacing={2} alignItems="center">
+        <Typography>กรองตามบทบาท:</Typography>
+        <Select value={selectedRole} onChange={handleRoleFilterChange} size="small">
+          <MenuItem value={Role.ADMIN}>{Role.ADMIN}</MenuItem>
+          <MenuItem value={Role.STAFF}>{Role.STAFF}</MenuItem>
+          <MenuItem value={Role.LECTURER}>{Role.LECTURER}</MenuItem>
+          <MenuItem value={Role.STUDENT}>{Role.STUDENT}</MenuItem>
+        </Select>
+      </Stack>
+      {/* ✅ Show "no user" text if empty */}
+      {users.length === 0 ? (
+        <Typography variant="body1" color="text.secondary" align="center">
+          ไม่มีผู้ใช้งานในระบบ
+        </Typography>
+      ) : (
+        <UsersTable
+          count={users.length}
+          page={0}
+          rows={users}
+          rowsPerPage={users.length}
+          onUpdated={fetchUsers}
+          onError={setErrorMessage}
+        />
+      )}
       {/* Create User Dialog */}
       <Dialog open={openCreateDialog} onClose={handleCloseCreateDialog} fullWidth maxWidth="sm">
         <DialogTitle>เพิ่มผู้ใช้งาน</DialogTitle>
@@ -226,8 +261,8 @@ export default function Page(): React.JSX.Element {
           <Stack spacing={2}>
             <TextField
               label="บัญชีผู้ใช้งาน"
-              value={newUser.id}
-              onChange={(e) => setNewUser({ ...newUser, id: e.target.value })}
+              value={newUser.username}
+              onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
               fullWidth
             />
             <TextField
@@ -237,9 +272,27 @@ export default function Page(): React.JSX.Element {
               fullWidth
             />
             <TextField
-              label="ชื่อ-นามสกุล"
-              value={newUser.name}
-              onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+              label="ชื่อ (ไทย)"
+              value={newUser.nameTh}
+              onChange={(e) => setNewUser({ ...newUser, nameTh: e.target.value })}
+              fullWidth
+            />
+            <TextField
+              label="นามสกุล (ไทย)"
+              value={newUser.surnameTh}
+              onChange={(e) => setNewUser({ ...newUser, surnameTh: e.target.value })}
+              fullWidth
+            />
+            <TextField
+              label="ชื่อ (อังกฤษ)"
+              value={newUser.nameEn}
+              onChange={(e) => setNewUser({ ...newUser, nameEn: e.target.value })}
+              fullWidth
+            />
+            <TextField
+              label="นามสกุล (อังกฤษ)"
+              value={newUser.surnameEn}
+              onChange={(e) => setNewUser({ ...newUser, surnameEn: e.target.value })}
               fullWidth
             />
             <TextField
@@ -254,22 +307,44 @@ export default function Page(): React.JSX.Element {
               onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
               fullWidth
             >
-              <MenuItem value="ADMIN">ADMIN</MenuItem>
-              <MenuItem value="USER">USER</MenuItem>
+              <MenuItem value={Role.ADMIN}>{Role.ADMIN}</MenuItem>
+              <MenuItem value={Role.STAFF}>{Role.STAFF}</MenuItem>
+              <MenuItem value={Role.LECTURER}>{Role.LECTURER}</MenuItem>
+              <MenuItem value={Role.STUDENT}>{Role.STUDENT}</MenuItem>
             </Select>
+            {/* ✅ Show only if role is STUDENT */}
+            {isStudentRole && (
+              <>
+                <TextField
+                  label="รหัสนักศึกษา"
+                  value={newUser.studentNo || ""}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, studentNo: e.target.value })
+                  }
+                  fullWidth
+                  error={isStudentNoEmpty}
+                  helperText={isStudentNoEmpty ? "กรุณากรอกรหัสนักศึกษา" : ""}
+                />
+              </>
+            )}
           </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseCreateDialog}>ยกเลิก</Button>
-          <Button variant="contained" onClick={handleSaveNewUser}>
+          <Button variant="contained" onClick={handleSaveNewUser} disabled={isStudentNoEmpty}>
             บันทึก
           </Button>
         </DialogActions>
       </Dialog>
+      <ErrorDialog
+        open={Boolean(errorMessage)}
+        message={errorMessage}
+        onClose={handleCloseErrorDialog}
+      />
     </Stack>
   );
 }
 
-function applyPagination(rows: User[], page: number, rowsPerPage: number): User[] {
-  return rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
-}
+// function applyPagination(rows: UserResponse[], page: number, rowsPerPage: number): UserResponse[] {
+//   return rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+// }

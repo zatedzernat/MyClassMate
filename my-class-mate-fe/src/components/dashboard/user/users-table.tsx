@@ -24,37 +24,21 @@ import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
-import { updateUser, deleteUser } from '@/api.js';
+import { updateUser, deleteUser, UserRequest, UserResponse } from '@/api/user-api'; // Import the API function
+import { Role } from '@/util/role-enum';
 
 
 function noop(): void {
   // do nothing
 }
 
-export interface User {
-  id: string;
-  password: string;
-  avatar: string;
-  name: string;
-  email: string;
-  role: string;
-}
-
-export interface UserRequest {
-  id?: string;
-  password?: string;
-  name?: string;
-  email?: string;
-  role?: string;
-}
-
 interface UsersTableProps {
   count?: number;
   page?: number;
-  rows?: User[];
+  rows?: UserResponse[];
   rowsPerPage?: number;
-  onUpdateSuccess?: () => void; // Callback for notifying parent on update success
-  onDeleteSuccess?: () => void; // Callback for notifying parent on delete success
+  onUpdated?: () => void;
+  onError?: (message: string) => void;
 }
 
 export function UsersTable({
@@ -62,15 +46,15 @@ export function UsersTable({
   rows = [],
   page = 0,
   rowsPerPage = 0,
-  onUpdateSuccess, // Destructure the callback prop
-  onDeleteSuccess, // Destructure the callback prop
+  onUpdated: onUpdated,
+  onError: onError,
 }: UsersTableProps): React.JSX.Element {
   const [openEditDialog, setOpenEditDialog] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedUser, setSelectedUser] = useState<UserResponse | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
-  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [userToDelete, setUserToDelete] = useState<UserResponse | null>(null);
 
 
   // Calculate selectedAll and selectedSome
@@ -79,7 +63,7 @@ export function UsersTable({
 
   // Functions to handle selection
   const selectAll = () => {
-    setSelected(new Set(rows.map((row) => row.id)));
+    setSelected(new Set(rows.map((row) => row.username)));
   };
 
   const deselectAll = () => {
@@ -98,7 +82,7 @@ export function UsersTable({
     });
   };
 
-  const handleOpenEditDialog = (user: User) => {
+  const handleOpenEditDialog = (user: UserResponse) => {
     setSelectedUser(user);
     setOpenEditDialog(true);
   };
@@ -111,9 +95,13 @@ export function UsersTable({
   const handleSave = async () => {
     if (selectedUser) {
       const userRequest: UserRequest = {
-        id: selectedUser.id,
+        userId: selectedUser.userId,
+        username: selectedUser.username,
         password: selectedUser.password,
-        name: selectedUser.name,
+        nameTh: selectedUser.nameTh,
+        surnameTh: selectedUser.surnameTh,
+        nameEn: selectedUser.nameEn,
+        surnameEn: selectedUser.surnameEn,
         email: selectedUser.email,
         role: selectedUser.role,
       };
@@ -122,20 +110,21 @@ export function UsersTable({
         await updateUser(userRequest); // Call the updateUser API with the mapped request
         console.log('User updated successfully:', userRequest);
 
-        if (onUpdateSuccess) {
-          onUpdateSuccess(); // Notify the parent component
+        if (onUpdated ) {
+          onUpdated(); 
         }
       } catch (error: any) {
-        console.error('Error updating user:', error);
         const message = error?.message || "Something went wrong";
-        return { error: message };
+        if (onError ) {
+          onError(message); 
+        }
       }
     }
     console.log('Updated user:', selectedUser);
     handleEditDialogClose();
   };
 
-  const handleDeleteDialogOpen = (user: User) => {
+  const handleDeleteDialogOpen = (user: UserResponse) => {
     setUserToDelete(user);
     setOpenDeleteDialog(true);
   };
@@ -148,20 +137,29 @@ export function UsersTable({
   const handleDeleteConfirm = async () => {
     if (userToDelete) {
       const userRequest: UserRequest = {
-        id: userToDelete.id,
+        userId: userToDelete.userId,
+        username: userToDelete.username,
+        password: '',
+        nameTh: '',
+        surnameTh: '',
+        nameEn: '',
+        surnameEn: '',
+        email: '',
+        role: Role.NOTHING,
       };
 
       try {
         await deleteUser(userRequest); // Call the updateUser API with the mapped request
         console.log('User deleted successfully:', userRequest);
 
-        if (onDeleteSuccess) {
-          onDeleteSuccess(); // Notify the parent component
+         if (onUpdated) {
+          onUpdated(); // Send role to parent
         }
       } catch (error: any) {
-        console.error('Error deleted user:', error);
         const message = error?.message || "Something went wrong";
-        return { error: message };
+        if (onError) {
+          onError(message); 
+        }
       }
     }
     console.log('Deleted user:', userToDelete);
@@ -197,10 +195,10 @@ export function UsersTable({
           </TableHead>
           <TableBody>
             {rows.map((row) => {
-              const isSelected = selected.has(row.id);
+              const isSelected = selected.has(row.username);
 
               return (
-                <TableRow hover key={row.id} selected={isSelected}>
+                <TableRow hover key={row.username} selected={isSelected}>
                   {/* <TableCell padding="checkbox">
                     <Checkbox
                       checked={isSelected}
@@ -213,16 +211,8 @@ export function UsersTable({
                       }}
                     />
                   </TableCell> */}
-                  <TableCell sx={{ paddingLeft: '40px' }}>
-                    <Stack sx={{ alignItems: 'center' }} direction="row" spacing={2}>
-                      <Avatar src={row.avatar} />
-                      <Typography variant="subtitle2">{row.name}</Typography>
-                    </Stack>
-                  </TableCell>
-                  <TableCell>
-                    {row.id}
-                    {/* {row.address.city}, {row.address.state}, {row.address.country} */}
-                  </TableCell>
+                  <TableCell sx={{ paddingLeft: '48px' }}>{row.nameTh} {row.surnameTh}</TableCell>
+                  <TableCell>{row.username}</TableCell>
                   <TableCell>{row.email}</TableCell>
                   <TableCell><Typography
                     variant="body2"
@@ -278,19 +268,46 @@ export function UsersTable({
         <DialogContent>
           <Stack spacing={2}>
             <TextField
-              label="ชื่อ-นามสกุล"
-              value={selectedUser?.name || ''}
+              label="ชื่อบัญชีผู้ใช้"
+              value={selectedUser?.username || ''}
               onChange={(e) =>
-                setSelectedUser((prev) => (prev ? { ...prev, name: e.target.value } : null))
+                setSelectedUser((prev) => (prev ? { ...prev, nameTh: e.target.value } : null))
               }
               fullWidth
               sx={{ marginTop: '8px' }}
             />
             <TextField
-              label="ชื่อบัญชีผู้ใช้"
-              value={selectedUser?.id || ''}
+              label="ชื่อ (ไทย)"
+              value={selectedUser?.nameTh || ''}
               onChange={(e) =>
-                setSelectedUser((prev) => (prev ? { ...prev, name: e.target.value } : null))
+                setSelectedUser((prev) => (prev ? { ...prev, nameTh: e.target.value } : null))
+              }
+              fullWidth
+              sx={{ marginTop: '8px' }}
+            />
+            <TextField
+              label="นามสกุล (ไทย)"
+              value={selectedUser?.surnameTh || ''}
+              onChange={(e) =>
+                setSelectedUser((prev) => (prev ? { ...prev, surnameTh: e.target.value } : null))
+              }
+              fullWidth
+              sx={{ marginTop: '8px' }}
+            />
+            <TextField
+              label="ชื่อ (อังกฤษ)"
+              value={selectedUser?.nameEn || ''}
+              onChange={(e) =>
+                setSelectedUser((prev) => (prev ? { ...prev, nameEn: e.target.value } : null))
+              }
+              fullWidth
+              sx={{ marginTop: '8px' }}
+            />
+            <TextField
+              label="นามสกุล (อังกฤษ)"
+              value={selectedUser?.surnameEn || ''}
+              onChange={(e) =>
+                setSelectedUser((prev) => (prev ? { ...prev, surnameEn: e.target.value } : null))
               }
               fullWidth
               sx={{ marginTop: '8px' }}
@@ -299,7 +316,7 @@ export function UsersTable({
               label="รหัสผู้ใช้"
               value={selectedUser?.password || ''}
               onChange={(e) =>
-                setSelectedUser((prev) => (prev ? { ...prev, name: e.target.value } : null))
+                setSelectedUser((prev) => (prev ? { ...prev, password: e.target.value } : null))
               }
               fullWidth
               sx={{ marginTop: '8px' }}
@@ -320,14 +337,33 @@ export function UsersTable({
               }
               fullWidth
             >
-              <MenuItem value="ADMIN">ADMIN</MenuItem>
-              <MenuItem value="USER">USER</MenuItem>
+              <MenuItem value={Role.ADMIN}>{Role.ADMIN}</MenuItem>
+              <MenuItem value={Role.STAFF}>{Role.STAFF}</MenuItem>
+              <MenuItem value={Role.LECTURER}>{Role.LECTURER}</MenuItem>
+              <MenuItem value={Role.STUDENT}>{Role.STUDENT}</MenuItem>
             </Select>
+            {/* Show studentNo field only if role is STUDENT */}
+            {selectedUser?.role === Role.STUDENT && (
+              <TextField
+                label="รหัสนักศึกษา"
+                value={selectedUser?.studentNo || ''}
+                onChange={(e) =>
+                  setSelectedUser((prev) =>
+                    prev ? { ...prev, studentNo: e.target.value } : null
+                  )
+                }
+                fullWidth
+                error={!selectedUser?.studentNo?.trim()}
+                helperText={
+                  !selectedUser?.studentNo?.trim() ? "กรุณากรอกรหัสนักศึกษา" : ""
+                }
+              />
+            )}
           </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleEditDialogClose}>ยกเลิก</Button>
-          <Button variant="contained" onClick={handleSave}>
+          <Button variant="contained" onClick={handleSave} disabled={selectedUser?.role === Role.STUDENT && !selectedUser?.studentNo?.trim()}>
             เเก้ไข
           </Button>
         </DialogActions>
@@ -338,7 +374,7 @@ export function UsersTable({
         <DialogTitle>ยืนยันการลบ</DialogTitle>
         <DialogContent>
           <Typography>
-            คุณต้องการลบผู้ใช้งาน <strong>{userToDelete?.name}</strong> ใช่หรือไม่?
+            คุณต้องการลบผู้ใช้งาน <strong>{userToDelete?.nameTh}</strong> ใช่หรือไม่?
           </Typography>
         </DialogContent>
         <DialogActions>

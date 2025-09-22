@@ -1,8 +1,7 @@
 'use client';
 
 import type { User } from '@/types/user';
-import { login } from '@/api.js';
-import { logout } from '@/api.js';
+import { login, LoginRequest } from '@/api/login-api';
 
 function generateToken(): string {
   const arr = new Uint8Array(12);
@@ -30,7 +29,7 @@ export interface SignInWithOAuthParams {
 }
 
 export interface SignInWithPasswordParams {
-  email: string;
+  username: string;
   password: string;
 }
 
@@ -54,31 +53,42 @@ class AuthClient {
   }
 
   async signInWithPassword(params: SignInWithPasswordParams): Promise<{ error?: string }> {
-    const { email, password } = params;
+    const { username, password } = params;
 
     // Make API request
 
-    // const request = {
-    //   email: email,
-    //   password: password,
-    // };
+    const request: LoginRequest = {
+      username: username,
+      password: password,
+    };
 
-    // try {
-    //   await login(request)
-    // } catch (error: any) {
-    //   const message =
-    //     error?.message || "Something went wrong while signing in.";
-    //   return { error: message };
-    // }
+    try {
+      const userData = await login(request)
+      const token = generateToken();
+      const localStorageData = {
+        'custom-auth-token': token,
+        'user-id': userData.userId,
+        'user-name': userData.username,
+        'user-role': userData.role,
+      };
+    
+      Object.entries(localStorageData).forEach(([key, value]) => {
+        localStorage.setItem(key, value);
+      });
+    } catch (error: any) {
+      const message =
+        error?.message || "Something went wrong while signing in.";
+      return { error: message };
+    }
 
 
     // We do not handle the API, so we'll check if the credentials match with the hardcoded ones.
-    if (email !== 'sofia@devias.io' || password !== 'Secret1') {
-      return { error: 'Invalid credentials' };
-    }
+    // if (email !== 'sofia@devias.io' || password !== 'Secret1') {
+    //   return { error: 'Invalid credentials' };
+    // }
 
-    const token = generateToken();
-    localStorage.setItem('custom-auth-token', token);
+    // const token = generateToken();
+    // localStorage.setItem('custom-auth-token', token);
 
     return {};
   }
@@ -105,8 +115,15 @@ class AuthClient {
   }
 
   async signOut(): Promise<{ error?: string }> {
-    logout()
-    localStorage.removeItem('custom-auth-token');
+    const keys = [
+      'custom-auth-token',
+      'user-id',
+      'user-name',
+      'user-role',
+    ];
+
+    keys.forEach((key) => localStorage.removeItem(key));
+    
     return {};
   }
 }
