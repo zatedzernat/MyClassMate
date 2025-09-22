@@ -2,6 +2,7 @@ package com.bill.service;
 
 import com.bill.constant.RoleEnum;
 import com.bill.exceptionhandler.AppException;
+import com.bill.model.StudentProfileDto;
 import com.bill.model.request.CreateUserRequest;
 import com.bill.model.request.LoginRequest;
 import com.bill.model.request.UpdateUserRequest;
@@ -146,16 +147,24 @@ public class UserService {
     private UserResponse mapToUserResponse(User user) {
         var userResponse = modelMapper.map(user, UserResponse.class);
         userResponse.setUserId(user.getId());
+        setStudentProfile(user, userResponse);
         return userResponse;
     }
 
     private List<UserResponse> mapToUserResponse(List<User> users) {
         var response = new ArrayList<UserResponse>();
         for (var user : users) {
-            var userResponse = modelMapper.map(user, UserResponse.class);
-            userResponse.setUserId(user.getId());
+            var userResponse = mapToUserResponse(user);
             response.add(userResponse);
         }
         return response;
+    }
+
+    private void setStudentProfile(User user, UserResponse userResponse) {
+        if (RoleEnum.STUDENT.equals(user.getRole())) {
+            var studentProfile = studentProfileRepository.findById(user.getId())
+                    .orElseThrow(() -> new AppException(ERROR_STUDENT_PROFILE_NOT_FOUND.getCode(), ERROR_STUDENT_PROFILE_NOT_FOUND.getMessage()));
+            userResponse.setStudentProfile(modelMapper.map(studentProfile, StudentProfileDto.class));
+        }
     }
 }

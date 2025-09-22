@@ -15,6 +15,7 @@ public enum ErrorEnum {
     ERROR_INVALID_REQUEST("ERR008", "invalid fields: %s"),
     ERROR_MISSING_STUDENT_NO("ERR009", "missing studentNo for student role"),
     ERROR_USER_NOT_FOUND("ERR010", "user not found"),
+    ERROR_STUDENT_PROFILE_NOT_FOUND("ERR011", "student profile not found"),
     ;
 
     private final String code;
