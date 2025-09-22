@@ -81,7 +81,6 @@ public class UserService {
 
         var usersResponse = filteredUsers.stream()
                 .filter(Objects::nonNull)
-                .filter(user -> !RoleEnum.ADMIN.equals(user.getRole()))
                 .sorted(Comparator.comparing(User::getRole).thenComparing(User::getId))
                 .toList();
 
