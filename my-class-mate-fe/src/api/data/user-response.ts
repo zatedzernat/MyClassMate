@@ -3,7 +3,7 @@ import { Role } from "@/util/role-enum";
 export interface UserRequest {
     userId?: string;
     username: string;
-    password: string;
+    password?: string;
     nameTh: string;
     surnameTh: string;
     nameEn: string;
@@ -17,7 +17,7 @@ export interface UserRequest {
 export interface UserResponse {
     userId: string;
     username: string;
-    password: string;
+    password?: string;
     nameTh: string;
     surnameTh: string;
     nameEn: string;

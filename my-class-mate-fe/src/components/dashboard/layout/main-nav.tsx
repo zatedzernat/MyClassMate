@@ -16,11 +16,25 @@ import { usePopover } from '@/hooks/use-popover';
 
 import { MobileNav } from './mobile-nav';
 import { UserPopover } from './user-popover';
+import { deepOrange, deepPurple, green, blue } from '@mui/material/colors';
+
+
+
+const roleColors: Record<string, string> = {
+  ADMIN: deepOrange[500],
+  STAFF: deepPurple[500],
+  LECTURER: green[500],
+  STUDENT: blue[500],
+  NOTHING: 'gray',
+};
 
 export function MainNav(): React.JSX.Element {
   const [openNav, setOpenNav] = React.useState<boolean>(false);
-
   const userPopover = usePopover<HTMLDivElement>();
+
+  // Get role from localStorage
+  const role = localStorage.getItem('user-role') || 'NOTHING';
+  
 
   return (
     <React.Fragment>
@@ -70,9 +84,23 @@ export function MainNav(): React.JSX.Element {
             <Avatar
               onClick={userPopover.handleOpen}
               ref={userPopover.anchorRef}
-              src="/assets/avatar.png"
-              sx={{ cursor: 'pointer' }}
-            />
+              sx={{
+                cursor: 'pointer',
+                bgcolor: roleColors[role] || 'gray',
+                width: 120,        // wider to fit full text
+                height: 40,       // keep height smaller to look like a pill
+                fontWeight: 'bold',
+                fontSize: '0.875rem',
+                textTransform: 'uppercase',
+                borderRadius: '20px', // make it pill-shaped
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                letterSpacing: '0.5px',
+              }}
+            >
+              {role}
+            </Avatar>
           </Stack>
         </Stack>
       </Box>

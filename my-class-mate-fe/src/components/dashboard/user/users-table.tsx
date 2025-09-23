@@ -99,7 +99,6 @@ export function UsersTable({
       const userRequest: UserRequest = {
         userId: selectedUser.userId,
         username: selectedUser.username,
-        password: selectedUser.password,
         nameTh: selectedUser.nameTh,
         surnameTh: selectedUser.surnameTh,
         nameEn: selectedUser.nameEn,
@@ -109,17 +108,21 @@ export function UsersTable({
         studentNo: selectedUser.studentProfile?.studentNo || '',
       };
 
+      if (selectedUser.password && selectedUser.password.trim() !== "") {
+        userRequest.password = selectedUser.password;
+      }
+
       try {
         await updateUser(userRequest); // Call the updateUser API with the mapped request
         console.log('User updated successfully:', userRequest);
 
-        if (onUpdated ) {
-          onUpdated(); 
+        if (onUpdated) {
+          onUpdated();
         }
       } catch (error: any) {
         const message = error?.message || "Something went wrong";
-        if (onError ) {
-          onError(message); 
+        if (onError) {
+          onError(message);
         }
       }
     }
@@ -155,13 +158,13 @@ export function UsersTable({
         await deleteUser(userRequest); // Call the updateUser API with the mapped request
         console.log('User deleted successfully:', userRequest);
 
-         if (onUpdated) {
+        if (onUpdated) {
           onUpdated(); // Send role to parent
         }
       } catch (error: any) {
         const message = error?.message || "Something went wrong";
         if (onError) {
-          onError(message); 
+          onError(message);
         }
       }
     }
@@ -169,6 +172,9 @@ export function UsersTable({
     // Add logic to delete the user (e.g., API call)
     handleDeleteDialogClose();
   };
+
+  const [selectedRole, setSelectedRole] = useState<Role | "">("");
+  const showStudentColumn = selectedRole === Role.STUDENT || rows.some(row => row.role === Role.STUDENT);
 
   return (
     <Card>
@@ -191,6 +197,7 @@ export function UsersTable({
               </TableCell> */}
               <TableCell sx={{ paddingLeft: '48px' }}>ชื่อ-นามสกุล</TableCell>
               <TableCell>ชื่อบัญชีผู้ใช้</TableCell>
+              {showStudentColumn && <TableCell>รหัสนักศึกษา</TableCell>}
               <TableCell>อีเมล</TableCell>
               <TableCell>บทบาท</TableCell>
               <TableCell></TableCell>
@@ -216,13 +223,12 @@ export function UsersTable({
                   </TableCell> */}
                   <TableCell sx={{ paddingLeft: '48px' }}>{row.nameTh} {row.surnameTh}</TableCell>
                   <TableCell>{row.username}</TableCell>
+                  {/* Show studentNo only for STUDENT */}
+                  {showStudentColumn && (
+                    <TableCell>{row.role === Role.STUDENT ? row.studentProfile?.studentNo || '-' : ''}</TableCell>
+                  )}
                   <TableCell>{row.email}</TableCell>
-                  <TableCell><Typography
-                    variant="body2"
-                    sx={{ fontWeight: row.role === 'ADMIN' ? 'bold' : 'normal' }}
-                  >
-                    {getRoleLabel(row.role)}
-                  </Typography></TableCell>
+                  <TableCell>{getRoleLabel(row.role)}</TableCell>
                   {/* <TableCell>{dayjs(row.createdAt).format('MMM D, YYYY')}</TableCell> */}
                   <TableCell align="right">
                     <Stack direction="row" spacing={1} justifyContent="flex-end">
@@ -352,7 +358,15 @@ export function UsersTable({
                 value={selectedUser?.studentProfile?.studentNo || ''}
                 onChange={(e) =>
                   setSelectedUser((prev) =>
-                    prev ? { ...prev, studentNo: e.target.value } : null
+                    prev
+                      ? {
+                        ...prev,
+                        studentProfile: {
+                          ...prev.studentProfile,
+                          studentNo: e.target.value,
+                        },
+                      }
+                      : null
                   )
                 }
                 fullWidth
