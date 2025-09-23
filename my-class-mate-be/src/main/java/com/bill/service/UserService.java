@@ -307,7 +307,7 @@ public class UserService {
                 RoleEnum role = RoleEnum.valueOf(roleStr.trim().toUpperCase());
                 boolean isDeleted = "Y".equalsIgnoreCase(isDeletedStr);
 
-                if (!userIdStr.isBlank()) {
+                if (userIdStr != null) {
                     updatedRow = getUpdatedRow(userIdStr, username, nameTh, surnameTh, nameEn, surnameEn, email, isDeleted, role, studentNo, address, phone, remark, updatedRow);
                 } else {
                     createdRow = getCreatedRow(username, nameTh, surnameTh, nameEn, surnameEn, email, isDeleted, role, studentNo, address, phone, remark, createdRow);
