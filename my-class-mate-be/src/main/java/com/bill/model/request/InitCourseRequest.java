@@ -7,6 +7,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Data
 @Builder
@@ -20,6 +21,10 @@ public class InitCourseRequest {
     LocalDate startDate;
     @NotNull
     LocalDate endDate;
+    @NotNull
+    LocalTime startTime;
+    @NotNull
+    LocalTime endTime;
     @NotBlank
     String room;
 }

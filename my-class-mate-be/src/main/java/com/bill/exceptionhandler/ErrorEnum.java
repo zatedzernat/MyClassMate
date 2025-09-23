@@ -20,8 +20,9 @@ public enum ErrorEnum {
     ERROR_IMPORT_EXCEL("ERR014", "cannot import excel"),
     ERROR_IMPORT_BLANK_EXCEL("ERR015", "cannot import blank excel"),
     ERROR_IMPORT_INVALID_EXCEL("ERR016", "cannot import invalid excel"),
-    ERROR_INVALID_END_DATE("ERR017", "invalid end date"),
+    ERROR_INVALID_END_DATE("ERR017", "invalid date or time"),
     ERROR_DUPLICATE_COURSE("ERR018", "found duplicate course code or course name"),
+    ERROR_COURSE_NOT_FOUND("ERR019", "course not found"),
     ;
 
     private final String code;

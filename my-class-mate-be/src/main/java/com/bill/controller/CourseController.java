@@ -4,6 +4,7 @@ import com.bill.constant.RequireRole;
 import com.bill.constant.RoleEnum;
 import com.bill.model.request.CreateCourseRequest;
 import com.bill.model.request.InitCourseRequest;
+import com.bill.model.request.UpdateCourseRequest;
 import com.bill.model.response.CourseResponse;
 import com.bill.model.response.InitCourseResponse;
 import com.bill.service.CourseService;
@@ -42,5 +43,24 @@ public class CourseController {
     public List<CourseResponse> getCourses(@RequestParam(required = false) Integer academicYear,
                                            @RequestParam(required = false) Integer semester) {
         return courseService.getCourses(academicYear, semester);
+    }
+
+    @RequireRole({RoleEnum.ADMIN, RoleEnum.LECTURER, RoleEnum.STAFF})
+    @GetMapping(value = "/{courseId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public CourseResponse getCourse(@PathVariable Long courseId) {
+        return courseService.getCourse(courseId);
+    }
+
+    @RequireRole({RoleEnum.ADMIN, RoleEnum.LECTURER, RoleEnum.STAFF})
+    @DeleteMapping(value = "/{courseId}")
+    public void deleteCourse(@PathVariable Long courseId) {
+        courseService.deleteCourse(courseId);
+    }
+
+    @RequireRole({RoleEnum.ADMIN, RoleEnum.LECTURER, RoleEnum.STAFF})
+    @PutMapping(value = "/{courseId}")
+    public CourseResponse deleteCourse(@PathVariable Long courseId,
+                             @RequestBody @Valid UpdateCourseRequest request) {
+        return courseService.updateCourse(courseId, request);
     }
 }
