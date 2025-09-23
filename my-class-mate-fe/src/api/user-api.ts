@@ -1,125 +1,175 @@
 import { Role } from "@/util/role-enum";
+import { ImportResponse, UserRequest, UserResponse } from "./data/user-response";
 
-export interface UserRequest {
-    userId?: string;
-    username: string;
-    password: string;
-    nameTh: string;
-    surnameTh: string;
-    nameEn: string;
-    surnameEn: string;
-    email: string;
-    role: Role;
-    isDeleted?: boolean;
-    studentNo?: string;
-  }
-  
-  export interface UserResponse extends UserRequest {}
-  
-  export async function getUsers(selectedRole: Role): Promise<UserResponse[]> {
+export async function getUsers(selectedRole: Role): Promise<UserResponse[]> {
     const role = localStorage.getItem("user-role") || "";
 
     const url = new URL('http://127.0.0.1:8080/my-class-mate/v1/users');
     if (selectedRole) {
-      url.searchParams.append('role', selectedRole);
+        url.searchParams.append('role', selectedRole);
     }
-    
+
     const response = await fetch(url.toString(), {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-role': role
-      }
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-role': role
+        }
     });
-  
+
     const resData = await response.json();
-  
+
     if (!response.ok) {
-      const errorMessage = resData?.message || resData?.code || 'Unknown error occurred';
-      throw new Error(errorMessage);
+        const errorMessage = resData?.message || resData?.code || 'Unknown error occurred';
+        throw new Error(errorMessage);
     }
-  
+
     // Assuming API returns an array of users
     const mappedUsers: UserResponse[] = resData.map((user: any) => ({
-      userId: user.userId,
-      username: user.username,
-      password: user.password,
-      nameTh: user.nameTh,
-      surnameTh: user.surnameTh,
-      nameEn: user.nameEn,
-      surnameEn: user.surnameEn,
-      email: user.email,
-      role: user.role,
-      isDeleted: user.isDeleted,
-      studentNo: user.studentNo,
+        userId: user.userId,
+        username: user.username,
+        password: user.password,
+        nameTh: user.nameTh,
+        surnameTh: user.surnameTh,
+        nameEn: user.nameEn,
+        surnameEn: user.surnameEn,
+        email: user.email,
+        role: user.role,
+        isDeleted: user.isDeleted,
+        studentProfile: user.studentProfile
     }));
-  
+
     return mappedUsers;
-  }
-  
-  export async function createUser(userRequest: UserRequest): Promise<void> {
+}
+
+export async function createUser(userRequest: UserRequest): Promise<void> {
     const role = localStorage.getItem("user-role") || "";
-  
+
     const response = await fetch('/api/my-class-mate/v1/users', {
-      method: 'POST',
-      body: JSON.stringify(userRequest),
-      headers: {
-        'Content-Type': 'application/json',
-        'x-role': role
-      }
+        method: 'POST',
+        body: JSON.stringify(userRequest),
+        headers: {
+            'Content-Type': 'application/json',
+            'x-role': role
+        }
     });
-  
+
     const resData = await response.json();
-  
+
     if (!response.ok) {
-      const errorMessage = resData?.message || resData?.code || 'Unknown error occurred';
-      throw new Error(errorMessage);
+        const errorMessage = resData?.message || resData?.code || 'Unknown error occurred';
+        throw new Error(errorMessage);
     }
-  }
-  
-  export async function updateUser(userRequest: UserRequest): Promise<void> {
+}
+
+export async function updateUser(userRequest: UserRequest): Promise<void> {
     if (!userRequest.userId) throw new Error("userId is required for update");
-  
+
     const role = localStorage.getItem("user-role") || "";
-  
+
     const response = await fetch(`/api/my-class-mate/v1/users/${encodeURIComponent(userRequest.userId)}`, {
-      method: 'PUT',
-      body: JSON.stringify(userRequest),
-      headers: {
-        'Content-Type': 'application/json',
-        'x-role': role
-      }
+        method: 'PUT',
+        body: JSON.stringify(userRequest),
+        headers: {
+            'Content-Type': 'application/json',
+            'x-role': role
+        }
     });
-  
+
     const resData = await response.json();
-  
+
     if (!response.ok) {
-      const errorMessage = resData?.message || resData?.code || 'Unknown error occurred';
-      throw new Error(errorMessage);
+        const errorMessage = resData?.message || resData?.code || 'Unknown error occurred';
+        throw new Error(errorMessage);
     }
-  }
-  
-  export async function deleteUser(userRequest: Pick<UserRequest, 'userId'>): Promise<void> {
+}
+
+export async function deleteUser(userRequest: Pick<UserRequest, 'userId'>): Promise<void> {
     if (!userRequest.userId) throw new Error("userId is required for delete");
-  
+
+    const role = localStorage.getItem("user-role") || "";
+
+    const response = await fetch(`/api/my-class-mate/v1/users/${encodeURIComponent(userRequest.userId)}`, {
+        method: 'DELETE',
+        body: JSON.stringify(userRequest),
+        headers: {
+            'Content-Type': 'application/json',
+            'x-role': role
+        }
+    });
+
+    const resData = await response.json();
+
+    if (!response.ok) {
+        const errorMessage = resData?.message || resData?.code || 'Unknown error occurred';
+        throw new Error(errorMessage);
+    }
+}
+
+export async function importUsers(file: File): Promise<ImportResponse> {
+    const role = localStorage.getItem("user-role") || "";
+
+    const formData = new FormData();
+    formData.append("file", file); // field name is 'file'
+
+    const response = await fetch('/api/my-class-mate/v1/users/import', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'x-role': role
+            // Note: do NOT set Content-Type, the browser will set multipart/form-data automatically
+        }
+    });
+
+    const resData = await response.json();
+
+    if (!response.ok) {
+        const errorMessage = resData?.message || resData?.code || 'Unknown error occurred';
+        throw new Error(errorMessage);
+    }
+
+    return { updatedRow: resData.updatedRow, createdRow: resData.createdRow }
+
+}
+
+export async function exportUsers(): Promise<void> {
     const role = localStorage.getItem("user-role") || "";
   
-    const response = await fetch(`/api/my-class-mate/v1/users/${encodeURIComponent(userRequest.userId)}`, {
-      method: 'DELETE',
-      body: JSON.stringify(userRequest),
+    const response = await fetch("/api/my-class-mate/v1/users/export", {
+      method: "GET",
       headers: {
-        'Content-Type': 'application/json',
-        'x-role': role
-      }
+        "x-role": role,
+      },
     });
   
-    const resData = await response.json();
-  
     if (!response.ok) {
-      const errorMessage = resData?.message || resData?.code || 'Unknown error occurred';
+      const resData = await response.json().catch(() => ({}));
+      const errorMessage = resData?.message || resData?.code || "Unknown error occurred";
       throw new Error(errorMessage);
     }
-  }
   
-  // Note: Wrap all function calls in try/catch when using, because they throw errors
+    // Get the file blob
+    const blob = await response.blob();
+  
+    // Create a link and trigger download
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+  
+    // File name: try backend Content-Disposition, fallback to default
+    const contentDisposition = response.headers.get("Content-Disposition");
+    let fileName = "users_export.xlsx";
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename="?(.+)"?/);
+      if (match?.[1]) fileName = match[1];
+    }
+  
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+  
+    // Cleanup
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  }
   

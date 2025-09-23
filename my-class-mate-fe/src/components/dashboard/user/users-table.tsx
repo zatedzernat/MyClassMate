@@ -24,8 +24,9 @@ import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
-import { updateUser, deleteUser, UserRequest, UserResponse } from '@/api/user-api'; // Import the API function
-import { Role } from '@/util/role-enum';
+import { updateUser, deleteUser } from '@/api/user-api'; // Import the API function
+import { getRoleLabel, Role } from '@/util/role-enum';
+import { UserRequest, UserResponse } from '@/api/data/user-response';
 
 
 function noop(): void {
@@ -83,6 +84,7 @@ export function UsersTable({
   };
 
   const handleOpenEditDialog = (user: UserResponse) => {
+    console.log("UserResponse in handleOpenEditDialog:", user);
     setSelectedUser(user);
     setOpenEditDialog(true);
   };
@@ -104,6 +106,7 @@ export function UsersTable({
         surnameEn: selectedUser.surnameEn,
         email: selectedUser.email,
         role: selectedUser.role,
+        studentNo: selectedUser.studentProfile?.studentNo || '',
       };
 
       try {
@@ -218,7 +221,7 @@ export function UsersTable({
                     variant="body2"
                     sx={{ fontWeight: row.role === 'ADMIN' ? 'bold' : 'normal' }}
                   >
-                    {row.role}
+                    {getRoleLabel(row.role)}
                   </Typography></TableCell>
                   {/* <TableCell>{dayjs(row.createdAt).format('MMM D, YYYY')}</TableCell> */}
                   <TableCell align="right">
@@ -337,25 +340,25 @@ export function UsersTable({
               }
               fullWidth
             >
-              <MenuItem value={Role.ADMIN}>{Role.ADMIN}</MenuItem>
-              <MenuItem value={Role.STAFF}>{Role.STAFF}</MenuItem>
-              <MenuItem value={Role.LECTURER}>{Role.LECTURER}</MenuItem>
-              <MenuItem value={Role.STUDENT}>{Role.STUDENT}</MenuItem>
+              <MenuItem value={Role.ADMIN}>{getRoleLabel(Role.ADMIN)}</MenuItem>
+              <MenuItem value={Role.STAFF}>{getRoleLabel(Role.STAFF)}</MenuItem>
+              <MenuItem value={Role.LECTURER}>{getRoleLabel(Role.LECTURER)}</MenuItem>
+              <MenuItem value={Role.STUDENT}>{getRoleLabel(Role.STUDENT)}</MenuItem>
             </Select>
             {/* Show studentNo field only if role is STUDENT */}
             {selectedUser?.role === Role.STUDENT && (
               <TextField
                 label="รหัสนักศึกษา"
-                value={selectedUser?.studentNo || ''}
+                value={selectedUser?.studentProfile?.studentNo || ''}
                 onChange={(e) =>
                   setSelectedUser((prev) =>
                     prev ? { ...prev, studentNo: e.target.value } : null
                   )
                 }
                 fullWidth
-                error={!selectedUser?.studentNo?.trim()}
+                error={!selectedUser?.studentProfile?.studentNo?.trim()}
                 helperText={
-                  !selectedUser?.studentNo?.trim() ? "กรุณากรอกรหัสนักศึกษา" : ""
+                  !selectedUser?.studentProfile?.studentNo?.trim() ? "กรุณากรอกรหัสนักศึกษา" : ""
                 }
               />
             )}
@@ -363,7 +366,7 @@ export function UsersTable({
         </DialogContent>
         <DialogActions>
           <Button onClick={handleEditDialogClose}>ยกเลิก</Button>
-          <Button variant="contained" onClick={handleSave} disabled={selectedUser?.role === Role.STUDENT && !selectedUser?.studentNo?.trim()}>
+          <Button variant="contained" onClick={handleSave} disabled={selectedUser?.role === Role.STUDENT && !selectedUser?.studentProfile?.studentNo?.trim()}>
             เเก้ไข
           </Button>
         </DialogActions>
@@ -374,7 +377,7 @@ export function UsersTable({
         <DialogTitle>ยืนยันการลบ</DialogTitle>
         <DialogContent>
           <Typography>
-            คุณต้องการลบผู้ใช้งาน <strong>{userToDelete?.nameTh}</strong> ใช่หรือไม่?
+            คุณต้องการลบผู้ใช้งาน <strong>{userToDelete?.nameTh} {userToDelete?.surnameTh}</strong> ใช่หรือไม่?
           </Typography>
         </DialogContent>
         <DialogActions>

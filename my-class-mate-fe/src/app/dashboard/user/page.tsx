@@ -14,17 +14,18 @@ import Select, { SelectChangeEvent } from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import { DownloadIcon } from '@phosphor-icons/react/dist/ssr/Download';
 import { PlusIcon } from '@phosphor-icons/react/dist/ssr/Plus';
-import { createUser, getUsers, UserRequest, UserResponse } from '@/api/user-api'; // Import the API function
+import Snackbar from "@mui/material/Snackbar";
+import MuiAlert, { AlertColor } from "@mui/material/Alert";
 
 
-import { config } from '@/config';
+import { createUser, exportUsers, getUsers, importUsers } from '@/api/user-api'; // Import the API function
 import { UsersFilters } from '@/components/dashboard/user/users-filters';
 import { UsersTable } from '@/components/dashboard/user/users-table';
 import ErrorDialog from '@/components/error/error-dialog';
-import { Role } from '@/util/role-enum';
-import { set } from 'react-hook-form';
-
-// export const metadata = { title: `Customers | Dashboard | ${config.site.name}` } satisfies Metadata;
+import { getRoleLabel, Role } from '@/util/role-enum';
+import { UploadIcon } from '@phosphor-icons/react';
+import Papa from 'papaparse';
+import { UserRequest, UserResponse } from '@/api/data/user-response';
 
 
 // const mockUsers = [
@@ -152,7 +153,6 @@ export default function Page(): React.JSX.Element {
       // In case of error, you might want to set an empty array or some default users
       setErrorMessage((error as Error).message);
       setUsers([]);
-      console.error('Error fetching users:', error);
     }
   };
 
@@ -187,13 +187,11 @@ export default function Page(): React.JSX.Element {
       const createdUser = await createUser(newUser); // Call the createUser API
       if (newUser.role !== selectedRole) {
         setSelectedRole(newUser.role); // trigger fetchUsers via useEffect
-      }else{
+      } else {
         fetchUsers(); // Refresh the user list after creation
       }
-      console.log('New user created:', createdUser);
       handleCloseCreateDialog(); // Close the dialog
     } catch (error: any) {
-      console.error('Error creating user:', error.message);
       setErrorMessage(error.message);
     }
   };
@@ -204,19 +202,82 @@ export default function Page(): React.JSX.Element {
     setErrorMessage(null);
   };
 
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      // Call your backend API to import users from XLSX
+      const res = await importUsers(file);
+      showToast(`นำเข้าไฟล์สำเร็จ: ${res.createdRow} แถวใหม่, ${res.updatedRow} แถวอัปเดตแล้ว`);
+      fetchUsers();
+    } catch (err: any) {
+      setErrorMessage(err.message);
+    }
+  };
+
+  const Alert = React.forwardRef<HTMLDivElement, { severity: AlertColor; children: React.ReactNode }>(
+    function Alert(props, ref) {
+      return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
+    }
+  );
+
+  const [toast, setToast] = useState<{ open: boolean; message: string; severity: AlertColor }>({
+    open: false,
+    message: "",
+    severity: "success",
+  });
+
+  const showToast = (message: string, severity: AlertColor = "success") => {
+    setToast({ open: true, message, severity });
+  };
+
+  const handleCloseToast = () => {
+    setToast((prev) => ({ ...prev, open: false }));
+  };
+
+
   return (
     <Stack spacing={3}>
       <Stack direction="row" spacing={3}>
         <Stack spacing={1} sx={{ flex: '1 1 auto' }}>
           <Typography variant="h4">ข้อมูลผู้ใช้งาน</Typography>
-          {/* <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-            <Button color="inherit" startIcon={<UploadIcon fontSize="var(--icon-fontSize-md)" />}>
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+            <Button
+              color="inherit"
+              startIcon={<UploadIcon fontSize="var(--icon-fontSize-md)" />}
+              onClick={handleImportClick}
+            >
               Import
             </Button>
-            <Button color="inherit" startIcon={<DownloadIcon fontSize="var(--icon-fontSize-md)" />}>
+            <Button
+              color="inherit"
+              startIcon={<DownloadIcon fontSize="var(--icon-fontSize-md)" />}
+              onClick={async () => {
+                try {
+                  await exportUsers();
+                } catch (err: any) {
+                  console.error("Error exporting users:", err.message);
+                  setErrorMessage(err.message);
+                }
+              }}
+            >
               Export
             </Button>
-          </Stack> */}
+            <input
+              type="file"
+              accept=".xlsx"
+              ref={fileInputRef}
+              style={{ display: "none" }}
+              onChange={handleFileUpload}
+            />
+          </Stack>
         </Stack>
         <div>
           <Button
@@ -233,10 +294,10 @@ export default function Page(): React.JSX.Element {
       <Stack direction="row" spacing={2} alignItems="center">
         <Typography>กรองตามบทบาท:</Typography>
         <Select value={selectedRole} onChange={handleRoleFilterChange} size="small">
-          <MenuItem value={Role.ADMIN}>{Role.ADMIN}</MenuItem>
-          <MenuItem value={Role.STAFF}>{Role.STAFF}</MenuItem>
-          <MenuItem value={Role.LECTURER}>{Role.LECTURER}</MenuItem>
-          <MenuItem value={Role.STUDENT}>{Role.STUDENT}</MenuItem>
+          <MenuItem value={Role.ADMIN}>{getRoleLabel(Role.ADMIN)}</MenuItem>
+          <MenuItem value={Role.STAFF}>{getRoleLabel(Role.STAFF)}</MenuItem>
+          <MenuItem value={Role.LECTURER}>{getRoleLabel(Role.LECTURER)}</MenuItem>
+          <MenuItem value={Role.STUDENT}>{getRoleLabel(Role.STUDENT)}</MenuItem>
         </Select>
       </Stack>
       {/* ✅ Show "no user" text if empty */}
@@ -307,10 +368,10 @@ export default function Page(): React.JSX.Element {
               onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
               fullWidth
             >
-              <MenuItem value={Role.ADMIN}>{Role.ADMIN}</MenuItem>
-              <MenuItem value={Role.STAFF}>{Role.STAFF}</MenuItem>
-              <MenuItem value={Role.LECTURER}>{Role.LECTURER}</MenuItem>
-              <MenuItem value={Role.STUDENT}>{Role.STUDENT}</MenuItem>
+              <MenuItem value={Role.ADMIN}>{getRoleLabel(Role.ADMIN)}</MenuItem>
+              <MenuItem value={Role.STAFF}>{getRoleLabel(Role.STAFF)}</MenuItem>
+              <MenuItem value={Role.LECTURER}>{getRoleLabel(Role.LECTURER)}</MenuItem>
+              <MenuItem value={Role.STUDENT}>{getRoleLabel(Role.STUDENT)}</MenuItem>
             </Select>
             {/* ✅ Show only if role is STUDENT */}
             {isStudentRole && (
@@ -341,6 +402,16 @@ export default function Page(): React.JSX.Element {
         message={errorMessage}
         onClose={handleCloseErrorDialog}
       />
+      <Snackbar
+        open={toast.open}
+        autoHideDuration={8000}
+        onClose={handleCloseToast}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <MuiAlert onClose={handleCloseToast} severity={toast.severity}>
+          {toast.message}
+        </MuiAlert>
+      </Snackbar>
     </Stack>
   );
 }
