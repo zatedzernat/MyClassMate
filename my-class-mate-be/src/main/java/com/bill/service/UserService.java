@@ -115,17 +115,15 @@ public class UserService {
             }
 
             var findStudent = studentProfileRepository.findByStudentNo(studentNo);
-            if (findStudent.isPresent()) {
-                throw new AppException(ERROR_DUPLICATE_STUDENT_NO.getCode(), ERROR_DUPLICATE_STUDENT_NO.getMessage());
+            if (findStudent.isEmpty()) {
+                var studentProfile = StudentProfile.builder()
+                        .studentId(userId)
+                        .studentNo(studentNo)
+                        .createdAt(now)
+                        .updatedAt(now)
+                        .build();
+                studentProfileRepository.save(studentProfile);
             }
-
-            var studentProfile = StudentProfile.builder()
-                    .studentId(userId)
-                    .studentNo(studentNo)
-                    .createdAt(now)
-                    .updatedAt(now)
-                    .build();
-            studentProfileRepository.save(studentProfile);
         }
     }
 
@@ -135,6 +133,7 @@ public class UserService {
                 .orElseThrow(() -> new AppException(ERROR_USER_NOT_FOUND.getCode(), ERROR_USER_NOT_FOUND.getMessage()));
         var now = LocalDateTime.now();
 
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setNameTh(request.getNameTh());
         user.setSurnameTh(request.getSurnameTh());
         user.setNameEn(request.getNameEn());
@@ -310,7 +309,7 @@ public class UserService {
                 // ตรวจสอบค่าว่างที่จำเป็น
                 if (username.isBlank() || nameTh.isBlank() || surnameTh.isBlank() ||
                         nameEn.isBlank() || surnameEn.isBlank() || email.isBlank() || roleStr.isBlank()) {
-                    throw new AppException(ERROR_IMPORT_INVALID_EXCEL.getCode(), "blank field at row = " + (i+1));
+                    throw new AppException(ERROR_IMPORT_INVALID_EXCEL.getCode(), "blank field at row = " + (i + 1));
                 }
 
                 RoleEnum role = RoleEnum.valueOf(roleStr.trim().toUpperCase());
