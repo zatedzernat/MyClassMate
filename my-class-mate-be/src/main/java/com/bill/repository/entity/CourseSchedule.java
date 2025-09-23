@@ -39,7 +39,7 @@ public class CourseSchedule {
     @Column(name = "room", length = 20, nullable = false)
     String room;
 
-    @Column(name = "remark", length = 255, nullable = false)
+    @Column(name = "remark", length = 255)
     String remark;
 
     @Column(name = "created_at", nullable = false)

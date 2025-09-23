@@ -105,7 +105,7 @@ CREATE TABLE myclassmate."course_schedules" (
   "start_time" TIME NOT NULL,
   "end_time" TIME NOT NULL,
   "room" VARCHAR(20) NOT NULL,
-  "remark" VARCHAR(255) NOT NULL,
+  "remark" VARCHAR(255) NULL,
   "created_at" TIMESTAMP NOT NULL,
   "updated_at" TIMESTAMP NOT NULL,
   PRIMARY KEY ("id")

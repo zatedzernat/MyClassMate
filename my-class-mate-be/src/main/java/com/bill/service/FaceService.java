@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class FaceService {
-    UserService userService;
+    private final UserService userService;
 
     public FaceRegisterResponse faceRegister(Long userId) {
         var user = userService.getUser(userId);
