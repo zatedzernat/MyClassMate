@@ -100,24 +100,7 @@ public class UserService {
             user = userRepository.save(user);
             var userId = user.getId();
 
-            if (RoleEnum.STUDENT.equals(request.getRole())) {
-                if (StringUtils.isBlank(request.getStudentNo())) {
-                    throw new AppException(ERROR_MISSING_STUDENT_NO.getCode(), ERROR_MISSING_STUDENT_NO.getMessage());
-                }
-
-                var findStudent = studentProfileRepository.findByStudentNo(request.getStudentNo());
-                if (findStudent.isPresent()) {
-                    throw new AppException(ERROR_DUPLICATE_STUDENT_NO.getCode(), ERROR_DUPLICATE_STUDENT_NO.getMessage());
-                }
-
-                var studentProfile = StudentProfile.builder()
-                        .studentId(userId)
-                        .studentNo(request.getStudentNo())
-                        .createdAt(now)
-                        .updatedAt(now)
-                        .build();
-                studentProfileRepository.save(studentProfile);
-            }
+            createStudent(request.getRole(), request.getStudentNo(), userId, now);
 
             return mapToUserResponse(user);
         } else {
@@ -125,17 +108,43 @@ public class UserService {
         }
     }
 
+    private void createStudent(RoleEnum role, String studentNo, Long userId, LocalDateTime now) {
+        if (RoleEnum.STUDENT.equals(role)) {
+            if (StringUtils.isBlank(studentNo)) {
+                throw new AppException(ERROR_MISSING_STUDENT_NO.getCode(), ERROR_MISSING_STUDENT_NO.getMessage());
+            }
+
+            var findStudent = studentProfileRepository.findByStudentNo(studentNo);
+            if (findStudent.isPresent()) {
+                throw new AppException(ERROR_DUPLICATE_STUDENT_NO.getCode(), ERROR_DUPLICATE_STUDENT_NO.getMessage());
+            }
+
+            var studentProfile = StudentProfile.builder()
+                    .studentId(userId)
+                    .studentNo(studentNo)
+                    .createdAt(now)
+                    .updatedAt(now)
+                    .build();
+            studentProfileRepository.save(studentProfile);
+        }
+    }
+
     @Transactional
     public UserResponse updateUser(Long userId, UpdateUserRequest request) {
         var user = userRepository.findByIdAndIsDeletedFalse(userId)
                 .orElseThrow(() -> new AppException(ERROR_USER_NOT_FOUND.getCode(), ERROR_USER_NOT_FOUND.getMessage()));
+        var now = LocalDateTime.now();
 
         user.setNameTh(request.getNameTh());
         user.setSurnameTh(request.getSurnameTh());
         user.setNameEn(request.getNameEn());
         user.setSurnameEn(request.getSurnameEn());
-        user.setUpdatedAt(LocalDateTime.now());
+        user.setRole(request.getRole());
+        user.setEmail(request.getEmail());
+        user.setUpdatedAt(now);
         user = userRepository.save(user);
+
+        createStudent(request.getRole(), request.getStudentNo(), userId, now);
 
         return mapToUserResponse(user);
     }
@@ -324,7 +333,20 @@ public class UserService {
 
     private int getUpdatedRow(String userIdStr, String username, String nameTh, String surnameTh, String nameEn, String surnameEn, String email, boolean isDeleted, RoleEnum role, String studentNo, String address, String phone, String remark, int updatedRow) {
         // ----- UPDATE -----
-        Long userId = updateUser(userIdStr, username, nameTh, surnameTh, nameEn, surnameEn, email, isDeleted, role);
+        Long userId = Long.valueOf(userIdStr);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ERROR_USER_NOT_FOUND.getCode(), ERROR_USER_NOT_FOUND.getMessage()));
+
+        user.setUsername(username.trim());
+        user.setNameTh(nameTh.trim());
+        user.setSurnameTh(surnameTh.trim());
+        user.setNameEn(nameEn.trim());
+        user.setSurnameEn(surnameEn.trim());
+        user.setEmail(email.trim());
+        user.setIsDeleted(isDeleted);
+        user.setRole(role);
+        user.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(user);
 
         if (role == RoleEnum.STUDENT) {
             if (studentNo.isBlank()) {
@@ -378,24 +400,6 @@ public class UserService {
         }
         createdRow++;
         return createdRow;
-    }
-
-    private Long updateUser(String userIdStr, String username, String nameTh, String surnameTh, String nameEn, String surnameEn, String email, boolean isDeleted, RoleEnum role) {
-        Long userId = Long.valueOf(userIdStr);
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(ERROR_USER_NOT_FOUND.getCode(), ERROR_USER_NOT_FOUND.getMessage()));
-
-        user.setUsername(username.trim());
-        user.setNameTh(nameTh.trim());
-        user.setSurnameTh(surnameTh.trim());
-        user.setNameEn(nameEn.trim());
-        user.setSurnameEn(surnameEn.trim());
-        user.setEmail(email.trim());
-        user.setIsDeleted(isDeleted);
-        user.setRole(role);
-        user.setUpdatedAt(LocalDateTime.now());
-        userRepository.save(user);
-        return userId;
     }
 
     private String getCellValue(Cell cell) {
