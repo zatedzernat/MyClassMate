@@ -84,7 +84,6 @@ export function UsersTable({
   };
 
   const handleOpenEditDialog = (user: UserResponse) => {
-    console.log("UserResponse in handleOpenEditDialog:", user);
     setSelectedUser(user);
     setOpenEditDialog(true);
   };
@@ -284,6 +283,7 @@ export function UsersTable({
               }
               fullWidth
               sx={{ marginTop: '8px' }}
+              disabled // Username should not be editable
             />
             <TextField
               label="ชื่อ (ไทย)"
@@ -342,7 +342,21 @@ export function UsersTable({
               label="บทบาท"
               value={selectedUser?.role || ''}
               onChange={(e) =>
-                setSelectedUser((prev) => (prev ? { ...prev, role: e.target.value } : null))
+                setSelectedUser((prev) => {
+                  if (!prev) return null;
+                  const newRole = e.target.value;
+                  // Clear studentNo if role is not STUDENT
+                  const updatedStudentProfile =
+                    newRole === Role.STUDENT
+                      ? prev.studentProfile
+                      : { ...prev.studentProfile, studentNo: '' };
+
+                  return {
+                    ...prev,
+                    role: newRole,
+                    studentProfile: updatedStudentProfile,
+                  };
+                })
               }
               fullWidth
             >
