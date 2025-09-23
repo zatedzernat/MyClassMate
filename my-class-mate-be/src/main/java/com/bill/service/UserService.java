@@ -143,7 +143,11 @@ public class UserService {
         user.setUpdatedAt(now);
         user = userRepository.save(user);
 
-        createStudent(request.getRole(), request.getStudentNo(), userId, now);
+        if (!RoleEnum.STUDENT.equals(request.getRole())) {
+            studentProfileRepository.deleteById(userId);
+        } else {
+            createStudent(request.getRole(), request.getStudentNo(), userId, now);
+        }
 
         return mapToUserResponse(user);
     }
