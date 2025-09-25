@@ -8,13 +8,17 @@ import com.bill.model.request.LoginRequest;
 import com.bill.model.request.UpdateUserRequest;
 import com.bill.model.response.ImportExcelResponse;
 import com.bill.model.response.UserResponse;
+import com.bill.repository.IdentityRepository;
 import com.bill.repository.StudentProfileRepository;
 import com.bill.repository.UserRepository;
 import com.bill.repository.entity.StudentProfile;
 import com.bill.repository.entity.User;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFRichTextString;
@@ -40,11 +44,13 @@ import static com.bill.exceptionhandler.ErrorEnum.*;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 public class UserService {
-    private final StudentProfileRepository studentProfileRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final ModelMapper modelMapper;
-    private final UserRepository userRepository;
+    StudentProfileRepository studentProfileRepository;
+    PasswordEncoder passwordEncoder;
+    ModelMapper modelMapper;
+    UserRepository userRepository;
+    IdentityRepository identityRepository;
 
     @SneakyThrows
     public UserResponse login(LoginRequest request) {
@@ -70,8 +76,10 @@ public class UserService {
     }
 
     public List<UserResponse> getUsers(RoleEnum role) {
-        var users = userRepository.findByIsDeletedFalse();
-        List<User> filteredUsers = new ArrayList<>();
+        log.info("getUsers role = {}", role);
+        // var users = userRepository.findByIsDeletedFalse();
+        var users = userRepository.findAll();
+        List<User> filteredUsers = new ArrayList<>(users);
 
         if (role != null) {
             filteredUsers = users.stream()
@@ -80,8 +88,7 @@ public class UserService {
         }
 
         var usersResponse = filteredUsers.stream()
-                .filter(Objects::nonNull)
-                .sorted(Comparator.comparing(User::getRole).thenComparing(User::getId))
+                .sorted(Comparator.comparing(User::getId))
                 .toList();
 
         return mapToUserResponse(usersResponse);
@@ -442,6 +449,7 @@ public class UserService {
         var userResponse = modelMapper.map(user, UserResponse.class);
         userResponse.setUserId(user.getId());
         setStudentProfile(user, userResponse);
+        setIdentity(user, userResponse);
         return userResponse;
     }
 
@@ -460,5 +468,11 @@ public class UserService {
                     .orElseThrow(() -> new AppException(ERROR_STUDENT_PROFILE_NOT_FOUND.getCode(), ERROR_STUDENT_PROFILE_NOT_FOUND.getMessage()));
             userResponse.setStudentProfile(modelMapper.map(studentProfile, StudentProfileDto.class));
         }
+    }
+
+    private void setIdentity(User user, UserResponse userResponse) {
+        var identities = identityRepository.findByUserId(user.getId());
+        userResponse.setIsUploadedImage(CollectionUtils.isNotEmpty(identities));
+        userResponse.setImageCount(identities.size());
     }
 }

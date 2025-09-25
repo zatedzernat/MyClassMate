@@ -21,4 +21,6 @@ public class UserResponse {
     RoleEnum role;
     Boolean isDeleted;
     StudentProfileDto studentProfile;
+    Boolean isUploadedImage;
+    Integer imageCount;
 }

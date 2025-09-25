@@ -13,7 +13,9 @@ import com.bill.repository.CourseRepository;
 import com.bill.repository.CourseScheduleRepository;
 import com.bill.repository.entity.Course;
 import com.bill.repository.entity.CourseSchedule;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -30,11 +32,12 @@ import static com.bill.exceptionhandler.ErrorEnum.*;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 public class CourseService {
-    private final ModelMapper modelMapper;
-    private final CourseRepository courseRepository;
-    private final CourseScheduleRepository courseScheduleRepository;
-    private final CourseJdbcRepository courseJdbcRepository;
+    ModelMapper modelMapper;
+    CourseRepository courseRepository;
+    CourseScheduleRepository courseScheduleRepository;
+    CourseJdbcRepository courseJdbcRepository;
 
     public List<InitCourseResponse> initCourse(InitCourseRequest request) {
         var dayOfWeek = request.getDayOfWeek();
