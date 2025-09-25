@@ -42,6 +42,46 @@ export async function getUsers(selectedRole: Role): Promise<UserResponse[]> {
     return mappedUsers;
 }
 
+export async function getUser(userId: string): Promise<UserResponse> {
+    const role = localStorage.getItem("user-role") || "";
+
+    const response = await fetch(`http://127.0.0.1:8080/my-class-mate/v1/users/${encodeURIComponent(userId)}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-role': role
+        }
+    });
+
+    const resData = await response.json();
+
+    if (!response.ok) {
+        const errorMessage = resData?.message || resData?.code || 'Unknown error occurred';
+        throw new Error(errorMessage);
+    }
+
+    // Map the API response to UserResponse object
+    const mappedUser: UserResponse = {
+        userId: resData.userId,
+        username: resData.username,
+        password: resData.password,
+        nameTh: resData.nameTh,
+        surnameTh: resData.surnameTh,
+        nameEn: resData.nameEn,
+        surnameEn: resData.surnameEn,
+        email: resData.email,
+        role: resData.role,
+        isDeleted: resData.isDeleted,
+        studentProfile: resData.studentProfile,
+        isUploadedImage: resData.isUploadedImage,
+        imageCount: resData.imageCount
+    };
+
+    console.log('Fetched user:', mappedUser); // Debug log
+
+    return mappedUser;
+}
+
 export async function createUser(userRequest: UserRequest): Promise<void> {
     const role = localStorage.getItem("user-role") || "";
 

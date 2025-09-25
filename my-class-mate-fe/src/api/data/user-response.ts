@@ -26,6 +26,8 @@ export interface UserResponse {
     role: Role;
     isDeleted?: boolean;
     studentProfile?: StudentProfile;
+    isUploadedImage?: boolean;
+    imageCount: number;
 }
 
 

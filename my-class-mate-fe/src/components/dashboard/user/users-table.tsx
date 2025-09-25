@@ -27,6 +27,9 @@ import MenuItem from '@mui/material/MenuItem';
 import { updateUser, deleteUser } from '@/api/user-api'; // Import the API function
 import { getRoleLabel, Role } from '@/util/role-enum';
 import { UserRequest, UserResponse } from '@/api/data/user-response';
+import { useRouter } from 'next/navigation';
+import { paths } from '@/paths'; // adjust path if needed
+
 
 
 function noop(): void {
@@ -62,14 +65,7 @@ export function UsersTable({
   const selectedAll = rows.length > 0 && selected.size === rows.length;
   const selectedSome = selected.size > 0 && selected.size < rows.length;
 
-  // Functions to handle selection
-  const selectAll = () => {
-    setSelected(new Set(rows.map((row) => row.username)));
-  };
-
-  const deselectAll = () => {
-    setSelected(new Set());
-  };
+  const router = useRouter();
 
   const selectOne = (id: string) => {
     setSelected((prev) => new Set(prev).add(id));
@@ -175,6 +171,11 @@ export function UsersTable({
   const [selectedRole, setSelectedRole] = useState<Role | "">("");
   const showStudentColumn = selectedRole === Role.STUDENT || rows.some(row => row.role === Role.STUDENT);
 
+  const handleRowClick = (user: UserResponse) => {
+    // Navigate to user-detail page with userId as query parameter
+    router.push(`/dashboard/user/user-detail?userId=${user.userId}`);
+  };
+
   return (
     <Card>
       <Box sx={{ overflowX: 'auto' }}>
@@ -207,7 +208,13 @@ export function UsersTable({
               const isSelected = selected.has(row.username);
 
               return (
-                <TableRow hover key={row.username} selected={isSelected}>
+                <TableRow
+                  hover
+                  key={row.username}
+                  selected={isSelected}
+                  sx={{ cursor: 'pointer' }} // shows pointer on hover
+                  onClick={() => handleRowClick(row)}
+                >
                   {/* <TableCell padding="checkbox">
                     <Checkbox
                       checked={isSelected}
