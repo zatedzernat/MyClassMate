@@ -10,5 +10,5 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class FaceRegisterResponse {
     Long userId;
-    Integer numOfFaces;
+    Integer imageCount;
 }
