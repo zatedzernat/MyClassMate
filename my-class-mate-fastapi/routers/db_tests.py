@@ -12,6 +12,7 @@ router = APIRouter()
 logging.basicConfig(level=logging.INFO)
 
 DATA_PATH = "/Users/pongthanat/Pictures/test-my-class-mate/users/"
+TEST_ONLY = True
 
 METHOD_MAP = {
     1: post_face_recognition,
@@ -29,6 +30,9 @@ async def post_test_face_recognition(method_number: int):
         raise HTTPException(status_code=400, detail=f"Folder not found: {folder_path}")
 
     files = list(folder_path.glob("*.[jJpP][pPnN][gG]"))
+    if TEST_ONLY:
+        files = [f for f in files if f.stem.endswith("-test")]
+
     if not files:
         raise HTTPException(status_code=400, detail=f"No image files found in {folder_path}")
     
@@ -73,14 +77,8 @@ async def post_test_face_recognition(method_number: int):
         if result["user_id"] != expected_user_id:
             errors.append({
                 "file": file_path.name,
-                "error": f"Expected user_id: {expected_user_id}, got: {result['user_id']}"
+                "error": f"Expected user_id: {expected_user_id}, got: {result['user_id']}, from file: {result['file_name']}"
             })
-        # returned_user_id = result.get("user", {}).get("user_id")
-        # if returned_user_id != expected_user_id:
-        #     errors.append({
-        #         "file": file_path.name,
-        #         "error": f"Expected user_id: {expected_user_id}, got: {returned_user_id}"
-        #     })
 
     if errors:
         raise HTTPException(status_code=422, detail=errors)

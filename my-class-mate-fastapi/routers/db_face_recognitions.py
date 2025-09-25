@@ -16,10 +16,11 @@ import shutil
 
 # ---------------- CONFIG ---------------- #
 MODEL_NAME = "Facenet512"       # หรือ "ArcFace"
-EUCLIDEAN_THRESHOLD = 1.04      # อ้างอิงจาก DeepFace (https://github.com/serengil/deepface/blob/master/deepface/config/threshold.py)
-CONFIDENCE_MARGIN = 0.05        # ใช้สำหรับ confidence margin rule
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png"}
 DETECTOR = "mtcnn"              # หรือ retinaface
+EUCLIDEAN_THRESHOLD = 1.04      # อ้างอิงจาก DeepFace (https://github.com/serengil/deepface/blob/master/deepface/config/threshold.py)
+CONFIDENCE_MARGIN = 0.05        # ใช้สำหรับ confidence margin rule
+TOP_K_VOTE = 5                  # fix k = 3,5,7 to prevent tie-break
 
 SAVE_IMAGE_FILES = True         # จะ save รูปไหม
 IMAGE_SAVE_DIR = os.path.join(os.path.dirname(__file__), "..", "storage", "upload")
@@ -29,7 +30,7 @@ router = APIRouter()
 
 # Logging
 logger = logging.getLogger("face_recognition")
-logger.setLevel(logging.INFO) # เปลี่ยนเป็น logging.DEBUG ได้
+logger.setLevel(logging.DEBUG) # เปลี่ยนเป็น logging.DEBUG ได้
 handler = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter("[%(asctime)s] %(levelname)s: %(message)s")
 handler.setFormatter(formatter)
@@ -201,18 +202,22 @@ async def post_face_recognition(file: UploadFile = File(...)):
     # Group distances per user
     user_distances: Dict[int, List[float]] = defaultdict(list)
     for user_id, file_name, distance in results:
-        logger.debug(f"row: uid={user_id}, file={file_name}, dist={distance:.4f}")
+        logger.debug(f"row: user_id={user_id}, file={file_name}, distance={distance:.4f}")
         user_distances[user_id].append(distance)
 
     # Rule 1: Exact match
     for user_id, distances in user_distances.items():
         if min(distances) <= 1e-6:
             logger.info(f"[face-recognition] Exact match: {user_id}")
-            return {"status": "Success", "user_id": user_id, "distance": 0.0, "threshold": EUCLIDEAN_THRESHOLD}
+            return {
+                "status": "Success", 
+                "user_id": user_id, 
+                "file_name": file_name,
+                "distance": 0.0, 
+                "threshold": EUCLIDEAN_THRESHOLD}
 
     # Rule 2: Top-K majority
-    K = 5
-    top_k = results[:K]
+    top_k = results[:TOP_K_VOTE]
     user_counts = defaultdict(int)
     topk_distances = defaultdict(list)
     for user_id, file_name, distance in top_k:
@@ -244,6 +249,7 @@ async def post_face_recognition(file: UploadFile = File(...)):
     return {
         "status": "Success", 
         "user_id": best_user, 
+        "file_name": file_name,
         "distance": best_distance, 
         "threshold": EUCLIDEAN_THRESHOLD
     }
