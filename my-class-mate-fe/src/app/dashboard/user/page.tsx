@@ -127,7 +127,7 @@ export default function Page(): React.JSX.Element {
   const rowsPerPage = 5;
 
   const [users, setUsers] = useState<UserResponse[]>([]); // State to store users
-  const [selectedRole, setSelectedRole] = useState<Role>(Role.STUDENT); // Role filter
+  const [selectedRole, setSelectedRole] = useState<Role>(Role.NOTHING); // Role filter
 
   // const paginatedCustomers = applyPagination(users, page, rowsPerPage);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
@@ -294,6 +294,7 @@ export default function Page(): React.JSX.Element {
       <Stack direction="row" spacing={2} alignItems="center">
         <Typography>กรองตามบทบาท:</Typography>
         <Select value={selectedRole} onChange={handleRoleFilterChange} size="small">
+          <MenuItem value={Role.NOTHING}>ทั้งหมด</MenuItem>
           <MenuItem value={Role.ADMIN}>{getRoleLabel(Role.ADMIN)}</MenuItem>
           <MenuItem value={Role.STAFF}>{getRoleLabel(Role.STAFF)}</MenuItem>
           <MenuItem value={Role.LECTURER}>{getRoleLabel(Role.LECTURER)}</MenuItem>
