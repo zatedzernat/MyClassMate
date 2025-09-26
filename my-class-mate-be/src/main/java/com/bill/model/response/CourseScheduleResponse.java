@@ -4,7 +4,6 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Data
@@ -20,6 +19,4 @@ public class CourseScheduleResponse {
     LocalTime endTime;
     String room;
     String remark;
-    LocalDateTime createdAt;
-    LocalDateTime updatedAt;
 }

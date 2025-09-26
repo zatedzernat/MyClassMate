@@ -19,5 +19,7 @@ public class UpdateCourseRequest {
     Integer semester;
     String room;
     @NotNull
+    List<Long> lecturerIds;
+    @NotNull
     List<@Valid CourseScheduleRequest> schedules;
 }

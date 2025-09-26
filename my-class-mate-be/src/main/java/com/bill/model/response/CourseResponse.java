@@ -29,5 +29,6 @@ public class CourseResponse {
     Long createdBy;
     LocalDateTime createdAt;
     LocalDateTime updatedAt;
+    List<CourseLecturerResponse> lecturers;
     List<CourseScheduleResponse> schedules;
 }

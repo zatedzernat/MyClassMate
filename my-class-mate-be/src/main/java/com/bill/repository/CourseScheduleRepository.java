@@ -11,4 +11,6 @@ public interface CourseScheduleRepository extends JpaRepository<CourseSchedule, 
     List<CourseSchedule> findByCourseId(Long courseId);
 
     void deleteByCourseId(Long courseId);
+
+    List<CourseSchedule> findByCourseIdOrderByScheduleDateAsc(Long courseId);
 }

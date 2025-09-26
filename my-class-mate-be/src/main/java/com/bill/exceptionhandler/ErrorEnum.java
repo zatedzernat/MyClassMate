@@ -23,6 +23,7 @@ public enum ErrorEnum {
     ERROR_INVALID_END_DATE("ERR017", "invalid date or time"),
     ERROR_DUPLICATE_COURSE("ERR018", "found duplicate course code or course name"),
     ERROR_COURSE_NOT_FOUND("ERR019", "course not found"),
+    ERROR_INVALID_ROLE_FOR_LECTURER_ID("ERR020", "invalid role for lecturer id"),
     ;
 
     private final String code;

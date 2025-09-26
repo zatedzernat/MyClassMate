@@ -40,5 +40,7 @@ public class CreateCourseRequest {
     @NotNull
     Long createdBy;
     @NotNull
+    List<Long> lecturerIds;
+    @NotNull
     List<@Valid CourseScheduleRequest> schedules;
 }

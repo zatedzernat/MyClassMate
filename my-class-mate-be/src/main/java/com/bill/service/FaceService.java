@@ -16,7 +16,7 @@ public class FaceService {
     UserService userService;
 
     public FaceRegisterResponse faceRegister(Long userId) {
-        var user = userService.getUser(userId);
+        var user = userService.getUser(userId, false);
         return null;
     }
 

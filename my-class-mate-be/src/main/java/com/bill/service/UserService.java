@@ -3,6 +3,7 @@ package com.bill.service;
 import com.bill.constant.RoleEnum;
 import com.bill.exceptionhandler.AppException;
 import com.bill.model.StudentProfileDto;
+import com.bill.model.UserNameDto;
 import com.bill.model.request.CreateUserRequest;
 import com.bill.model.request.LoginRequest;
 import com.bill.model.request.UpdateUserRequest;
@@ -62,17 +63,17 @@ public class UserService {
         }
 
         if (passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            return mapToUserResponse(user);
+            return mapToUserResponse(user, true);
         } else {
             throw new AppException(ERROR_LOGIN.getCode(), ERROR_LOGIN.getMessage());
         }
     }
 
-    public UserResponse getUser(Long userId) {
+    public UserResponse getUser(Long userId, boolean needAllInfo) {
         var user = userRepository.findByIdAndIsDeletedFalse(userId)
                 .orElseThrow(() -> new AppException(ERROR_USER_NOT_FOUND.getCode(), ERROR_USER_NOT_FOUND.getMessage()));
 
-        return mapToUserResponse(user);
+        return mapToUserResponse(user, needAllInfo);
     }
 
     public List<UserResponse> getUsers(RoleEnum role) {
@@ -109,7 +110,7 @@ public class UserService {
 
             createStudent(request.getRole(), request.getStudentNo(), userId, now);
 
-            return mapToUserResponse(user);
+            return mapToUserResponse(user, true);
         } else {
             throw new AppException(ERROR_DUPLICATE_USER_NAME.getCode(), ERROR_DUPLICATE_USER_NAME.getMessage());
         }
@@ -156,7 +157,7 @@ public class UserService {
             createStudent(request.getRole(), request.getStudentNo(), userId, now);
         }
 
-        return mapToUserResponse(user);
+        return mapToUserResponse(user, true);
     }
 
     public byte[] exportUsers(RoleEnum role) {
@@ -442,21 +443,32 @@ public class UserService {
         user.setUpdatedAt(LocalDateTime.now());
         user = userRepository.save(user);
 
-        return mapToUserResponse(user);
+        return mapToUserResponse(user, true);
     }
 
-    private UserResponse mapToUserResponse(User user) {
+    public UserNameDto getFullName(Long userId) {
+        var user = getUser(userId, false);
+        var fullNameTh = user.getNameTh().concat(" ").concat(user.getSurnameTh());
+        var fullNameEn = user.getNameEn().concat(" ").concat(user.getSurnameEn());
+        return UserNameDto.builder().fullNameTh(fullNameTh).fullNameEn(fullNameEn).build();
+    }
+
+    private UserResponse mapToUserResponse(User user, boolean needAllInfo) {
         var userResponse = modelMapper.map(user, UserResponse.class);
         userResponse.setUserId(user.getId());
-        setStudentProfile(user, userResponse);
-        setIdentity(user, userResponse);
+
+        if (needAllInfo) {
+            setStudentProfile(user, userResponse);
+            setIdentity(user, userResponse);
+        }
+
         return userResponse;
     }
 
     private List<UserResponse> mapToUserResponse(List<User> users) {
         var response = new ArrayList<UserResponse>();
         for (var user : users) {
-            var userResponse = mapToUserResponse(user);
+            var userResponse = mapToUserResponse(user, true);
             response.add(userResponse);
         }
         return response;
