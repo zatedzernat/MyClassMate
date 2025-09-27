@@ -12,6 +12,7 @@ import { UserInfo } from '@/components/dashboard/user/user-detail/user-info';
 import { getUser } from '@/api/user-api';
 import { UserResponse } from '@/api/data/user-response';
 import { Role } from '@/util/role-enum';
+import { Box, Container } from '@mui/system';
 
 export default function Page(): React.JSX.Element {
   const searchParams = useSearchParams();
@@ -37,59 +38,63 @@ export default function Page(): React.JSX.Element {
     fetchUser();
   }, [userId]);
 
-  
   const handleToggleDetailsForm = () => {
     setShowDetailsForm(!showDetailsForm);
   };
 
   if (loading) {
     return (
-      <Stack spacing={3}>
-        <Typography variant="h4">Loading...</Typography>
-      </Stack>
+      <Container maxWidth="lg" sx={{ px: { xs: 1, sm: 2 } }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+          <Typography variant="h4">Loading...</Typography>
+        </Box>
+      </Container>
     );
   }
 
-
-// // In the parent component where you use UserValidateFace
-// const mockUser: UserResponse = {
-//   userId: '12345',
-//   nameTh: "สมชาย",
-//   surnameTh: "ใจดี",
-//   nameEn: "Somchai",
-//   surnameEn: "Jaidee",
-//   role: Role.STUDENT, // or whatever role enum you have
-//   isUploadedImage: true, // ← This is the key property
-//   imageCount: 4,
-//   username: '',
-//   email: ''
-// };
-
-
   return (
-    <Stack spacing={3}>
-      <div>
-        <Typography variant="h4">ข้อมูลผู้ใช้งาน</Typography>
-      </div>
+    <Container maxWidth="lg" sx={{ px: { xs: 1, sm: 2 } }}>
+      <Stack spacing={3} sx={{ py: { xs: 0.5, sm: 0.5 } }}> {/* Reduced from py: { xs: 1, sm: 1.5 } */}
+        {/* Header - Minimal top padding */}
+        <Box sx={{ textAlign: 'start', px: { xs: 1, sm: 2 }, pt: 0, pb: 0 }}> {/* Added pb: 0 */}
+          <Typography variant="h4" sx={{ mb: 0 }}> {/* Added mb: 0 to remove bottom margin */}
+            รายละเอียดผู้ใช้งาน
+          </Typography>
+        </Box>
 
-      <Grid container spacing={3}>
-        <Grid size={{ lg: 4, md: 6, xs: 12 }}>
-          <UserInfo 
-            user={user}
-            onToggleDetailsForm={handleToggleDetailsForm}
-            showDetailsForm={showDetailsForm}
-          />
-        </Grid>
-        
-        <Grid size={{ lg: 8, md: 6, xs: 12 }}>
-          <UserValidateFace 
-            user={user}
-            onScanComplete={(success) => {
-              console.log('Scan completed:', success ? 'Success' : 'Failed');
+        {/* Vertical Layout - User Info First, then Camera */}
+        <Stack spacing={3}>
+          {/* User Info Section - Full width with minimal horizontal padding */}
+          <Box
+            sx={{
+              width: '100%',
+              px: { xs: 0, sm: 1 },
             }}
-          />
-        </Grid>
-      </Grid>
-    </Stack>
+          >
+            <UserInfo 
+              user={user}
+              onToggleDetailsForm={handleToggleDetailsForm}
+              showDetailsForm={showDetailsForm}
+            />
+          </Box>
+
+          {/* Camera Section - Full width with minimal horizontal padding */}
+          <Box
+            sx={{
+              width: '100%',
+              px: { xs: 0, sm: 1 },
+              justifyContent: 'center',
+            }}
+          >
+            <UserValidateFace 
+              user={user}
+              onScanComplete={(success) => {
+                console.log('Scan completed:', success ? 'Success' : 'Failed');
+              }}
+            />
+          </Box>
+        </Stack>
+      </Stack>
+    </Container>
   );
 }

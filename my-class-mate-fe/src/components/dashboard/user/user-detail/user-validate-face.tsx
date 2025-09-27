@@ -12,18 +12,7 @@ import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
 import { UserResponse } from '@/api/data/user-response';
-import { getRoleLabel } from '@/util/role-enum';
-
-// Face detection types
-interface FaceDetection {
-  box: {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  };
-  confidence: number;
-}
+import { validateFaceImage } from '@/api/face-api'; // Add your API import
 
 interface UserValidateFaceProps {
   user: UserResponse | null;
@@ -35,17 +24,15 @@ export function UserValidateFace({
   onScanComplete
 }: UserValidateFaceProps): React.JSX.Element {
 
-  const [isScanning, setIsScanning] = React.useState(false);
-  const [scanResult, setScanResult] = React.useState<'success' | 'failed' | null>(null);
+  const [isCapturing, setIsCapturing] = React.useState(false);
+  const [captureResult, setCaptureResult] = React.useState<'success' | 'failed' | null>(null);
   const [cameraActive, setCameraActive] = React.useState(false);
   const [cameraError, setCameraError] = React.useState<string | null>(null);
   const [isRequestingPermission, setIsRequestingPermission] = React.useState(false);
-  const [faceDetected, setFaceDetected] = React.useState(false);
-  const [faceDetections, setFaceDetections] = React.useState<FaceDetection[]>([]);
+  const [savedImages, setSavedImages] = React.useState<string[]>([]);
 
   const videoRef = React.useRef<HTMLVideoElement>(null);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
-  const animationFrameRef = React.useRef<number | undefined>(undefined);
 
   if (!user) {
     return (
@@ -57,122 +44,17 @@ export function UserValidateFace({
     );
   }
 
-  if (!user.isUploadedImage) {
-    return (
-      <Card>
-        <CardHeader
-          subheader="จำเป็นต้องอัปโหลดภาพถ่ายใบหน้าก่อนใช้งาน"
-          title="การสแกนใบหน้า"
-        />
-        <Divider />
-        <CardContent sx={{ textAlign: 'center', py: 6 }}>
-          <Typography variant="h5" sx={{ mb: 2, color: 'warning.main' }}>
-            ⚠️ ยังไม่ได้อัปโหลดภาพถ่ายใบหน้า
-          </Typography>
-
-          <Typography variant="h6" sx={{ mb: 2, color: 'text.primary' }}>
-            {getRoleLabel(user.role)}: {user.nameTh} {user.surnameTh}
-          </Typography>
-
-          <Typography variant="body1" sx={{ mb: 2, color: 'text.secondary' }}>
-            อัปโหลดไปแล้ว {user.imageCount || 0} รูป จาก 4 รูป
-          </Typography>
-
-          <Typography variant="body2" color="text.secondary">
-            กรุณาอัปโหลดภาพถ่ายใบหน้าให้ครบ 4 รูป ก่อนใช้งานระบบสแกน
-          </Typography>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Detect faces in video frame
-  const detectFaces = React.useCallback(async () => {
-    if (!videoRef.current || !canvasRef.current || !cameraActive) {
-      if (cameraActive) {
-        animationFrameRef.current = requestAnimationFrame(detectFaces);
-      }
-      return;
-    }
-
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-
-    if (!ctx || video.readyState !== 4) {
-      animationFrameRef.current = requestAnimationFrame(detectFaces);
-      return;
-    }
-
-    // Set canvas size to match video
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-
-    // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    try {
-      // Mock face detection for demonstration
-      const mockFaceDetection: FaceDetection = {
-        box: {
-          x: canvas.width * 0.25,
-          y: canvas.height * 0.25,
-          width: canvas.width * 0.5,
-          height: canvas.height * 0.5,
-        },
-        confidence: 0.85
-      };
-
-      // Check if face is detected (mock logic)
-      const faceDetectedNow = Math.random() > 0.3; // 70% chance of detecting face
-      setFaceDetected(faceDetectedNow);
-
-      if (faceDetectedNow) {
-        setFaceDetections([mockFaceDetection]);
-
-        // Draw face detection box
-        ctx.strokeStyle = '#00ff00';
-        ctx.lineWidth = 3;
-        ctx.strokeRect(
-          mockFaceDetection.box.x,
-          mockFaceDetection.box.y,
-          mockFaceDetection.box.width,
-          mockFaceDetection.box.height
-        );
-
-        // Draw confidence text
-        ctx.fillStyle = '#00ff00';
-        ctx.font = '16px Arial';
-        ctx.fillText(
-          `Face: ${(mockFaceDetection.confidence * 100).toFixed(1)}%`,
-          mockFaceDetection.box.x,
-          mockFaceDetection.box.y - 10
-        );
-      } else {
-        setFaceDetections([]);
-      }
-
-    } catch (error) {
-      console.error('Face detection error:', error);
-    }
-
-    // Continue detection loop
-    if (cameraActive) {
-      animationFrameRef.current = requestAnimationFrame(detectFaces);
-    }
-  }, [cameraActive]);
-
   const startCamera = async () => {
     console.log('Starting camera...');
     setIsRequestingPermission(true);
     setCameraError(null);
-    setCameraActive(false); // Explicitly set to false first
+    setCameraActive(false);
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
-          width: { ideal: 640 },
-          height: { ideal: 480 },
+          width: { ideal: 1280, max: 1920 },
+          height: { ideal: 720, max: 1080 },
           facingMode: 'user'
         }
       });
@@ -180,11 +62,8 @@ export function UserValidateFace({
       if (videoRef.current && stream.active && stream.getVideoTracks().length > 0) {
         const video = videoRef.current;
         video.srcObject = stream;
-
-        // Force load
         video.load();
 
-        // Wait for video to be ready
         const loadPromise = new Promise<void>((resolve, reject) => {
           const timeout = setTimeout(() => {
             console.log('Video load timeout');
@@ -197,49 +76,19 @@ export function UserValidateFace({
             clearTimeout(timeout);
             video.onloadedmetadata = null;
             video.oncanplay = null;
-            video.onplaying = null;
             video.onerror = null;
           };
 
-          video.onloadedmetadata = () => {
-            console.log('Video metadata loaded:', {
-              videoWidth: video.videoWidth,
-              videoHeight: video.videoHeight,
-              duration: video.duration,
-              readyState: video.readyState
-            });
-          };
-
           video.oncanplay = () => {
-            console.log('Video can play, ready state:', video.readyState);
-
+            console.log('Video can play');
             video.play()
               .then(() => {
-                console.log('Video playing successfully');
-
-                // Double check video is actually working
                 setTimeout(() => {
-                  console.log('Final video check:', {
-                    videoWidth: video.videoWidth,
-                    videoHeight: video.videoHeight,
-                    paused: video.paused,
-                    ended: video.ended,
-                    readyState: video.readyState,
-                    currentTime: video.currentTime
-                  });
-
                   if (video.videoWidth > 0 && video.videoHeight > 0 && !video.paused) {
-                    console.log('✅ Camera is working! Setting cameraActive to true');
+                    console.log('✅ Camera is working!');
                     setCameraActive(true);
                     setCameraError(null);
                     setIsRequestingPermission(false);
-
-                    // Start face detection
-                    setTimeout(() => {
-                      console.log('Starting face detection...');
-                      detectFaces();
-                    }, 1000);
-
                     cleanup();
                     resolve();
                   } else {
@@ -270,27 +119,17 @@ export function UserValidateFace({
         });
 
         await loadPromise;
-      } else {
-        console.log('No video element or inactive stream');
-        setCameraError('ไม่สามารถเริ่มกล้องได้');
-        setIsRequestingPermission(false);
       }
     } catch (error: any) {
       console.error('Error accessing camera:', error);
-
       let errorMessage = 'ไม่สามารถเข้าถึงกล้องได้';
 
       if (error.name === 'NotAllowedError') {
         errorMessage = 'การเข้าถึงกล้องถูกปฏิเสธ กรุณาอนุญาตการใช้กล้องและรีเฟรชหน้า';
       } else if (error.name === 'NotFoundError') {
         errorMessage = 'ไม่พบกล้อง กรุณาตรวจสอบว่ามีกล้องเชื่อมต่ออยู่';
-      } else if (error.name === 'NotReadableError') {
-        errorMessage = 'กล้องถูกใช้งานโดยแอปพลิเคชันอื่น กรุณาปิดแอปอื่นแล้วลองใหม่';
-      } else if (error.name === 'OverconstrainedError') {
-        errorMessage = 'ไม่สามารถใช้การตั้งค่ากล้องได้ กรุณาลองใหม่';
       }
 
-      console.log('Setting camera error:', errorMessage);
       setCameraError(errorMessage);
       setIsRequestingPermission(false);
       setCameraActive(false);
@@ -299,74 +138,124 @@ export function UserValidateFace({
 
   const stopCamera = () => {
     console.log('Stopping camera...');
-
-    // Stop animation frame
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = undefined as number | undefined;
-    }
-
     if (videoRef.current && videoRef.current.srcObject) {
       const stream = videoRef.current.srcObject as MediaStream;
       stream.getTracks().forEach(track => {
-        console.log('Stopping track:', track.kind);
         track.stop();
       });
       videoRef.current.srcObject = null;
     }
-
     setCameraActive(false);
-    setFaceDetected(false);
-    setFaceDetections([]);
   };
 
-  const handleStartScan = async () => {
-    if (!cameraActive) {
-      setCameraError('กรุณาเปิดกล้องก่อนเริ่มสแกน');
+  const captureImage = async () => {
+    if (!videoRef.current || !canvasRef.current || !cameraActive) {
+      setCameraError('กรุณาเปิดกล้องก่อนถ่ายภาพ');
       return;
     }
-
-    if (!faceDetected) {
-      setCameraError('ไม่พบใบหน้าในกล้อง กรุณาวางใบหน้าให้อยู่ในกรอบ');
-      return;
-    }
-
-    setIsScanning(true);
-    setScanResult(null);
-
-    // Simulate face recognition process with actual detection
-    setTimeout(() => {
-      const success = faceDetected && Math.random() > 0.2; // 80% success rate if face detected
-      setScanResult(success ? 'success' : 'failed');
-      setIsScanning(false);
-
-      if (onScanComplete) {
-        onScanComplete(success);
+  
+    setIsCapturing(true);
+    setCaptureResult(null);
+  
+    try {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+  
+      if (!ctx) {
+        throw new Error('Cannot get canvas context');
       }
-    }, 3000);
-  };
-
-  const handleStopScan = () => {
-    setIsScanning(false);
-    setScanResult(null);
-  };
-
-  const handleReset = () => {
-    setScanResult(null);
-    setIsScanning(false);
-    setCameraError(null);
+  
+      // Set canvas size to match video
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+  
+      // Draw the current video frame to canvas (mirrored)
+      ctx.save();
+      ctx.scale(-1, 1); // Mirror horizontally
+      ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+      ctx.restore();
+  
+      // Convert canvas to blob
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error('Failed to create blob'));
+          }
+        }, 'image/jpeg', 0.9);
+      });
+  
+      // Convert blob to base64 for preview
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+  
+      console.log('Captured image:', {
+        size: blob.size,
+        type: blob.type,
+        base64Length: base64.length
+      });
+  
+      // **Call validateFaceImage API correctly**
+      try {
+        console.log('Validating face image...');
+        
+        // Call the API with userId string and blob directly
+        const validationResponse = await validateFaceImage(user.userId.toString(), blob);
+        
+        console.log('✅ Face validation result:', validationResponse);
+        
+        // Check if validation was successful and face was detected
+        if (validationResponse.success && validationResponse.faceDetected) {
+          // Add to saved images array only after successful validation
+          setSavedImages(prev => [...prev, base64]);
+          setCaptureResult('success');
+          
+          if (onScanComplete) {
+            onScanComplete(true);
+          }
+        } else {
+          // Face not detected or validation failed
+          setCaptureResult('failed');
+          setCameraError(validationResponse.message || 'ไม่พบใบหน้าในภาพ กรุณาลองใหม่');
+          return;
+        }
+        
+      } catch (validationError: any) {
+        console.error('❌ Face validation failed:', validationError);
+        setCaptureResult('failed');
+        setCameraError(validationError.message || 'เกิดข้อผิดพลาดในการตรวจสอบใบหน้า');
+        return;
+      }
+  
+    } catch (error) {
+      console.error('Error capturing image:', error);
+      setCaptureResult('failed');
+      setCameraError('เกิดข้อผิดพลาดในการบันทึกภาพ');
+    } finally {
+      setIsCapturing(false);
+    }
   };
 
   const handleStopCamera = () => {
     stopCamera();
-    setScanResult(null);
-    setIsScanning(false);
+    setCaptureResult(null);
     setCameraError(null);
   };
 
   const handleRetryCamera = () => {
     setCameraError(null);
     startCamera();
+  };
+
+  const clearSavedImages = () => {
+    setSavedImages([]);
+    setCaptureResult(null);
   };
 
   React.useEffect(() => {
@@ -378,205 +267,235 @@ export function UserValidateFace({
   return (
     <Card>
       <CardHeader
-        subheader="สแกนใบหน้าเพื่อยืนยันตัวตน"
-        title={`การสแกนใบหน้า - ${user.nameTh} ${user.surnameTh}`}
+        title={`ภายถ่ายใบหน้า - ${user.nameTh} ${user.surnameTh}`}
       />
       <Divider />
-      <CardContent>
-        {/* Camera Error Alert */}
-        {cameraError && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            <Typography variant="body2">
-              <strong>เกิดข้อผิดพลาด:</strong> {cameraError}
-            </Typography>
-          </Alert>
-        )}
 
-        {/* Face Detection Status */}
-        {cameraActive && (
-          <Alert severity={faceDetected ? "success" : "warning"} sx={{ mb: 3 }}>
-            <Typography variant="body2">
-              {faceDetected ? (
-                <>
-                  <strong>✓ ตรวจพบใบหน้า:</strong> พร้อมสำหรับการสแกน ({faceDetections.length} ใบหน้า)
-                </>
-              ) : (
-                <>
-                  <strong>⚠️ ไม่พบใบหน้า:</strong> กรุณาวางใบหน้าให้อยู่ในกรอบสีเขียว
-                </>
-              )}
-            </Typography>
-          </Alert>
-        )}
-<Box
-  sx={{
-    position: 'relative',
-    width: '100%',
-    maxWidth: 400,
-    aspectRatio: '4/3',
-    margin: '0 auto',
-    border: '3px solid',
-    borderColor: cameraError ? 'error.main' :
-      faceDetected ? 'success.main' :
-        scanResult === 'success' ? 'success.main' :
-          scanResult === 'failed' ? 'error.main' :
-            isScanning ? 'primary.main' : '#e0e0e0',
-    borderRadius: 2,
-    overflow: 'hidden',
-    backgroundColor: '#000',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  }}
->
-  {/* Always render video element, but hide it when not active */}
-  <video
-    ref={videoRef}
-    autoPlay
-    playsInline
-    muted
-    style={{
-      width: '100%',
-      height: '100%',
-      objectFit: 'cover',
-      display: cameraActive ? 'block' : 'none',
-    }}
-  />
-  <canvas
-    ref={canvasRef}
-    style={{
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      width: '100%',
-      height: '100%',
-      objectFit: 'cover',
-      pointerEvents: 'none',
-      display: cameraActive ? 'block' : 'none',
-    }}
-  />
-
-  {/* Show overlay content when camera is not active */}
-  {!cameraActive && (
-    <Box
-      sx={{
-        textAlign: 'center',
-        color: 'white',
-        p: 3,
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        zIndex: 1,
-      }}
-    >
-      {isRequestingPermission ? (
-        <Box>
-          <CircularProgress color="primary" size={40} sx={{ mb: 2 }} />
-          <Typography variant="body2" color="text.secondary">
-            กำลังเปิดกล้อง...
-          </Typography>
-        </Box>
-      ) : cameraError ? (
-        <Typography variant="body2" color="error.main">
-          ❌ ไม่สามารถเข้าถึงกล้องได้
-        </Typography>
-      ) : (
-        <Typography variant="body1" color="text.secondary">
-          กดปุ่ม "เริ่มกล้อง" เพื่อเปิดกล้อง
-        </Typography>
-      )}
-    </Box>
-  )}
-
-  {/* Rest of your overlays remain the same */}
-  {/* Scanning Overlay */}
-  {isScanning && cameraActive && !cameraError && (
-    <Box
-      sx={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
+      <CardContent sx={{
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        zIndex: 10,
-      }}
-    >
-      <Box sx={{ textAlign: 'center', color: 'white' }}>
-        <CircularProgress color="primary" size={60} sx={{ mb: 2 }} />
-        <Typography variant="body1">
-          กำลังสแกนใบหน้า...
-        </Typography>
-      </Box>
-    </Box>
-  )}
+        p: { xs: 2, sm: 3, md: 4 }
+      }}>
+        {/* Camera Container */}
+        <Box
+          sx={{
+            position: 'relative',
+            width: '100%',
+            maxWidth: { xs: 250, sm: 350, md: 500 },
+            aspectRatio: '4/3',
+            border: '3px solid',
+            borderColor: cameraError ? 'error.main' :
+              captureResult === 'success' ? 'success.main' :
+                captureResult === 'failed' ? 'error.main' :
+                  isCapturing ? 'primary.main' : '#e0e0e0',
+            borderRadius: 2,
+            overflow: 'hidden',
+            backgroundColor: '#000',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            mx: 'auto',
+          }}
+        >
+          {/* Video element */}
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              display: cameraActive ? 'block' : 'none',
+              transform: 'scaleX(-1)', // Mirror the video
+            }}
+          />
 
-  {/* Result Overlay */}
-  {scanResult && !isScanning && cameraActive && (
-    <Box
-      sx={{
-        position: 'absolute',
-        top: 16,
-        left: 16,
-        right: 16,
-        textAlign: 'center',
-        backgroundColor: scanResult === 'success' ? 'rgba(76, 175, 80, 0.9)' : 'rgba(244, 67, 54, 0.9)',
-        color: 'white',
-        p: 1,
-        borderRadius: 1,
-        zIndex: 10,
-      }}
-    >
-      <Typography variant="body1">
-        {scanResult === 'success' ? '✓ สแกนสำเร็จ' : '✗ สแกนไม่สำเร็จ'}
-      </Typography>
-    </Box>
-  )}
-</Box>
+          {/* Hidden canvas for capturing */}
+          <canvas
+            ref={canvasRef}
+            style={{ display: 'none' }}
+          />
+
+          {/* Camera not active overlay */}
+          {!cameraActive && (
+            <Box
+              sx={{
+                textAlign: 'center',
+                color: 'white',
+                p: 3,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {isRequestingPermission ? (
+                <>
+                  <CircularProgress color="primary" size={50} sx={{ mb: 2 }} />
+                  <Typography variant="body1" color="text.secondary">
+                    กำลังเปิดกล้อง...
+                  </Typography>
+                </>
+              ) : cameraError ? (
+                <Typography variant="body1" color="error.main" textAlign="center">
+                  ❌ ไม่สามารถเข้าถึงกล้องได้
+                </Typography>
+              ) : (
+                <Typography variant="h6" color="text.secondary" textAlign="center">
+                  กดปุ่ม "เริ่มกล้อง" เพื่อเปิดกล้อง
+                </Typography>
+              )}
+            </Box>
+          )}
+
+          {/* Capturing overlay */}
+          {isCapturing && cameraActive && (
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'rgba(0,0,0,0.7)',
+                zIndex: 10,
+              }}
+            >
+              <Box sx={{ textAlign: 'center', color: 'white' }}>
+                <CircularProgress color="primary" size={60} sx={{ mb: 2 }} />
+                <Typography variant="h6">
+                  กำลังบันทึกภาพ...
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 1, opacity: 0.8 }}>
+                  กรุณารอสักครู่
+                </Typography>
+              </Box>
+            </Box>
+          )}
+
+          {/* Result overlay */}
+          {captureResult && !isCapturing && cameraActive && (
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 16,
+                left: 16,
+                right: 16,
+                textAlign: 'center',
+                backgroundColor: captureResult === 'success' ? 'rgba(76, 175, 80, 0.95)' : 'rgba(244, 67, 54, 0.95)',
+                color: 'white',
+                p: 2,
+                borderRadius: 2,
+                zIndex: 10,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+              }}
+            >
+              <Typography variant="h6">
+                {captureResult === 'success' ? '✓ บันทึกสำเร็จ!' : '✗ บันทึกไม่สำเร็จ!'}
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 0.5, opacity: 0.9 }}>
+                {captureResult === 'success' ? 'บันทึกภาพได้เรียบร้อย' : 'กรุณาลองใหม่อีกครั้ง'}
+              </Typography>
+            </Box>
+          )}
+        </Box>
 
         {/* Status Messages */}
-        <Box sx={{ mt: 3 }}>
-          {scanResult === 'success' && (
-            <Alert severity="success" sx={{ mb: 2 }}>
-              <strong>สแกนใบหน้าสำเร็จ!</strong> ระบบจดจำใบหน้าของคุณได้เรียบร้อย
+        <Box sx={{ mt: 4, width: '100%', maxWidth: 600, textAlign: 'center' }}>
+          {captureResult === 'success' && (
+            <Alert severity="success" sx={{ mb: 3 }}>
+              <Typography variant="body1">
+                <strong>บันทึกภาพสำเร็จ!</strong> ระบบได้บันทึกภาพของคุณเรียบร้อยแล้ว
+              </Typography>
             </Alert>
           )}
 
-          {scanResult === 'failed' && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              <strong>สแกนใบหน้าไม่สำเร็จ!</strong> กรุณาลองใหม่อีกครั้ง
+          {captureResult === 'failed' && (
+            <Alert severity="error" sx={{ mb: 3 }}>
+              <Typography variant="body1">
+                <strong>บันทึกภาพไม่สำเร็จ!</strong> กรุณาลองใหม่อีกครั้ง
+              </Typography>
             </Alert>
           )}
 
-          <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
+          <Typography
+            variant="body1"
+            color="text.secondary"
+            sx={{
+              textAlign: 'center',
+              px: 2,
+              lineHeight: 1.6
+            }}
+          >
             {cameraError
               ? 'กรุณาแก้ไขปัญหาการเข้าถึงกล้องก่อนใช้งาน'
               : isRequestingPermission
-                ? 'กำลังเปิดกล้อง...'
-                : isScanning
-                  ? 'กรุณามองที่กล้องและรอสักครู่...'
+                ? 'กำลังเปิดกล้อง กรุณารอสักครู่...'
+                : isCapturing
+                  ? 'กำลังบันทึกภาพ กรุณาอย่าขยับ...'
                   : cameraActive
-                    ? faceDetected
-                      ? 'พบใบหน้าแล้ว - กดปุ่ม "เริ่มสแกน" เพื่อสแกนใบหน้า'
-                      : 'วางใบหน้าให้อยู่ในกรอบเพื่อให้ระบบตรวจจับได้'
-                    : 'เปิดกล้องเพื่อเริ่มการตรวจจับใบหน้า'
+                    ? '📸 กดปุ่ม "ถ่ายภาพ" เพื่อบันทึกภาพใบหน้า'
+                    : '📹 เปิดกล้องเพื่อเริ่มการถ่ายภาพ'
             }
           </Typography>
         </Box>
+
+        {/* Preview saved images */}
+        {savedImages.length > 0 && (
+          <Box sx={{ mt: 4, width: '100%', maxWidth: 600 }}>
+            <Typography variant="h6" sx={{ mb: 2, textAlign: 'center' }}>
+              ภาพที่บันทึกแล้ว ({savedImages.length} รูป)
+            </Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'center' }}>
+              {savedImages.map((image, index) => (
+                <Box
+                  key={index}
+                  sx={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: 1,
+                    overflow: 'hidden',
+                    border: '2px solid',
+                    borderColor: 'success.main',
+                  }}
+                >
+                  <img
+                    src={image}
+                    alt={`Captured ${index + 1}`}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                    }}
+                  />
+                </Box>
+              ))}
+            </Box>
+          </Box>
+        )}
       </CardContent>
 
       <Divider />
-      <CardActions sx={{ justifyContent: 'center', p: 2 }}>
+      <CardActions sx={{
+        justifyContent: 'center',
+        p: 3,
+        backgroundColor: 'grey.50',
+        borderTop: '1px solid',
+        borderColor: 'divider'
+      }}>
         {cameraError ? (
           <Button
             variant="contained"
             onClick={handleRetryCamera}
             size="large"
             color="error"
+            sx={{ minWidth: 120, py: 1.5 }}
           >
             ลองใหม่
           </Button>
@@ -586,46 +505,56 @@ export function UserValidateFace({
             onClick={startCamera}
             size="large"
             disabled={isRequestingPermission}
+            sx={{
+              minWidth: 150,
+              py: 1.5,
+              fontSize: '1.1rem'
+            }}
           >
-            {isRequestingPermission ? 'กำลังเปิด...' : 'เริ่มกล้อง'}
+            {isRequestingPermission ? 'กำลังเปิด...' : '🎥 เริ่มกล้อง'}
           </Button>
-        ) : !isScanning ? (
-          <Box sx={{ display: 'flex', gap: 2 }}>
+        ) : (
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
             <Button
               variant="contained"
-              onClick={handleStartScan}
+              onClick={captureImage}
               size="large"
-              disabled={!faceDetected}
+              disabled={isCapturing}
+              sx={{
+                minWidth: 120,
+                py: 1.5,
+                fontSize: '1.1rem',
+                backgroundColor: 'primary.main',
+                '&:hover': {
+                  backgroundColor: 'primary.dark',
+                }
+              }}
             >
-              เริ่มสแกน
+              {isCapturing ? 'กำลังถ่าย...' : '📸 ถ่ายภาพ'}
             </Button>
-            {scanResult && (
+            
+            {savedImages.length > 0 && (
               <Button
                 variant="outlined"
-                onClick={handleReset}
+                onClick={clearSavedImages}
                 size="large"
+                color="warning"
+                sx={{ minWidth: 120, py: 1.5 }}
               >
-                สแกนใหม่
+                🗑️ ลบภาพทั้งหมด
               </Button>
             )}
+            
             <Button
               variant="outlined"
               onClick={handleStopCamera}
               size="large"
               color="error"
+              sx={{ minWidth: 120, py: 1.5 }}
             >
-              ปิดกล้อง
+              ❌ ปิดกล้อง
             </Button>
           </Box>
-        ) : (
-          <Button
-            variant="outlined"
-            onClick={handleStopScan}
-            size="large"
-            color="error"
-          >
-            หยุดสแกน
-          </Button>
         )}
       </CardActions>
     </Card>
