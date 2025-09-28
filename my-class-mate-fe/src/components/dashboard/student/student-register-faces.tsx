@@ -27,9 +27,10 @@ import { UserResponse } from '@/api/data/user-response';
 interface StudentRegisterFacesProps {
   onUploadComplete?: (success: boolean) => void;
   userResponse?: UserResponse | null;
+  onDataUpdate?: () => Promise<void>; // Callback to refresh user data
 }
 
-export function StudentRegisterFaces({ onUploadComplete, userResponse }: StudentRegisterFacesProps): React.JSX.Element {
+export function StudentRegisterFaces({ onUploadComplete, userResponse, onDataUpdate }: StudentRegisterFacesProps): React.JSX.Element {
   const videoRef = React.useRef<HTMLVideoElement>(null);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const streamRef = React.useRef<MediaStream | null>(null);
@@ -41,6 +42,14 @@ export function StudentRegisterFaces({ onUploadComplete, userResponse }: Student
   const [uploadProgress, setUploadProgress] = React.useState(0);
   const [message, setMessage] = React.useState<{ type: 'success' | 'info'; text: string } | null>(null);
   const [cameraLoading, setCameraLoading] = React.useState(false);
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
+
+  // Local state to track upload completion (for immediate UI update)
+  const [localUploadState, setLocalUploadState] = React.useState<{
+    isCompleted: boolean;
+    uploadedCount: number;
+    uploadDate: string;
+  } | null>(null);
 
   // Dialog states
   const [errorDialog, setErrorDialog] = React.useState<{ open: boolean; title: string; message: string }>({
@@ -56,13 +65,29 @@ export function StudentRegisterFaces({ onUploadComplete, userResponse }: Student
 
   const REQUIRED_IMAGES = 4;
 
-  // Check if images are already uploaded
-  const isAlreadyUploaded = userResponse?.isUploadedImage === true;
-  const uploadedCount = userResponse?.imageCount || 0;
+  // Determine upload status from either local state or userResponse
+  const isAlreadyUploaded = localUploadState?.isCompleted || userResponse?.isUploadedImage === true;
+  const uploadedCount = localUploadState?.uploadedCount || userResponse?.imageCount || 0;
 
   // Show error dialog
   const showError = (title: string, message: string) => {
     setErrorDialog({ open: true, title, message });
+  };
+
+  // Refresh user data after upload
+  const refreshUserData = async () => {
+    if (!onDataUpdate) return;
+    
+    setIsRefreshing(true);
+    try {
+      await onDataUpdate();
+      console.log('User data refreshed successfully');
+    } catch (error) {
+      console.error('Failed to refresh user data:', error);
+      // Don't show error to user as the upload was successful
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   // Initialize camera with ultra-high quality settings
@@ -425,9 +450,28 @@ export function StudentRegisterFaces({ onUploadComplete, userResponse }: Student
       setUploadProgress(100);
 
       if (response.success) {
-        setMessage({ type: 'success', text: 'อัปโหลดภาพสำเร็จ!' });
+        // Set local upload state for immediate UI update
+        setLocalUploadState({
+          isCompleted: true,
+          uploadedCount: REQUIRED_IMAGES,
+          uploadDate: new Date().toISOString()
+        });
+
+        setMessage({ type: 'success', text: 'อัปโหลดภาพสำเร็จ! กำลังอัปเดตข้อมูล...' });
         stopCamera();
+
+        // Clear captured images since upload is successful
+        capturedImageUrls.forEach(url => URL.revokeObjectURL(url));
+        setCapturedImages([]);
+        setCapturedImageUrls([]);
+
+        // Refresh user data in background
+        await refreshUserData();
+
+        // Notify parent component
         onUploadComplete?.(true);
+
+        setMessage({ type: 'success', text: '🎉 ลงทะเบียนภาพใบหน้าสำเร็จ!' });
       } else {
         throw new Error(response.message || 'เกิดข้อผิดพลาดในการอัปโหลด');
       }
@@ -443,7 +487,10 @@ export function StudentRegisterFaces({ onUploadComplete, userResponse }: Student
 
   // Handle re-registration
   const handleReRegister = () => {
+    // Clear local upload state to show registration UI
+    setLocalUploadState(null);
     setMessage({ type: 'info', text: 'เริ่มลงทะเบียนใหม่' });
+    
     // Reset all states for re-registration
     setCapturedImages([]);
     setCapturedImageUrls([]);
@@ -460,7 +507,7 @@ export function StudentRegisterFaces({ onUploadComplete, userResponse }: Student
   }, []);
 
   // Render uploaded state UI
-  if (!isAlreadyUploaded) {
+  if (isAlreadyUploaded) {
     return (
       <Card>
         <CardHeader
@@ -483,8 +530,60 @@ export function StudentRegisterFaces({ onUploadComplete, userResponse }: Student
             <Typography variant="h6" color="text.secondary" sx={{ mb: 3 }}>
               คุณได้อัปโหลดภาพใบหน้า {uploadedCount} ภาพเรียบร้อยแล้ว
             </Typography>
+            <Alert severity="success" sx={{ mb: 3, textAlign: 'left' }}>
+              <Typography variant="body1" fontWeight={600} gutterBottom>
+                สถานะ: พร้อมใช้งาน {isRefreshing && '(กำลังอัปเดต...)'}
+              </Typography>
+              <Typography variant="body2">
+                • ระบบจดจำใบหน้าของคุณได้แล้ว<br/>
+                • คุณสามารถเข้าเรียนผ่านระบบ Face Recognition ได้<br/>
+                • ภาพที่อัปโหลดมีคุณภาพเพียงพอสำหรับการจดจำ
+              </Typography>
+            </Alert>
+
+            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <Button
+                variant="outlined"
+                onClick={handleReRegister}
+                size="large"
+                sx={{ minWidth: 180 }}
+                disabled={isRefreshing}
+              >
+                🔄 ลงทะเบียนใหม่
+              </Button>
+              <Button
+                variant="contained"
+                onClick={() => onUploadComplete?.(true)}
+                size="large"
+                color="success"
+                sx={{ minWidth: 180 }}
+                disabled={isRefreshing}
+              >
+                ✅ เสร็จสิ้น
+              </Button>
+            </Box>
+
+            {isRefreshing && (
+              <Box sx={{ mt: 2 }}>
+                <LinearProgress />
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                  กำลังอัปเดตข้อมูล...
+                </Typography>
+              </Box>
+            )}
           </Box>
         </CardContent>
+
+        <Divider />
+        
+        <CardActions sx={{ justifyContent: 'center', py: 2 }}>
+          <Chip 
+            label={`${uploadedCount}/${REQUIRED_IMAGES} ภาพ - สำเร็จ`}
+            color="success"
+            size="medium"
+            icon={<CheckCircleIcon />}
+          />
+        </CardActions>
       </Card>
     );
   }

@@ -28,8 +28,20 @@ export function GuestGuard({ children }: GuestGuardProps): React.JSX.Element | n
     }
 
     if (user) {
-      logger.debug('[GuestGuard]: User is logged in, redirecting to dashboard');
-      router.replace(paths.dashboard.overview);
+      logger.debug('[GuestGuard]: User is logged in, checking role and redirecting');
+      
+      // Get user role from localStorage or user object
+      const userRole = localStorage.getItem('user-role') || user.role;
+      
+      if (userRole === 'STUDENT') {
+        logger.debug('[GuestGuard]: Student role detected, redirecting to camera page');
+        router.replace(paths.dashboard.student || '/dashboard/camera');
+      } else {
+        // Default fallback - redirect to overview if role is unknown
+        logger.debug('[GuestGuard]: Unknown role, redirecting to dashboard overview');
+        router.replace(paths.dashboard.user);
+      }
+      
       return;
     }
 
