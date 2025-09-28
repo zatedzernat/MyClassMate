@@ -7,6 +7,9 @@ export interface LoginRequest {
   export interface LoginResponse {
     userId: string;
     username: string;
+    nameTh: string;
+    surnameTh: string;
+    email: string;
     role: string;
   }
 
@@ -28,7 +31,10 @@ export async function login(loginRequest: LoginRequest): Promise<LoginResponse> 
     // map API response to object we want in state
     const mappedUser: LoginResponse = {
       userId: resData.userId,
-      username: resData.name,
+      username: resData.username,
+      nameTh: resData.nameTh,
+      surnameTh: resData.surnameTh,
+      email: resData.email,
       role: resData.role,
     };
 

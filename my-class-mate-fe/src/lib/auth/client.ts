@@ -69,6 +69,8 @@ class AuthClient {
         'custom-auth-token': token,
         'user-id': userData.userId,
         'user-name': userData.username,
+        'user-fullname': userData.nameTh + ' ' + userData.surnameTh,
+        'user-email': userData.email,
         'user-role': userData.role,
       };
     
@@ -119,6 +121,8 @@ class AuthClient {
       'custom-auth-token',
       'user-id',
       'user-name',
+      'user-fullname',
+      'user-email',
       'user-role',
     ];
 

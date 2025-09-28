@@ -8,6 +8,7 @@ export const paths = {
     settings: '/dashboard/settings',
     user: '/dashboard/user',
     userDetail: '/dashboard/user/user-detail',
+    student: '/dashboard/student',
   },
   errors: { notFound: '/errors/not-found' },
 } as const;

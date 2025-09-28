@@ -5,7 +5,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import { UserResponse } from '@/api/data/user-response';
-import { getRoleLabel } from '@/util/role-enum';
+import { getRoleLabel, Role } from '@/util/role-enum';
 
 interface UsersInfoProps {
   user: UserResponse | null;
@@ -144,30 +144,32 @@ export function UserInfo({
             </Stack>
           </Box>
 
-          {/* Enhanced Status Badge with more information */}
-<Box sx={{ 
-  flexShrink: 0,
-  px: { xs: 2, sm: 3 },
-  py: 1,
-  borderRadius: 2,
-  backgroundColor: user.isUploadedImage ? 'success.light' : 'error.light',
-  color: user.isUploadedImage ? 'success.dark' : 'error.dark',
-  textAlign: 'center',
-  border: '1px solid',
-  borderColor: user.isUploadedImage ? 'success.main' : 'error.main',
-  minWidth: { xs: 100, sm: 120 },
-}}>
-  <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
-    {user.isUploadedImage ? (
-      <>✓ พร้อมใช้งาน</>
-    ) : (
-      <>❌ ยังไม่พร้อม</>
-    )}
-  </Typography>
-  <Typography variant="caption" sx={{ fontSize: '0.625rem', display: 'block', mt: 0.25 }}>
-    {user.isUploadedImage ? 'สแกนใบหน้าได้' : 'ต้องอัปโหลดภาพ'}
-  </Typography>
-</Box>
+          {/* Enhanced Status Badge - Only show for STUDENT role */}
+          {user.role === Role.STUDENT && (
+            <Box sx={{ 
+              flexShrink: 0,
+              px: { xs: 2, sm: 3 },
+              py: 1,
+              borderRadius: 2,
+              backgroundColor: user.isUploadedImage ? 'success.light' : 'error.light',
+              color: user.isUploadedImage ? 'success.dark' : 'error.dark',
+              textAlign: 'center',
+              border: '1px solid',
+              borderColor: user.isUploadedImage ? 'success.main' : 'error.main',
+              minWidth: { xs: 100, sm: 120 },
+            }}>
+              <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
+                {user.isUploadedImage ? (
+                  <>✓ พร้อมใช้งาน</>
+                ) : (
+                  <>❌ ยังไม่พร้อม</>
+                )}
+              </Typography>
+              <Typography variant="caption" sx={{ fontSize: '0.625rem', display: 'block', mt: 0.25 }}>
+                {user.isUploadedImage ? 'สแกนใบหน้าได้' : 'ต้องอัปโหลดภาพ'}
+              </Typography>
+            </Box>
+          )}
         </Box>
       </CardContent>
     </Card>

@@ -5,6 +5,7 @@ export enum Role {
     LECTURER = "LECTURER",
     STUDENT = "STUDENT",
     NOTHING = "",
+    ALL = "ALL",
   }
 
   export function getRoleLabel(role: Role): string {
@@ -17,6 +18,8 @@ export enum Role {
         return "ผู้สอน";
       case Role.STUDENT:
         return "ผู้เรียน";
+        case Role.ALL:
+        return "ทั้งหมด";
       default:
         return "";
     }

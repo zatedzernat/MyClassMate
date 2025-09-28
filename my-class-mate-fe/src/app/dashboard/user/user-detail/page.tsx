@@ -54,10 +54,10 @@ export default function Page(): React.JSX.Element {
 
   return (
     <Container maxWidth="lg" sx={{ px: { xs: 1, sm: 2 } }}>
-      <Stack spacing={3} sx={{ py: { xs: 0.5, sm: 0.5 } }}> {/* Reduced from py: { xs: 1, sm: 1.5 } */}
+      <Stack spacing={3} sx={{ py: { xs: 0.5, sm: 0.5 } }}>
         {/* Header - Minimal top padding */}
-        <Box sx={{ textAlign: 'start', px: { xs: 1, sm: 2 }, pt: 0, pb: 0 }}> {/* Added pb: 0 */}
-          <Typography variant="h4" sx={{ mb: 0 }}> {/* Added mb: 0 to remove bottom margin */}
+        <Box sx={{ textAlign: 'start', px: { xs: 1, sm: 2 }, pt: 0, pb: 0 }}>
+          <Typography variant="h4" sx={{ mb: 0 }}>
             รายละเอียดผู้ใช้งาน
           </Typography>
         </Box>
@@ -78,21 +78,23 @@ export default function Page(): React.JSX.Element {
             />
           </Box>
 
-          {/* Camera Section - Full width with minimal horizontal padding */}
-          <Box
-            sx={{
-              width: '100%',
-              px: { xs: 0, sm: 1 },
-              justifyContent: 'center',
-            }}
-          >
-            <UserValidateFace 
-              user={user}
-              onScanComplete={(success) => {
-                console.log('Scan completed:', success ? 'Success' : 'Failed');
+          {/* Camera Section - Only show for STUDENT role */}
+          {user && user.role === Role.STUDENT && (
+            <Box
+              sx={{
+                width: '100%',
+                px: { xs: 0, sm: 1 },
+                justifyContent: 'center',
               }}
-            />
-          </Box>
+            >
+              <UserValidateFace 
+                user={user}
+                onScanComplete={(success) => {
+                  console.log('Scan completed:', success ? 'Success' : 'Failed');
+                }}
+              />
+            </Box>
+          )}
         </Stack>
       </Stack>
     </Container>

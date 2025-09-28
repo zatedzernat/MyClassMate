@@ -20,6 +20,8 @@ export default function Page(): React.JSX.Element {
           'custom-auth-token',
           'user-id', 
           'user-name',
+          'user-fullname',
+          'user-email',
           'user-role'
         ];
         

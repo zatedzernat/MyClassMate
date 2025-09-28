@@ -5,7 +5,9 @@ export async function getUsers(selectedRole: Role): Promise<UserResponse[]> {
     const role = localStorage.getItem("user-role") || "";
 
     const url = new URL('http://127.0.0.1:8080/my-class-mate/v1/users');
-    if (selectedRole) {
+    
+    // Only add role parameter if it's not "all" or empty
+    if (selectedRole && selectedRole.toLowerCase() !== 'all') {
         url.searchParams.append('role', selectedRole);
     }
 

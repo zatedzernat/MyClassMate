@@ -16,11 +16,21 @@ import { paths } from '@/paths';
 import { isNavItemActive } from '@/lib/is-nav-item-active';
 import { Logo } from '@/components/core/logo';
 
-import { navItems } from './config';
+import { navItems, navItemsForStudent } from './config';
 import { navIcons } from './nav-icons';
 
 export function SideNav(): React.JSX.Element {
   const pathname = usePathname();
+  const [userRole, setUserRole] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    // Get user role from localStorage
+    const role = localStorage.getItem('user-role');
+    setUserRole(role);
+  }, []);
+
+  // Determine which navigation items to show based on user role
+  const currentNavItems = userRole === 'STUDENT' ? navItemsForStudent : navItems;
 
   return (
     <Box
@@ -57,10 +67,23 @@ export function SideNav(): React.JSX.Element {
       </Stack>
       <Divider sx={{ borderColor: 'var(--mui-palette-neutral-700)' }} />
       <Box component="nav" sx={{ flex: '1 1 auto', p: '12px' }}>
-        {renderNavItems({ pathname, items: navItems })}
+        {renderNavItems({ pathname, items: currentNavItems })}
       </Box>
       <Divider sx={{ borderColor: 'var(--mui-palette-neutral-700)' }} />
       <Stack spacing={2} sx={{ p: '12px' }}>
+        {/* Add user info at bottom if needed */}
+        {userRole && (
+          <Typography 
+            variant="caption" 
+            sx={{ 
+              color: 'var(--mui-palette-neutral-500)', 
+              textAlign: 'center',
+              fontSize: '0.7rem'
+            }}
+          >
+            {localStorage.getItem('user-name') || 'ผู้ใช้'}
+          </Typography>
+        )}
       </Stack>
     </Box>
   );
@@ -119,6 +142,9 @@ function NavItem({ disabled, external, href, icon, matcher, pathname, title }: N
             cursor: 'not-allowed',
           }),
           ...(active && { bgcolor: 'var(--NavItem-active-background)', color: 'var(--NavItem-active-color)' }),
+          '&:hover': {
+            bgcolor: active ? 'var(--NavItem-active-background)' : 'var(--NavItem-hover-background)',
+          },
         }}
       >
         <Box sx={{ alignItems: 'center', display: 'flex', justifyContent: 'center', flex: '0 0 auto' }}>

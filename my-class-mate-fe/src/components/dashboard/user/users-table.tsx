@@ -235,12 +235,15 @@ export function UsersTable({
                   )}
                   <TableCell>{row.email}</TableCell>
                   <TableCell>{getRoleLabel(row.role)}</TableCell>
-                  {/* <TableCell>{dayjs(row.createdAt).format('MMM D, YYYY')}</TableCell> */}
+                  {/* Update the IconButton onClick handlers to stop propagation */}
                   <TableCell align="right">
                     <Stack direction="row" spacing={1} justifyContent="flex-end">
                       <IconButton
                         size="small"
-                        onClick={() => handleOpenEditDialog(row)} // Open dialog with user data
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent row click
+                          handleOpenEditDialog(row);
+                        }}
                       >
                         <img
                           src="/assets/edit.png"
@@ -250,7 +253,10 @@ export function UsersTable({
                       </IconButton>
                       <IconButton
                         size="small"
-                        onClick={() => handleDeleteDialogOpen(row)}
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent row click
+                          handleDeleteDialogOpen(row);
+                        }}
                       >
                         <img
                           src="/assets/delete.png"
