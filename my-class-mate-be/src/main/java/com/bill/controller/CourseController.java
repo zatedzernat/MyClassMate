@@ -2,6 +2,7 @@ package com.bill.controller;
 
 import com.bill.constant.RequireRole;
 import com.bill.constant.RoleEnum;
+import com.bill.model.request.AddStudentToCourseRequest;
 import com.bill.model.request.CreateCourseRequest;
 import com.bill.model.request.InitCourseRequest;
 import com.bill.model.request.UpdateCourseRequest;
@@ -62,5 +63,11 @@ public class CourseController {
     public CourseResponse deleteCourse(@PathVariable Long courseId,
                              @RequestBody @Valid UpdateCourseRequest request) {
         return courseService.updateCourse(courseId, request);
+    }
+
+    @RequireRole({RoleEnum.ADMIN, RoleEnum.LECTURER, RoleEnum.STAFF})
+    @PostMapping(value = "/add-student-to-course", produces = MediaType.APPLICATION_JSON_VALUE)
+    public CourseResponse addStudentToCourse(@RequestBody @Valid AddStudentToCourseRequest request) {
+        return courseService.addStudentToCourse(request);
     }
 }

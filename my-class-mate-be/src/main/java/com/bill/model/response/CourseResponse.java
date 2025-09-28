@@ -31,4 +31,5 @@ public class CourseResponse {
     LocalDateTime updatedAt;
     List<CourseLecturerResponse> lecturers;
     List<CourseScheduleResponse> schedules;
+    List<CourseEnrollmentResponse> enrollments;
 }

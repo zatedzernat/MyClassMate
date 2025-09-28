@@ -2,18 +2,13 @@ package com.bill.service;
 
 import com.bill.constant.RoleEnum;
 import com.bill.exceptionhandler.AppException;
-import com.bill.model.request.CourseScheduleRequest;
-import com.bill.model.request.CreateCourseRequest;
-import com.bill.model.request.InitCourseRequest;
-import com.bill.model.request.UpdateCourseRequest;
-import com.bill.model.response.CourseLecturerResponse;
-import com.bill.model.response.CourseResponse;
-import com.bill.model.response.CourseScheduleResponse;
-import com.bill.model.response.InitCourseResponse;
+import com.bill.model.request.*;
+import com.bill.model.response.*;
 import com.bill.repository.*;
 import com.bill.repository.entity.Course;
 import com.bill.repository.entity.CourseLecturer;
 import com.bill.repository.entity.CourseSchedule;
+import com.bill.repository.entity.Enrollment;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -37,9 +32,11 @@ import static com.bill.exceptionhandler.ErrorEnum.*;
 public class CourseService {
     ModelMapper modelMapper;
     UserService userService;
+    StudentProfileService studentProfileService;
     CourseRepository courseRepository;
     CourseScheduleRepository courseScheduleRepository;
     CourseLecturerRepository courseLecturerRepository;
+    EnrollmentRepository enrollmentRepository;
     CourseJdbcRepository courseJdbcRepository;
 
     public List<InitCourseResponse> initCourse(InitCourseRequest request) {
@@ -168,34 +165,72 @@ public class CourseService {
         return mapToCourseResponse(course);
     }
 
+    @Transactional
+    public CourseResponse addStudentToCourse(AddStudentToCourseRequest request) {
+        var courseId = request.getCourseId();
+        var course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new AppException(ERROR_COURSE_NOT_FOUND.getCode(), ERROR_COURSE_NOT_FOUND.getMessage()));
+        var now = LocalDateTime.now();
+        var studentIds = request.getStudentIds().stream().distinct().toList();
+
+        var enrollments = new ArrayList<Enrollment>();
+        for (var studentId : studentIds) {
+            studentProfileService.validateStudent(studentId);
+            var enrollment = Enrollment.builder()
+                    .courseId(courseId)
+                    .studentId(studentId)
+                    .createdAt(now)
+                    .build();
+            enrollments.add(enrollment);
+        }
+
+        enrollmentRepository.deleteByCourseId(courseId);
+        enrollmentRepository.saveAll(enrollments);
+
+        return mapToCourseResponse(course);
+    }
+
     private CourseResponse mapToCourseResponse(Course course) {
         var courseResponse = modelMapper.map(course, CourseResponse.class);
         var courseId = course.getId();
         courseResponse.setCourseId(courseId);
 
         // course lecturer
-        var courseLecturers = courseLecturerRepository.findByCourseId(courseId);
         var clResponses = new ArrayList<CourseLecturerResponse>();
+        var courseLecturers = courseLecturerRepository.findByCourseId(courseId);
         for (var courseLecturer : courseLecturers) {
             var clResponse = modelMapper.map(courseLecturer, CourseLecturerResponse.class);
             var lecturerId = courseLecturer.getLecturerId();
             clResponse.setLecturerId(lecturerId);
-            var dto = userService.getFullName(lecturerId);
-            clResponse.setLecturerNameTh(dto.getFullNameTh());
-            clResponse.setLecturerNameEn(dto.getFullNameEn());
+            var userNameDto = userService.getFullName(lecturerId);
+            clResponse.setLecturerNameTh(userNameDto.getFullNameTh());
+            clResponse.setLecturerNameEn(userNameDto.getFullNameEn());
             clResponses.add(clResponse);
         }
         courseResponse.setLecturers(clResponses);
 
         // course schedule
-        var courseSchedules = courseScheduleRepository.findByCourseIdOrderByScheduleDateAsc(courseId);
         var csResponses = new ArrayList<CourseScheduleResponse>();
+        var courseSchedules = courseScheduleRepository.findByCourseIdOrderByScheduleDateAsc(courseId);
         for (var cs : courseSchedules) {
             var csResponse = modelMapper.map(cs, CourseScheduleResponse.class);
             csResponse.setCourseScheduleId(cs.getId());
             csResponses.add(csResponse);
         }
         courseResponse.setSchedules(csResponses);
+
+        // course enrollment
+        var enResponses = new ArrayList<CourseEnrollmentResponse>();
+        var enrollments = enrollmentRepository.findByCourseIdOrderByCreatedAtAsc(courseId);
+        for (var en : enrollments) {
+            var enResponse = modelMapper.map(en, CourseEnrollmentResponse.class);
+            var studentProfile = studentProfileService.getStudentProfile(en.getStudentId());
+            enResponse.setStudentNo(studentProfile.getStudentNo());
+            enResponse.setStudentNameTh(studentProfile.getStudentNameTh());
+            enResponse.setStudentNameEn(studentProfile.getStudentNameEn());
+            enResponses.add(enResponse);
+        }
+        courseResponse.setEnrollments(enResponses);
 
         return courseResponse;
     }

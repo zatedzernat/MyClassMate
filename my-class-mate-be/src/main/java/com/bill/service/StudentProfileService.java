@@ -11,6 +11,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
@@ -26,6 +27,17 @@ public class StudentProfileService {
     UserService userService;
     StudentProfileRepository studentProfileRepository;
 
+    public void validateStudent(Long studentId) {
+        var user = userService.getUser(studentId, false);
+
+        if (RoleEnum.STUDENT.equals(user.getRole())) {
+            studentProfileRepository.findById(user.getUserId())
+                    .orElseThrow(() -> new AppException(ERROR_STUDENT_PROFILE_NOT_FOUND.getCode(), ERROR_STUDENT_PROFILE_NOT_FOUND.getMessage()));
+        } else {
+            throw new AppException(ERROR_USER_NOT_STUDENT.getCode(), ERROR_USER_NOT_STUDENT.getMessage());
+        }
+    }
+
     public StudentProfileResponse getStudentProfile(Long studentId) {
         var user = userService.getUser(studentId, false);
 
@@ -33,6 +45,9 @@ public class StudentProfileService {
             var studentProfile = studentProfileRepository.findById(user.getUserId())
                     .orElseThrow(() -> new AppException(ERROR_STUDENT_PROFILE_NOT_FOUND.getCode(), ERROR_STUDENT_PROFILE_NOT_FOUND.getMessage()));
             var response = modelMapper.map(studentProfile, StudentProfileResponse.class);
+            var userNameDto = userService.getFullName(studentId);
+            response.setStudentNameTh(userNameDto.getFullNameTh());
+            response.setStudentNameEn(userNameDto.getFullNameEn());
             response.setStudentId(studentId);
             return response;
         } else {
@@ -40,6 +55,8 @@ public class StudentProfileService {
         }
     }
 
+
+    @Transactional
     public StudentProfileResponse updateStudentProfile(Long studentId, UpdateStudentProfileRequest request) {
         var user = userService.getUser(studentId, false);
 

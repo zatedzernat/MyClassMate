@@ -8,12 +8,9 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class StudentProfileResponse {
+public class CourseEnrollmentResponse {
     Long studentId;
     String studentNo;
     String studentNameTh;
     String studentNameEn;
-    String address;
-    String phoneNumber;
-    String remark;
 }
