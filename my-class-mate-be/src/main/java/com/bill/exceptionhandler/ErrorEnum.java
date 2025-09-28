@@ -25,6 +25,7 @@ public enum ErrorEnum {
     ERROR_COURSE_NOT_FOUND("ERR019", "course not found"),
     ERROR_INVALID_ROLE_FOR_LECTURER_ID("ERR020", "invalid role for lecturer id"),
     ERROR_INTERNAL_API_CALL("ERR021", "error calling fast api"),
+    ERROR_USER_NOT_STUDENT("ERR022", "can not get student profile from other role"),
     ;
 
     private final String code;
