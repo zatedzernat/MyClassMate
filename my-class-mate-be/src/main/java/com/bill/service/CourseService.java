@@ -13,10 +13,15 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -24,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.bill.exceptionhandler.ErrorEnum.*;
+import static com.bill.service.CommonService.getCellValue;
 
 @Slf4j
 @Service
@@ -176,18 +182,130 @@ public class CourseService {
         var enrollments = new ArrayList<Enrollment>();
         for (var studentId : studentIds) {
             studentProfileService.validateStudent(studentId);
-            var enrollment = Enrollment.builder()
-                    .courseId(courseId)
-                    .studentId(studentId)
-                    .createdAt(now)
-                    .build();
-            enrollments.add(enrollment);
+            var enrollment = enrollmentRepository.findByStudentIdAndCourseId(studentId, courseId);
+            if (enrollment.isEmpty()) {
+                var newEnrollment = Enrollment.builder()
+                        .courseId(courseId)
+                        .studentId(studentId)
+                        .createdAt(now)
+                        .build();
+                enrollments.add(newEnrollment);
+            }
         }
 
-        enrollmentRepository.deleteByCourseId(courseId);
         enrollmentRepository.saveAll(enrollments);
 
         return mapToCourseResponse(course);
+    }
+
+    public byte[] exportStudentToCourse(Long courseId) {
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("ผู้เรียน");
+
+            // ---------- Header Style ----------
+            Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerFont.setFontHeightInPoints((short) 18);
+            headerFont.setColor(IndexedColors.BLACK.getIndex());
+
+            CellStyle headerStyle = workbook.createCellStyle();
+            headerStyle.setFont(headerFont);
+            headerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+            // ---------- Data Style ----------
+            CellStyle dataStyle = workbook.createCellStyle();
+            Font dataFont = workbook.createFont();
+            dataFont.setFontHeightInPoints((short) 16);
+            dataStyle.setFont(dataFont);
+
+            // Header row
+            Row headerRow = sheet.createRow(0);
+            String[] headers = {"รหัสนักศึกษา"};
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            var enrollments = enrollmentRepository.findByCourseIdOrderByCreatedAtAsc(courseId);
+
+            int rowIdx = 1;
+            for (var enrollment : enrollments) {
+                var studentId = enrollment.getStudentId();
+                var studentProfile = studentProfileService.getStudentProfile(studentId);
+                String studentNo = studentProfile.getStudentNo();
+
+                Row row = sheet.createRow(rowIdx++);
+                row.createCell(0).setCellValue(studentNo);
+                row.getCell(0).setCellStyle(dataStyle);
+            }
+
+            // Auto size
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+                int currentWidth = sheet.getColumnWidth(i);
+                sheet.setColumnWidth(i, (int) (currentWidth * 1.3));
+            }
+
+            workbook.write(out);
+            return out.toByteArray();
+
+        } catch (Exception e) {
+            log.error("cannot export excel", e);
+            throw new AppException(ERROR_EXPORT_EXCEL.getCode(), ERROR_EXPORT_EXCEL.getMessage());
+        }
+    }
+
+    @Transactional
+    public ImportStudentToCourseExcelResponse importStudentToCourse(Long courseId, MultipartFile file) {
+        List<String> invalidStudentNos = new ArrayList<>();
+        int createdRow = 0;
+        var now = LocalDateTime.now();
+
+        try (InputStream is = file.getInputStream();
+             Workbook workbook = new XSSFWorkbook(is)) {
+
+            Sheet sheet = workbook.getSheetAt(0);
+
+            for (int rowIdx = 1; rowIdx <= sheet.getLastRowNum(); rowIdx++) {
+                Row row = sheet.getRow(rowIdx);
+                if (row == null) continue;
+
+                Cell cell = row.getCell(0);
+                if (cell == null) continue;
+
+                String studentNo = getCellValue(cell);
+                if (studentNo.isEmpty()) continue;
+
+                // check student exist?
+                var studentProfile = studentProfileService.getStudentProfile(studentNo).orElse(null);
+                if (studentProfile == null) {
+                    invalidStudentNos.add(studentNo);
+                    continue;
+                }
+
+                Long studentId = studentProfile.getStudentId();
+                var enrollments = new ArrayList<Enrollment>();
+                var enrollment = enrollmentRepository.findByStudentIdAndCourseId(studentId, courseId);
+                if (enrollment.isEmpty()) {
+                    var newEnrollment = Enrollment.builder()
+                            .studentId(studentId)
+                            .courseId(courseId)
+                            .createdAt(now)
+                            .build();
+                    enrollments.add(newEnrollment);
+                    createdRow++;
+                }
+
+                enrollmentRepository.saveAll(enrollments);
+            }
+        } catch (Exception e) {
+            log.error("cannot import excel", e);
+            throw new AppException(ERROR_IMPORT_EXCEL.getCode(), ERROR_IMPORT_EXCEL.getMessage());
+        }
+
+        return ImportStudentToCourseExcelResponse.builder().createdRow(createdRow).invalidStudentNos(invalidStudentNos).build();
     }
 
     private CourseResponse mapToCourseResponse(Course course) {

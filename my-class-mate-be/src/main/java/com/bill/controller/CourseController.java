@@ -7,6 +7,7 @@ import com.bill.model.request.CreateCourseRequest;
 import com.bill.model.request.InitCourseRequest;
 import com.bill.model.request.UpdateCourseRequest;
 import com.bill.model.response.CourseResponse;
+import com.bill.model.response.ImportStudentToCourseExcelResponse;
 import com.bill.model.response.InitCourseResponse;
 import com.bill.service.CourseService;
 import jakarta.validation.Valid;
@@ -14,8 +15,11 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -69,5 +73,21 @@ public class CourseController {
     @PostMapping(value = "/add-student-to-course", produces = MediaType.APPLICATION_JSON_VALUE)
     public CourseResponse addStudentToCourse(@RequestBody @Valid AddStudentToCourseRequest request) {
         return courseService.addStudentToCourse(request);
+    }
+
+    @RequireRole({RoleEnum.ADMIN, RoleEnum.LECTURER, RoleEnum.STAFF})
+    @GetMapping(value = "/{courseId}/export-student-to-course", produces = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    public ResponseEntity<byte[]> exportStudentToCourse(@PathVariable Long courseId) {
+        byte[] excelFile = courseService.exportStudentToCourse(courseId);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=students.xlsx")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(excelFile);
+    }
+
+    @RequireRole({RoleEnum.ADMIN, RoleEnum.LECTURER, RoleEnum.STAFF})
+    @PostMapping(value = "/{courseId}/import-student-to-course", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ImportStudentToCourseExcelResponse importStudentToCourse(@PathVariable Long courseId, @RequestParam("file") MultipartFile file) {
+        return courseService.importStudentToCourse(courseId, file);
     }
 }

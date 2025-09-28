@@ -5,6 +5,7 @@ import com.bill.exceptionhandler.AppException;
 import com.bill.model.request.UpdateStudentProfileRequest;
 import com.bill.model.response.StudentProfileResponse;
 import com.bill.repository.StudentProfileRepository;
+import com.bill.repository.entity.StudentProfile;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 import static com.bill.exceptionhandler.ErrorEnum.ERROR_STUDENT_PROFILE_NOT_FOUND;
 import static com.bill.exceptionhandler.ErrorEnum.ERROR_USER_NOT_STUDENT;
@@ -53,6 +55,10 @@ public class StudentProfileService {
         } else {
             throw new AppException(ERROR_USER_NOT_STUDENT.getCode(), ERROR_USER_NOT_STUDENT.getMessage());
         }
+    }
+
+    public Optional<StudentProfile> getStudentProfile(String studentNo) {
+        return studentProfileRepository.findByStudentNo(studentNo);
     }
 
 

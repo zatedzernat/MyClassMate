@@ -37,10 +37,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
 
 import static com.bill.constant.Constants.PASSWORD_VALUE;
 import static com.bill.exceptionhandler.ErrorEnum.*;
+import static com.bill.service.CommonService.getCellValue;
 
 @Slf4j
 @Service
@@ -303,7 +303,6 @@ public class UserService {
                     continue;
                 }
 
-                // อ่านค่าจากแต่ละ Cell (trim แล้ว)
                 String userIdStr = getCellValue(row.getCell(0));
                 String username = getCellValue(row.getCell(1));
                 String nameTh = getCellValue(row.getCell(2));
@@ -411,27 +410,6 @@ public class UserService {
         }
         createdRow++;
         return createdRow;
-    }
-
-    private String getCellValue(Cell cell) {
-        if (cell == null) return null;
-        switch (cell.getCellType()) {
-            case STRING:
-                return cell.getStringCellValue().isBlank() ? null : cell.getStringCellValue().trim();
-            case NUMERIC:
-                double numericValue = cell.getNumericCellValue();
-                if (numericValue == Math.floor(numericValue)) {
-                    return String.valueOf((long) numericValue).trim();
-                } else {
-                    return String.valueOf(numericValue).trim();
-                }
-            case BOOLEAN:
-                return String.valueOf(cell.getBooleanCellValue()).trim();
-            case FORMULA:
-                return cell.getCellFormula().trim();
-            default:
-                return null;
-        }
     }
 
     @Transactional
