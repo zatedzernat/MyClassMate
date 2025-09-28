@@ -24,6 +24,7 @@ public enum ErrorEnum {
     ERROR_DUPLICATE_COURSE("ERR018", "found duplicate course code or course name"),
     ERROR_COURSE_NOT_FOUND("ERR019", "course not found"),
     ERROR_INVALID_ROLE_FOR_LECTURER_ID("ERR020", "invalid role for lecturer id"),
+    ERROR_INTERNAL_API_CALL("ERR021", "error calling fast api"),
     ;
 
     private final String code;

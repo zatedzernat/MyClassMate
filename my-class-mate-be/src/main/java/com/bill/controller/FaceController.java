@@ -25,8 +25,7 @@ public class FaceController {
     @PostMapping(value = "/v1/face-register/{userId}")
     public FaceRegisterResponse faceRegister(@PathVariable Long userId,
                                              @RequestParam("files") List<MultipartFile> files) {
-        // TODO: return faceService.faceRegister(userId);
-        return FaceRegisterResponse.builder().userId(userId).imageCount(files.size()).build();
+        return faceService.faceRegister(userId, files);
     }
 
     @PostMapping(value = "/v1/attendance")
