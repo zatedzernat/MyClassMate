@@ -13,7 +13,5 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class AddStudentToCourseRequest {
     @NotNull
-    Long courseId;
-    @NotNull
     List<Long> studentIds;
 }

@@ -70,9 +70,9 @@ public class CourseController {
     }
 
     @RequireRole({RoleEnum.ADMIN, RoleEnum.LECTURER, RoleEnum.STAFF})
-    @PostMapping(value = "/add-student-to-course", produces = MediaType.APPLICATION_JSON_VALUE)
-    public CourseResponse addStudentToCourse(@RequestBody @Valid AddStudentToCourseRequest request) {
-        return courseService.addStudentToCourse(request);
+    @PostMapping(value = "/{courseId}/add-student-to-course", produces = MediaType.APPLICATION_JSON_VALUE)
+    public CourseResponse addStudentToCourse(@PathVariable Long courseId, @RequestBody @Valid AddStudentToCourseRequest request) {
+        return courseService.addStudentToCourse(courseId, request);
     }
 
     @RequireRole({RoleEnum.ADMIN, RoleEnum.LECTURER, RoleEnum.STAFF})

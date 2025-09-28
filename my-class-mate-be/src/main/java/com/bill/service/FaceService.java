@@ -25,7 +25,7 @@ public class FaceService {
         var user = userService.getUser(userId, false);
 
         var faceRegisterEndpoint = "/v1/face-register";
-        FastAPIFaceRegisterResponse response = apiClient.postMultipartSafe(faceRegisterEndpoint, userId, files, FastAPIFaceRegisterResponse.class);
+        FastAPIFaceRegisterResponse response = apiClient.postMultipartSafe(faceRegisterEndpoint, userId, files, FastAPIFaceRegisterResponse.class, "files");
 
 
         if ("Success".equals(response.getStatus())) {

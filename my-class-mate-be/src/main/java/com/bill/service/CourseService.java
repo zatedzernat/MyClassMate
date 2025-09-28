@@ -148,6 +148,8 @@ public class CourseService {
     public void deleteCourse(Long courseId) {
         courseRepository.deleteById(courseId);
         courseScheduleRepository.deleteByCourseId(courseId);
+        courseLecturerRepository.deleteByCourseId(courseId);
+        enrollmentRepository.deleteByCourseId(courseId);
     }
 
     @Transactional
@@ -172,8 +174,7 @@ public class CourseService {
     }
 
     @Transactional
-    public CourseResponse addStudentToCourse(AddStudentToCourseRequest request) {
-        var courseId = request.getCourseId();
+    public CourseResponse addStudentToCourse(Long courseId, AddStudentToCourseRequest request) {
         var course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new AppException(ERROR_COURSE_NOT_FOUND.getCode(), ERROR_COURSE_NOT_FOUND.getMessage()));
         var now = LocalDateTime.now();

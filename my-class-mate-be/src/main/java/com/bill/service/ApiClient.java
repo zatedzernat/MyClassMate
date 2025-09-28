@@ -18,6 +18,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import static com.bill.exceptionhandler.ErrorEnum.ERROR_INTERNAL_API_CALL;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -27,28 +29,7 @@ public class ApiClient {
     @Value("${external.fastapi.url}")
     private String FASTAPI_URL;
 
-    public <T> T post(String endpoint, Object request, Class<T> responseType) {
-        String url = FASTAPI_URL + endpoint;
-        log.info("Calling FastAPI POST: {}", url);
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/json");
-
-        HttpEntity<Object> entity = new HttpEntity<>(request, headers);
-
-        ResponseEntity<T> response = restTemplate.exchange(url, HttpMethod.POST, entity, responseType);
-        return response.getBody();
-    }
-
-    public <T> T get(String endpoint, Class<T> responseType) {
-        String url = FASTAPI_URL + endpoint;
-        log.info("Calling FastAPI GET: {}", url);
-
-        ResponseEntity<T> response = restTemplate.getForEntity(url, responseType);
-        return response.getBody();
-    }
-
-    public <T> T postMultipartSafe(String endpoint, Long userId, List<MultipartFile> files, Class<T> responseType) {
+    public <T> T postMultipartSafe(String endpoint, Long userId, List<MultipartFile> files, Class<T> responseType, String fileBody) {
         String url = FASTAPI_URL + endpoint;
         log.info("Calling FastAPI POST (Multipart): {}", url);
 
@@ -60,15 +41,7 @@ public class ApiClient {
 
         try {
             for (MultipartFile file : files) {
-                HttpHeaders fileHeader = new HttpHeaders();
-                fileHeader.setContentType(MediaType.parseMediaType(file.getContentType()));
-                var resource = new ByteArrayResource(file.getBytes()) {
-                    @Override
-                    public String getFilename() {
-                        return file.getOriginalFilename();
-                    }
-                };
-                body.add("files", resource);
+                body.add(fileBody, getByteArrayResource(file));
             }
         } catch (IOException e) {
             throw new RuntimeException("Error reading files", e);
@@ -81,26 +54,53 @@ public class ApiClient {
             return response.getBody();
         } catch (HttpClientErrorException e) {
             log.error("FastAPI returned error: {}", e.getResponseBodyAsString());
+            throw mapFastApiError(e);
+        }
+    }
 
-            try {
-                var mapper = new ObjectMapper();
-                var errorMap = mapper.readValue(e.getResponseBodyAsString(), Map.class);
-                Object detail = errorMap.get("detail");
-
-                log.error("postMultipartSafe HttpClientErrorException", e);
-                if (detail instanceof Map) {
-                    Map<String, Object> detailMap = (Map<String, Object>) detail;
-                    throw new AppException(
-                            (String) detailMap.getOrDefault("code", "ERR_UNKNOWN"),
-                            (String) detailMap.getOrDefault("message", "Unknown error from FastAPI")
-                    );
-                } else {
-                    throw new AppException("ERR_UNKNOWN", detail != null ? detail.toString() : "Unknown error");
-                }
-            } catch (Exception parseEx) {
-                log.error("postMultipartSafe Exception", parseEx);
-                throw new AppException("ERR_PARSE", "Cannot parse FastAPI error: " + e.getResponseBodyAsString());
+    private ByteArrayResource getByteArrayResource(MultipartFile file) throws IOException {
+        HttpHeaders fileHeader = new HttpHeaders();
+        fileHeader.setContentType(MediaType.parseMediaType(file.getContentType()));
+        return new ByteArrayResource(file.getBytes()) {
+            @Override
+            public String getFilename() {
+                return file.getOriginalFilename();
             }
+        };
+    }
+
+    private AppException mapFastApiError(HttpClientErrorException e) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            Map<String, Object> errorMap = mapper.readValue(e.getResponseBodyAsString(), Map.class);
+
+            Object detail = errorMap.get("detail");
+            if (detail instanceof Map) {
+                Map<String, Object> detailMap = (Map<String, Object>) detail;
+                String code = (String) detailMap.getOrDefault("code", "ERR_UNKNOWN");
+                String message = (String) detailMap.getOrDefault("message", "Unknown FastAPI error");
+                return new AppException(code, message);
+            } else if (detail instanceof String) {
+                try {
+                    Map<String, Object> detailMap = mapper.readValue((String) detail, Map.class);
+                    String code = (String) detailMap.getOrDefault("code", "ERR_UNKNOWN");
+                    String message = (String) detailMap.getOrDefault("message", "Unknown FastAPI error");
+                    return new AppException(code, message);
+                } catch (Exception ex2) {
+                    return new AppException(ERROR_INTERNAL_API_CALL.getCode(), detail.toString());
+                }
+            } else {
+                return new AppException(
+                        ERROR_INTERNAL_API_CALL.getCode(),
+                        detail != null ? detail.toString() : "Unknown FastAPI error"
+                );
+            }
+        } catch (Exception ex) {
+            log.error("mapFastApiError Exception", ex);
+            return new AppException(
+                    ERROR_INTERNAL_API_CALL.getCode(),
+                    "Cannot parse FastAPI error: " + e.getResponseBodyAsString()
+            );
         }
     }
 }
