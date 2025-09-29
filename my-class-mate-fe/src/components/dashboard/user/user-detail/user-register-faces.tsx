@@ -19,7 +19,6 @@ import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 import { uploadFaceImages } from '@/api/face-api';
 import { UserResponse } from '@/api/data/user-response';
@@ -491,13 +490,6 @@ export function UserRegisterFaces({ userResponse, onUploadComplete, onDataUpdate
         <Divider />
         <CardContent>
           <Box sx={{ textAlign: 'center', py: 4 }}>
-            <CheckCircleIcon
-              sx={{
-                fontSize: 80,
-                color: 'success.main',
-                mb: 2
-              }}
-            />
             <Typography variant="h5" color="success.main" gutterBottom fontWeight={600}>
               ✅ ลงทะเบียนสำเร็จแล้ว
             </Typography>
@@ -555,7 +547,6 @@ export function UserRegisterFaces({ userResponse, onUploadComplete, onDataUpdate
             label={`${uploadedCount}/${REQUIRED_IMAGES} ภาพ - สำเร็จ`}
             color="success"
             size="medium"
-            icon={<CheckCircleIcon />}
           />
         </CardActions>
       </Card>
