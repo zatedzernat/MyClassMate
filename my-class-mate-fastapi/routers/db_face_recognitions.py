@@ -93,7 +93,7 @@ def get_face_embedding(image) -> np.ndarray:
         return normalize_embedding(embedding)
     except Exception as e:
         logger.error(f"DeepFace error: {e}")
-        raise HTTPException(status_code=500, detail={"code": "ERR006", "message": "Face embedding failed"})
+        raise HTTPException(status_code=500, detail={"code": "ERR005", "message": "Face embedding failed"})
     
 def save_uploaded_file(user_id: str, file: UploadFile, image_bytes: bytes) -> str:
     """Save uploaded image to disk and return saved path."""
@@ -197,7 +197,7 @@ async def post_face_recognition(file: UploadFile = File(...)):
         conn.close()
 
     if not results:
-        raise HTTPException(status_code=404, detail={"code": "ERR003", "message": "No face found in DB"})
+        raise HTTPException(status_code=404, detail={"code": "ERR004", "message": "No face found in DB"})
 
     # Group distances per user
     user_distances: Dict[int, List[float]] = defaultdict(list)
