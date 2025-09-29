@@ -44,15 +44,14 @@ export async function uploadFaceImages(
   }
 
   const formData = new FormData();
-  formData.append('userId', userId);
   
   // Add all 4 images to FormData
   imageFiles.forEach((imageFile, index) => {
-    formData.append('images', imageFile, `face-upload-${index + 1}-${Date.now()}.jpg`);
+    formData.append('files', imageFile, `face-upload-${index + 1}-${Date.now()}.jpg`);
   });
 
   try {
-    const response = await fetch('/api/face/upload-multiple', {
+    const response = await fetch(`/api/my-class-mate/v1/face-register/${userId}`, {
       method: 'POST',
       body: formData,
       headers: {
@@ -61,11 +60,14 @@ export async function uploadFaceImages(
       },
     });
 
+    const data = await response.json();
+
+
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorMessage = data?.message || data?.code || 'Unknown error occurred';
+      throw new Error(errorMessage);
     }
 
-    const data: UploadFaceImagesResponse = await response.json();
     return data;
   } catch (error: any) {
     console.error('Face upload error:', error);

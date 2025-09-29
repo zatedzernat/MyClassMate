@@ -7,9 +7,6 @@ export interface FaceValidationResponse {
   }
   
   export interface UploadFaceImagesResponse {
-    success: boolean;
-    message: string;
-    uploadedCount: number;
-    totalRequired: number;
-    imageIds: string[];
+    userId: string;
+    imageCount: number;
   }

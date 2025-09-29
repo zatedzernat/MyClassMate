@@ -40,7 +40,6 @@ export function UserRegisterFaces({ userResponse, onUploadComplete, onDataUpdate
   const [capturedImageUrls, setCapturedImageUrls] = React.useState<string[]>([]);
   const [isUploading, setIsUploading] = React.useState(false);
   const [uploadProgress, setUploadProgress] = React.useState(0);
-  const [message, setMessage] = React.useState<{ type: 'success' | 'info'; text: string } | null>(null);
   const [cameraLoading, setCameraLoading] = React.useState(false);
   const [isRefreshing, setIsRefreshing] = React.useState(false);
 
@@ -77,7 +76,7 @@ export function UserRegisterFaces({ userResponse, onUploadComplete, onDataUpdate
   // Refresh user data after upload
   const refreshUserData = async () => {
     if (!onDataUpdate) return;
-    
+
     setIsRefreshing(true);
     try {
       await onDataUpdate();
@@ -93,7 +92,6 @@ export function UserRegisterFaces({ userResponse, onUploadComplete, onDataUpdate
   // Initialize camera with ultra-high quality settings
   const startCamera = async () => {
     setCameraLoading(true);
-    setMessage(null);
 
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -109,7 +107,7 @@ export function UserRegisterFaces({ userResponse, onUploadComplete, onDataUpdate
             height: { ideal: 2160, min: 1080 },
             facingMode: 'user',
             frameRate: { ideal: 30, min: 15 },
-            aspectRatio: { ideal: 16/9 },
+            aspectRatio: { ideal: 16 / 9 },
             focusMode: 'continuous',
             exposureMode: 'continuous',
             whiteBalanceMode: 'continuous',
@@ -126,7 +124,7 @@ export function UserRegisterFaces({ userResponse, onUploadComplete, onDataUpdate
             height: { ideal: 1080, min: 720 },
             facingMode: 'user',
             frameRate: { ideal: 30, min: 15 },
-            aspectRatio: { ideal: 16/9 }
+            aspectRatio: { ideal: 16 / 9 }
           }
         },
         // HD Fallback
@@ -157,7 +155,7 @@ export function UserRegisterFaces({ userResponse, onUploadComplete, onDataUpdate
       if (!stream) {
         throw new Error('ไม่สามารถเปิดกล้องได้');
       }
-      
+
       // Wait for component to render
       await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -181,18 +179,16 @@ export function UserRegisterFaces({ userResponse, onUploadComplete, onDataUpdate
         });
 
         setCameraActive(true);
-        const resolution = usedConfig === qualityConfigs[0] ? '4K Ultra HD' : 
-                          usedConfig === qualityConfigs[1] ? 'Full HD' : 'HD';
-        setMessage({ type: 'success', text: `กล้องเปิดแล้ว (${resolution}) กรุณาจัดท่าใบหน้าให้ชัดเจน` });
+        usedConfig === qualityConfigs[1] ? 'Full HD' : 'HD';
       } else {
         throw new Error('ไม่สามารถเข้าถึงองค์ประกอบวิดีโอได้');
       }
     } catch (error: any) {
       console.error('Error accessing camera:', error);
-      
+
       let errorTitle = 'เกิดข้อผิดพลาดในการเปิดกล้อง';
       let errorMessage = 'กรุณาลองใหม่อีกครั้ง';
-      
+
       if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
         errorTitle = 'ไม่ได้รับอนุญาตเข้าถึงกล้อง';
         errorMessage = 'กรุณาอนุญาตการเข้าถึงกล้องในเบราว์เซอร์ แล้วรีเฟรชหน้าเว็บ';
@@ -228,7 +224,6 @@ export function UserRegisterFaces({ userResponse, onUploadComplete, onDataUpdate
     }
 
     setCameraActive(false);
-    setMessage({ type: 'info', text: 'ปิดกล้องแล้ว' });
   };
 
   // Enhanced capture image with maximum quality
@@ -246,9 +241,9 @@ export function UserRegisterFaces({ userResponse, onUploadComplete, onDataUpdate
     try {
       const canvas = canvasRef.current;
       const video = videoRef.current;
-      
+
       // Get the highest quality 2D rendering context
-      const context = canvas.getContext('2d', { 
+      const context = canvas.getContext('2d', {
         alpha: false, // No transparency for better compression
         desynchronized: false, // Synchronize for better quality
         willReadFrequently: false, // Optimize for single capture
@@ -259,39 +254,39 @@ export function UserRegisterFaces({ userResponse, onUploadComplete, onDataUpdate
         // Use video's native resolution for maximum quality
         const sourceWidth = video.videoWidth;
         const sourceHeight = video.videoHeight;
-        
+
         // Set canvas to native video resolution
         canvas.width = sourceWidth;
         canvas.height = sourceHeight;
-        
+
         console.log(`Capturing at native resolution: ${sourceWidth}x${sourceHeight}`);
-        
+
         // Configure context for maximum quality
         context.imageSmoothingEnabled = true;
         context.imageSmoothingQuality = 'high';
-        
+
         // Use high-quality pixel interpolation
         context.globalCompositeOperation = 'source-over';
         context.globalAlpha = 1.0;
-        
+
         // Clear canvas with optimal background
         context.fillStyle = '#FFFFFF';
         context.fillRect(0, 0, canvas.width, canvas.height);
-        
+
         // Save context state for transformation
         context.save();
-        
+
         // Apply horizontal flip for mirror effect
         context.scale(-1, 1);
         context.translate(-canvas.width, 0);
-        
+
         // Draw video frame at native resolution with pixel-perfect accuracy
         context.drawImage(
-          video, 
+          video,
           0, 0, sourceWidth, sourceHeight, // Source dimensions (full video)
           0, 0, canvas.width, canvas.height // Destination dimensions (full canvas)
         );
-        
+
         // Restore context state
         context.restore();
 
@@ -304,29 +299,16 @@ export function UserRegisterFaces({ userResponse, onUploadComplete, onDataUpdate
         canvas.toBlob((blob) => {
           if (blob) {
             const imageUrl = URL.createObjectURL(blob);
-            
+
             setCapturedImages(prev => [...prev, blob]);
             setCapturedImageUrls(prev => [...prev, imageUrl]);
-            
+
             const remaining = REQUIRED_IMAGES - capturedImages.length - 1;
-            
-            // Log comprehensive quality information
-            console.log(`📸 Ultra High-Quality Capture:`);
-            console.log(`   Resolution: ${canvas.width}x${canvas.height} pixels`);
-            console.log(`   File Size: ${(blob.size / 1024).toFixed(1)}KB`);
-            console.log(`   Quality: Maximum (100%)`);
-            console.log(`   Format: JPEG with no compression loss`);
-            console.log(`   Color Space: sRGB`);
-            
-            setMessage({ 
-              type: 'success', 
-              text: `📸 ถ่ายภาพคุณภาพสูงสุด ${capturedImages.length + 1} สำเร็จ ${remaining > 0 ? `(เหลืออีก ${remaining} ภาพ)` : '🎉 (ครบแล้ว!)'}` 
-            });
           } else {
             showError('ไม่สามารถสร้างภาพได้', 'กรุณาลองถ่ายใหม่');
           }
         }, 'image/jpeg', 1.0); // Maximum JPEG quality (no compression loss)
-        
+
       } else {
         showError('ไม่สามารถถ่ายภาพได้', 'วิดีโอยังไม่พร้อม กรุณาลองใหม่');
       }
@@ -342,29 +324,29 @@ export function UserRegisterFaces({ userResponse, onUploadComplete, onDataUpdate
     const width = imageData.width;
     const height = imageData.height;
     const output = new ImageData(width, height);
-    
+
     // Simple sharpening kernel
     const kernel = [
       0, -1, 0,
       -1, 5, -1,
       0, -1, 0
     ];
-    
+
     for (let y = 1; y < height - 1; y++) {
       for (let x = 1; x < width - 1; x++) {
         let r = 0, g = 0, b = 0;
-        
+
         for (let ky = -1; ky <= 1; ky++) {
           for (let kx = -1; kx <= 1; kx++) {
             const pixel = ((y + ky) * width + (x + kx)) * 4;
             const weight = kernel[(ky + 1) * 3 + (kx + 1)];
-            
+
             r += data[pixel] * weight;
             g += data[pixel + 1] * weight;
             b += data[pixel + 2] * weight;
           }
         }
-        
+
         const outputPixel = (y * width + x) * 4;
         output.data[outputPixel] = Math.min(255, Math.max(0, r));
         output.data[outputPixel + 1] = Math.min(255, Math.max(0, g));
@@ -372,7 +354,7 @@ export function UserRegisterFaces({ userResponse, onUploadComplete, onDataUpdate
         output.data[outputPixel + 3] = data[outputPixel + 3]; // Alpha
       }
     }
-    
+
     return output;
   };
 
@@ -391,11 +373,10 @@ export function UserRegisterFaces({ userResponse, onUploadComplete, onDataUpdate
     if (capturedImageUrls[index]) {
       URL.revokeObjectURL(capturedImageUrls[index]);
     }
-    
+
     setCapturedImages(prev => prev.filter((_, i) => i !== index));
     setCapturedImageUrls(prev => prev.filter((_, i) => i !== index));
-    setMessage({ type: 'info', text: 'ลบภาพแล้ว' });
-    
+
     // Close preview dialog if it's showing the deleted image
     if (imagePreviewDialog.open && imagePreviewDialog.index === index) {
       setImagePreviewDialog({ open: false, imageUrl: '', index: -1 });
@@ -406,11 +387,10 @@ export function UserRegisterFaces({ userResponse, onUploadComplete, onDataUpdate
   const clearAllImages = () => {
     // Revoke all object URLs
     capturedImageUrls.forEach(url => URL.revokeObjectURL(url));
-    
+
     setCapturedImages([]);
     setCapturedImageUrls([]);
-    setMessage({ type: 'info', text: 'ลบภาพทั้งหมดแล้ว' });
-    
+
     // Close preview dialog
     setImagePreviewDialog({ open: false, imageUrl: '', index: -1 });
   };
@@ -430,7 +410,6 @@ export function UserRegisterFaces({ userResponse, onUploadComplete, onDataUpdate
 
     setIsUploading(true);
     setUploadProgress(0);
-    setMessage({ type: 'info', text: 'กำลังอัปโหลดภาพ...' });
 
     try {
       // Simulate progress
@@ -445,36 +424,32 @@ export function UserRegisterFaces({ userResponse, onUploadComplete, onDataUpdate
       }, 200);
 
       const response = await uploadFaceImages(userId, capturedImages);
-      
+
       clearInterval(progressInterval);
       setUploadProgress(100);
 
-      if (response.success) {
-        // Set local upload state for immediate UI update
-        setLocalUploadState({
-          isCompleted: true,
-          uploadedCount: REQUIRED_IMAGES,
-          uploadDate: new Date().toISOString()
-        });
 
-        setMessage({ type: 'success', text: 'อัปโหลดภาพสำเร็จ! กำลังอัปเดตข้อมูล...' });
-        stopCamera();
+      // Set local upload state for immediate UI update
+      setLocalUploadState({
+        isCompleted: true,
+        uploadedCount: REQUIRED_IMAGES,
+        uploadDate: new Date().toISOString()
+      });
 
-        // Clear captured images since upload is successful
-        capturedImageUrls.forEach(url => URL.revokeObjectURL(url));
-        setCapturedImages([]);
-        setCapturedImageUrls([]);
+      stopCamera();
 
-        // Refresh user data in background
-        await refreshUserData();
+      // Clear captured images since upload is successful
+      capturedImageUrls.forEach(url => URL.revokeObjectURL(url));
+      setCapturedImages([]);
+      setCapturedImageUrls([]);
 
-        // Notify parent component
-        onUploadComplete?.(true);
+      // Refresh user data in background
+      await refreshUserData();
 
-        setMessage({ type: 'success', text: '🎉 ลงทะเบียนภาพใบหน้าสำเร็จ!' });
-      } else {
-        throw new Error(response.message || 'เกิดข้อผิดพลาดในการอัปโหลด');
-      }
+      // Notify parent component
+      onUploadComplete?.(true);
+
+
     } catch (error: any) {
       console.error('Upload error:', error);
       showError('เกิดข้อผิดพลาดในการอัปโหลด', error.message || 'กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่');
@@ -489,8 +464,7 @@ export function UserRegisterFaces({ userResponse, onUploadComplete, onDataUpdate
   const handleReRegister = () => {
     // Clear local upload state to show registration UI
     setLocalUploadState(null);
-    setMessage({ type: 'info', text: 'เริ่มลงทะเบียนใหม่' });
-    
+
     // Reset all states for re-registration
     setCapturedImages([]);
     setCapturedImageUrls([]);
@@ -517,12 +491,12 @@ export function UserRegisterFaces({ userResponse, onUploadComplete, onDataUpdate
         <Divider />
         <CardContent>
           <Box sx={{ textAlign: 'center', py: 4 }}>
-            <CheckCircleIcon 
-              sx={{ 
-                fontSize: 80, 
-                color: 'success.main', 
-                mb: 2 
-              }} 
+            <CheckCircleIcon
+              sx={{
+                fontSize: 80,
+                color: 'success.main',
+                mb: 2
+              }}
             />
             <Typography variant="h5" color="success.main" gutterBottom fontWeight={600}>
               ✅ ลงทะเบียนสำเร็จแล้ว
@@ -535,8 +509,8 @@ export function UserRegisterFaces({ userResponse, onUploadComplete, onDataUpdate
                 สถานะ: พร้อมใช้งาน {isRefreshing && '(กำลังอัปเดต...)'}
               </Typography>
               <Typography variant="body2">
-                • ระบบจดจำใบหน้าของคุณได้แล้ว<br/>
-                • คุณสามารถเข้าเรียนผ่านระบบ Face Recognition ได้<br/>
+                • ระบบจดจำใบหน้าของคุณได้แล้ว<br />
+                • คุณสามารถเข้าเรียนผ่านระบบ Face Recognition ได้<br />
                 • ภาพที่อัปโหลดมีคุณภาพเพียงพอสำหรับการจดจำ
               </Typography>
             </Alert>
@@ -575,9 +549,9 @@ export function UserRegisterFaces({ userResponse, onUploadComplete, onDataUpdate
         </CardContent>
 
         <Divider />
-        
+
         <CardActions sx={{ justifyContent: 'center', py: 2 }}>
-          <Chip 
+          <Chip
             label={`${uploadedCount}/${REQUIRED_IMAGES} ภาพ - สำเร็จ`}
             color="success"
             size="medium"
@@ -822,33 +796,20 @@ export function UserRegisterFaces({ userResponse, onUploadComplete, onDataUpdate
               )}
             </Box>
           </Box>
-
-          {/* Status Messages */}
-          {message && (
-            <Box sx={{ mt: 3 }}>
-              <Alert 
-                severity={message.type} 
-                onClose={() => setMessage(null)}
-                sx={{ '& .MuiAlert-message': { width: '100%' } }}
-              >
-                {message.text}
-              </Alert>
-            </Box>
-          )}
         </CardContent>
 
         <Divider />
-        
+
         <CardActions sx={{ justifyContent: 'space-between', px: 3, py: 2 }}>
           <Box>
-            <Chip 
+            <Chip
               label={`${capturedImages.length}/${REQUIRED_IMAGES} ภาพ`}
               color={capturedImages.length === REQUIRED_IMAGES ? 'success' : 'default'}
               size="small"
             />
           </Box>
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             onClick={handleUpload}
             disabled={capturedImages.length !== REQUIRED_IMAGES || isUploading}
             color="primary"
@@ -877,7 +838,7 @@ export function UserRegisterFaces({ userResponse, onUploadComplete, onDataUpdate
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button 
+          <Button
             onClick={() => setErrorDialog({ open: false, title: '', message: '' })}
             variant="contained"
             color="error"
@@ -913,14 +874,14 @@ export function UserRegisterFaces({ userResponse, onUploadComplete, onDataUpdate
           )}
         </DialogContent>
         <DialogActions>
-          <Button 
+          <Button
             onClick={() => deleteImage(imagePreviewDialog.index)}
             color="error"
             disabled={isUploading}
           >
             🗑️ ลบภาพนี้
           </Button>
-          <Button 
+          <Button
             onClick={() => setImagePreviewDialog({ open: false, imageUrl: '', index: -1 })}
             variant="contained"
           >
