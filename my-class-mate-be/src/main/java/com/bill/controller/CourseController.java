@@ -6,9 +6,7 @@ import com.bill.model.request.AddStudentToCourseRequest;
 import com.bill.model.request.CreateCourseRequest;
 import com.bill.model.request.InitCourseRequest;
 import com.bill.model.request.UpdateCourseRequest;
-import com.bill.model.response.CourseResponse;
-import com.bill.model.response.ImportStudentToCourseExcelResponse;
-import com.bill.model.response.InitCourseResponse;
+import com.bill.model.response.*;
 import com.bill.service.CourseService;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
@@ -89,5 +87,11 @@ public class CourseController {
     @PostMapping(value = "/{courseId}/import-student-to-course", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ImportStudentToCourseExcelResponse importStudentToCourse(@PathVariable Long courseId, @RequestParam("file") MultipartFile file) {
         return courseService.importStudentToCourse(courseId, file);
+    }
+
+    @RequireRole({RoleEnum.ADMIN, RoleEnum.LECTURER, RoleEnum.STAFF})
+    @GetMapping(value = "/today-schedules", produces = MediaType.APPLICATION_JSON_VALUE)
+    public List<TodayCourseResponse> getTodayCourses() {
+        return courseService.getTodayCourses();
     }
 }

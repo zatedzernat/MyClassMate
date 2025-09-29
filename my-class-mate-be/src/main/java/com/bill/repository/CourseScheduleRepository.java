@@ -4,6 +4,7 @@ import com.bill.repository.entity.CourseSchedule;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Repository
@@ -13,4 +14,6 @@ public interface CourseScheduleRepository extends JpaRepository<CourseSchedule, 
     void deleteByCourseId(Long courseId);
 
     List<CourseSchedule> findByCourseIdOrderByScheduleDateAsc(Long courseId);
+
+    List<CourseSchedule> findByScheduleDate(LocalDate scheduleDate);
 }

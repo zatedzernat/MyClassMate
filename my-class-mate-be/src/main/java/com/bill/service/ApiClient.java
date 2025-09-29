@@ -37,7 +37,9 @@ public class ApiClient {
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("user_id", userId.toString());
+        if (userId != null) {
+            body.add("user_id", userId.toString());
+        }
 
         try {
             for (MultipartFile file : files) {

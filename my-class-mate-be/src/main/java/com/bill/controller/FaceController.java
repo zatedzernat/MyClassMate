@@ -28,8 +28,10 @@ public class FaceController {
         return faceService.faceRegister(userId, files);
     }
 
-    @PostMapping(value = "/v1/attendance")
-    public AttendanceResponse attendance() {
-        return faceService.attendance();
+    @PostMapping(value = "/v1/attendance/{courseId}/{courseScheduleId}")
+    public AttendanceResponse attendance(@PathVariable Long courseId,
+                                         @PathVariable Long courseScheduleId,
+                                         @RequestParam("file") MultipartFile file) {
+        return faceService.attendance(courseId, courseScheduleId, file);
     }
 }

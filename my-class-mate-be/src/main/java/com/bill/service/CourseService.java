@@ -309,6 +309,20 @@ public class CourseService {
         return ImportStudentToCourseExcelResponse.builder().createdRow(createdRow).invalidStudentNos(invalidStudentNos).build();
     }
 
+    public List<TodayCourseResponse> getTodayCourses() {
+        var responses = new ArrayList<TodayCourseResponse>();
+        var schedules = courseScheduleRepository.findByScheduleDate(LocalDate.now());
+        for (var schedule : schedules) {
+            var course = courseRepository.findById(schedule.getCourseId())
+                    .orElseThrow(() -> new AppException(ERROR_COURSE_NOT_FOUND.getCode(), ERROR_COURSE_NOT_FOUND.getMessage()));
+            var response = modelMapper.map(schedule, TodayCourseResponse.class);
+            response.setCourseCode(course.getCourseCode());
+            response.setCourseName(course.getCourseName());
+            responses.add(response);
+        }
+        return responses;
+    }
+
     private CourseResponse mapToCourseResponse(Course course) {
         var courseResponse = modelMapper.map(course, CourseResponse.class);
         var courseId = course.getId();

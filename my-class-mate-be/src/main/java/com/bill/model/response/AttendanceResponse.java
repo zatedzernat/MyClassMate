@@ -15,10 +15,12 @@ public class AttendanceResponse {
     Long attendanceId;
     Long studentId;
     String studentNo;
-    String studentName;
+    String studentNameTh;
+    String studentNameEn;
     Long courseScheduleId;
     Long courseId;
-    String courseName;
+    String courseCode;
     LocalDateTime createdAt;
     AttendanceStatusEnum status;
+    String statusDesc;
 }
