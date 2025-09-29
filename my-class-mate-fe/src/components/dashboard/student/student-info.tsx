@@ -1,238 +1,368 @@
-'use client';
 import * as React from 'react';
-import Avatar from '@mui/material/Avatar';
-import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
-import CardActions from '@mui/material/CardActions';
 import CardContent from '@mui/material/CardContent';
-import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import TextField from '@mui/material/TextField';
 import CircularProgress from '@mui/material/CircularProgress';
-
-import { UserResponse } from '@/api/data/user-response';
-import { getUser } from '@/api/user-api';
-import { getRoleLabel, Role } from '@/util/role-enum';
+import Alert from '@mui/material/Alert';
+import { StudentResponse, UpdateStudentRequest } from '@/api/data/student-response';
+import { updateStudentProfile } from '@/api/student-api';
+import ErrorDialog from '@/components/error/error-dialog';
+import { error } from 'console';
 
 interface StudentInfoProps {
-  onUploadClick?: () => void;
+  studentData: StudentResponse | null;
+  onDataUpdate: () => Promise<void>; // Callback for data refresh
 }
 
-// Mock student data for temporary use
-const mockStudentData: UserResponse = {
-  userId: 'STU001',
-  username: 'student001',
-  password: '', // Not shown to user
-  nameTh: 'สมชาย',
-  surnameTh: 'ใจดี',
-  nameEn: 'Somchai',
-  surnameEn: 'Jaidee',
-  email: 'somchai.jaidee@school.ac.th',
-  role: Role.STUDENT,
-  isDeleted: false,
-  isUploadedImage: false, // Change to true to test uploaded state
-  studentProfile: {
-    studentNo: '65010001'
-  },
-  imageCount: 0
-};
+export function StudentInfo({
+  studentData,
+  onDataUpdate
+}: StudentInfoProps): React.JSX.Element {
+  // Dialog states
+  const [editDialogOpen, setEditDialogOpen] = React.useState(false);
+  const [isUpdating, setIsUpdating] = React.useState(false);
+  const [updateError, setUpdateError] = React.useState<string | null>(null);
+  const [updateSuccess, setUpdateSuccess] = React.useState(false);
 
-export function StudentInfo({ onUploadClick }: StudentInfoProps): React.JSX.Element {
-  const [student, setStudent] = React.useState<UserResponse | null>(null);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
+  // Form data state
+  const [formData, setFormData] = React.useState<UpdateStudentRequest>({
+    studentId: '',
+    address: '',
+    phoneNumber: '',
+    remark: ''
+  });
 
-  React.useEffect(() => {
-    const fetchStudentData = async () => {
-      try {
-        // Get user info from localStorage
-        const userId = localStorage.getItem('user-id');
-        const userName = localStorage.getItem('user-name');
-        const userRole = localStorage.getItem('user-role');
-        
-        if (!userId || userRole !== 'STUDENT') {
-          setError('ไม่พบข้อมูลนักเรียน');
-          return;
-        }
+  // Initialize form data when dialog opens
+  const handleOpenEditDialog = () => {
+    if (studentData) {
+      setFormData({
+        studentId: studentData.studentId,
+        address: studentData.address || '',
+        phoneNumber: studentData.phoneNumber || '',
+        remark: studentData.remark || ''
+      });
+    }
+    setUpdateError(null);
+    setUpdateSuccess(false);
+    setEditDialogOpen(true);
+  };
 
-        // Simulate API delay
-        setTimeout(() => {
-          // Create mock data based on localStorage info
-          const mockData: UserResponse = {
-            ...mockStudentData,
-            userId: userId,
-            nameTh: userName?.split(' ')[0] || 'นักเรียน',
-            surnameTh: userName?.split(' ')[1] || 'ตัวอย่าง',
-            // Randomly set upload status for demo
-            isUploadedImage: Math.random() > 0.5,
-          };
+  const handleCloseEditDialog = () => {
+    setEditDialogOpen(false);
+    setUpdateError(null);
+    setUpdateSuccess(false);
+    setIsUpdating(false);
+  };
 
-          setStudent(mockData);
-          setLoading(false);
-        }, 1000);
+  // Handle form input changes
+  const handleInputChange = (field: keyof UpdateStudentRequest) => (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: event.target.value
+    }));
+    setUpdateError(null);
+    setUpdateSuccess(false);
+  };
 
-        // Uncomment this to use real API data
-        // const userData = await getUser(userId);
-        // 
-        // // Verify this is actually a student
-        // if (userData.role !== Role.STUDENT) {
-        //   setError('ผู้ใช้นี้ไม่ใช่นักเรียน');
-        //   return;
-        // }
-        // 
-        // setStudent(userData);
-        
-      } catch (err: any) {
-        console.error('Error fetching student data:', err);
-        setError(err.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูล');
-        setLoading(false);
-      }
-    };
+  // Handle form submission
+  const handleSubmitUpdateData = async () => {
+    if (!studentData) return;
 
-    fetchStudentData();
-  }, []);
+    // Get userId from localStorage or other source
+    const userId = localStorage.getItem('user-id');
+    if (!userId) {
+      setUpdateError('ไม่พบข้อมูลผู้ใช้');
+      return;
+    }
 
-  if (loading) {
+    setIsUpdating(true);
+    setUpdateError(null);
+
+    try {
+      const response = await updateStudentProfile(userId, formData);
+
+      setUpdateSuccess(true);
+      handleCloseEditDialog();
+
+      // Refresh data after successful update
+      await onDataUpdate();
+
+
+    } catch (error: any) {
+      setUpdateError(error?.message || 'เกิดข้อผิดพลาดในการอัปเดตข้อมูล');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  // Show loading state if studentData is null
+  if (!studentData) {
     return (
-      <Card>
-        <CardContent>
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
-            <Stack spacing={2} alignItems="center">
-              <CircularProgress />
-              <Typography variant="body2" color="text.secondary">
-                กำลังโหลดข้อมูลนักเรียน...
-              </Typography>
-            </Stack>
-          </Box>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card>
-        <CardContent>
-          <Box sx={{ textAlign: 'center', py: 4 }}>
-            <Typography color="error" variant="h6">
-              ⚠️ เกิดข้อผิดพลาด
-            </Typography>
-            <Typography color="text.secondary" variant="body2" sx={{ mt: 1 }}>
-              {error}
-            </Typography>
-            <Button 
-              variant="outlined" 
-              sx={{ mt: 2 }}
-              onClick={() => window.location.reload()}
-            >
-              โหลดข้อมูลใหม่
-            </Button>
-          </Box>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!student) {
-    return (
-      <Card>
-        <CardContent>
-          <Box sx={{ textAlign: 'center', py: 4 }}>
-            <Typography color="text.secondary" variant="body1">
-              ไม่พบข้อมูลนักเรียน
-            </Typography>
-          </Box>
+      <Card sx={{ minHeight: 120 }}>
+        <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 80 }}>
+          <CircularProgress size={24} sx={{ mr: 2 }} />
+          <Typography>Loading student information...</Typography>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card>
-      <CardContent>
-        <Stack spacing={3} sx={{ alignItems: 'center' }}>
-          {/* Student Details */}
-          <Stack spacing={2} sx={{ textAlign: 'center', width: '100%' }}>
-            {/* Thai Name */}
-            <Typography variant="h5" sx={{ fontWeight: 600 }}>
-              {student.nameTh} {student.surnameTh}
-            </Typography>
+    <>
+      <Card sx={{ minHeight: 120 }}>
+        <CardContent sx={{ minHeight: 80, p: { xs: 2, sm: 3 } }}>
+          {/* Compact Horizontal Layout */}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: { xs: 2, sm: 3 },
+              flexDirection: { xs: 'column', sm: 'row' },
+              textAlign: { xs: 'center', sm: 'left' },
+              width: '100%',
+            }}
+          >
+            {/* Student Details Section */}
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Stack spacing={1}>
+                {/* Name */}
+                <Typography
+                  variant="h4"
+                  sx={{
+                    fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' },
+                    fontWeight: 600,
+                    lineHeight: 1.2
+                  }}
+                >
+                  {studentData.studentNameTh}
+                </Typography>
 
-            {/* English Name */}
-            {student.nameEn && student.surnameEn && (
-              <Typography color="text.secondary" variant="body1">
-                {student.nameEn} {student.surnameEn}
-              </Typography>
-            )}
-
-            {/* Student Details */}
-            <Stack spacing={1.5}>
-              {/* Student Number */}
-              {student.studentProfile?.studentNo && (
-                <Box sx={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center',
-                  px: 2
-                }}>
-                  <Typography color="text.secondary" variant="body2">
-                    รหัสนักเรียน:
+                {/* English Name (if available) */}
+                {studentData.studentNameEn && (
+                  <Typography
+                    color="text.secondary"
+                    variant="body1"
+                    sx={{
+                      fontSize: { xs: '0.9rem', sm: '1rem' },
+                      fontWeight: 400
+                    }}
+                  >
+                    {studentData.studentNameEn}
                   </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                    {student.studentProfile.studentNo}
+                )}
+
+                {/* Student Number */}
+                <Box sx={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: { xs: 1, sm: 2 },
+                  justifyContent: { xs: 'center', sm: 'flex-start' },
+                  alignItems: 'center',
+                  mb: 1
+                }}>
+                  <Typography
+                    color="primary.main"
+                    variant="body2"
+                    sx={{
+                      fontWeight: 600,
+                      fontSize: { xs: '0.875rem', sm: '0.9rem' }
+                    }}
+                  >
+                    รหัส: {studentData.studentNo}
                   </Typography>
                 </Box>
-              )}
 
-              {/* Username */}
-              <Box sx={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center',
-                px: 2
-              }}>
-                <Typography color="text.secondary" variant="body2">
-                  ชื่อผู้ใช้:
-                </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  {student.username}
-                </Typography>
-              </Box>
+                {/* Contact Information */}
+                {(studentData.address || studentData.phoneNumber) && (
+                  <Box sx={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: { xs: 1, sm: 2 },
+                    justifyContent: { xs: 'center', sm: 'flex-start' },
+                    alignItems: 'center'
+                  }}>
+                    {studentData.address && (
+                      <Typography
+                        color="text.secondary"
+                        variant="body2"
+                        sx={{
+                          fontSize: { xs: '0.875rem', sm: '0.9rem' }
+                        }}
+                      >
+                        📍 {studentData.address}
+                      </Typography>
+                    )}
 
-              {/* Email */}
-              <Box sx={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center',
-                px: 2
-              }}>
-                <Typography color="text.secondary" variant="body2">
-                  อีเมล:
-                </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  {student.email}
-                </Typography>
-              </Box>
+                    {studentData.address && studentData.phoneNumber && (
+                      <Box sx={{
+                        width: 4,
+                        height: 4,
+                        borderRadius: '50%',
+                        backgroundColor: 'text.secondary',
+                        display: { xs: 'none', sm: 'block' }
+                      }} />
+                    )}
 
-              {/* Role */}
-              <Box sx={{ 
-                display: 'flex', 
-                justifyContent: 'center',
-                mt: 1
-              }}>
-                <Chip 
-                  label={getRoleLabel(student.role)}
-                  color="primary"
-                  size="small"
-                  sx={{ fontWeight: 600 }}
-                />
-              </Box>
-            </Stack>
+                    {studentData.phoneNumber && (
+                      <Typography
+                        color="text.secondary"
+                        variant="body2"
+                        sx={{
+                          fontSize: { xs: '0.875rem', sm: '0.9rem' }
+                        }}
+                      >
+                        📞 {studentData.phoneNumber}
+                      </Typography>
+                    )}
+                  </Box>
+                )}
+
+                {/* Remark */}
+                {studentData.remark && (
+                  <Typography
+                    color="text.secondary"
+                    variant="body2"
+                    sx={{
+                      fontSize: { xs: '0.875rem', sm: '0.9rem' },
+                      fontStyle: 'italic'
+                    }}
+                  >
+                    💬 {studentData.remark}
+                  </Typography>
+                )}
+              </Stack>
+            </Box>
+
+            {/* Action Buttons */}
+            <Box sx={{
+              display: 'flex',
+              flexDirection: { xs: 'row', sm: 'column' },
+              gap: 1,
+              alignItems: 'center'
+            }}>
+              <Button
+                variant="outlined"
+                onClick={handleOpenEditDialog}
+                size="medium"
+                sx={{ minWidth: 120 }}
+              >
+                ✏️ แก้ไขข้อมูล
+              </Button>
+            </Box>
+          </Box>
+        </CardContent>
+      </Card>
+
+      {/* Edit Dialog */}
+      <Dialog
+        open={editDialogOpen}
+        onClose={handleCloseEditDialog}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: { borderRadius: 2 }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, pb: 2 }}>
+          ✏️ แก้ไขข้อมูลนักศึกษา
+        </DialogTitle>
+
+        <DialogContent sx={{ pt: 1 }}>
+          <Stack spacing={3}>
+            {/* Student ID (Read-only) */}
+            <TextField
+              label="รหัสนักศึกษา"
+              value={formData.studentId}
+              disabled
+              fullWidth
+              variant="outlined"
+              size="medium"
+              sx={{ marginTop: '8px' }}
+            />
+
+            {/* Address */}
+            <TextField
+              label="ที่อยู่"
+              value={formData.address}
+              onChange={handleInputChange('address')}
+              disabled={isUpdating}
+              fullWidth
+              multiline
+              rows={3}
+              variant="outlined"
+              size="medium"
+              placeholder="กรุณากรอกที่อยู่ของนักศึกษา"
+            />
+
+            {/* Phone Number */}
+            <TextField
+              label="หมายเลขโทรศัพท์"
+              value={formData.phoneNumber}
+              onChange={handleInputChange('phoneNumber')}
+              disabled={isUpdating}
+              fullWidth
+              variant="outlined"
+              size="medium"
+              placeholder="เช่น 081-234-5678"
+              inputProps={{
+                maxLength: 15
+              }}
+            />
+
+            {/* Remark */}
+            <TextField
+              label="หมายเหตุ"
+              value={formData.remark}
+              onChange={handleInputChange('remark')}
+              disabled={isUpdating}
+              fullWidth
+              multiline
+              rows={2}
+              variant="outlined"
+              size="medium"
+              placeholder="หมายเหตุเพิ่มเติม (ถ้ามี)"
+            />
           </Stack>
-        </Stack>
-      </CardContent>
-    </Card>
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, pb: 3, pt: 2 }}>
+          <Button
+            onClick={handleCloseEditDialog}
+            disabled={isUpdating}
+            color="inherit"
+            size="large"
+          >
+            ยกเลิก
+          </Button>
+
+          <Button
+            onClick={handleSubmitUpdateData}
+            disabled={isUpdating || updateSuccess}
+            variant="contained"
+            size="large"
+            startIcon={isUpdating ? <CircularProgress size={16} /> : null}
+            sx={{ minWidth: 120 }}
+          >
+            {isUpdating ? 'กำลังอัปเดต...' : 'บันทึก'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <ErrorDialog
+        open={Boolean(updateError)}
+        message={updateError || ''}
+        onClose={handleCloseEditDialog}
+      />
+    </>
   );
 }

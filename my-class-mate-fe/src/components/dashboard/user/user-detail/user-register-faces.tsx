@@ -19,17 +19,18 @@ import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 import { uploadFaceImages } from '@/api/face-api';
 import { UserResponse } from '@/api/data/user-response';
 
-interface StudentRegisterFacesProps {
-  onUploadComplete?: (success: boolean) => void;
+interface UserRegisterFacesProps {
   userResponse?: UserResponse | null;
+  onUploadComplete?: (success: boolean) => void;
   onDataUpdate?: () => Promise<void>; // Callback to refresh user data
 }
 
-export function StudentRegisterFaces({ onUploadComplete, userResponse, onDataUpdate }: StudentRegisterFacesProps): React.JSX.Element {
+export function UserRegisterFaces({ userResponse, onUploadComplete, onDataUpdate }: UserRegisterFacesProps): React.JSX.Element {
   const videoRef = React.useRef<HTMLVideoElement>(null);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const streamRef = React.useRef<MediaStream | null>(null);

@@ -7,7 +7,7 @@ import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
-import { UserValidateFace } from '@/components/dashboard/user/user-detail/user-validate-face';
+import { UserRegisterFaces } from '@/components/dashboard/user/user-detail/user-register-faces';
 import { UserInfo } from '@/components/dashboard/user/user-detail/user-info';
 import { getUser } from '@/api/user-api';
 import { UserResponse } from '@/api/data/user-response';
@@ -87,12 +87,7 @@ export default function Page(): React.JSX.Element {
                 justifyContent: 'center',
               }}
             >
-              <UserValidateFace 
-                user={user}
-                onScanComplete={(success) => {
-                  console.log('Scan completed:', success ? 'Success' : 'Failed');
-                }}
-              />
+              <UserRegisterFaces userResponse={user}/>
             </Box>
           )}
         </Stack>

@@ -11,5 +11,5 @@ export const navItems = [
 ] satisfies NavItemConfig[];
 
 export const navItemsForStudent = [
-  { key: 'registerFace', title: 'ถ่ายภาพ', href: paths.dashboard.student, icon: 'camera' },
+  { key: 'student', title: 'รายละเอียดนักศึกษา', href: paths.dashboard.student, icon: 'users' },
 ] satisfies NavItemConfig[];
