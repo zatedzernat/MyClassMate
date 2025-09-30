@@ -135,7 +135,7 @@ export function UserInfo({
                         fontSize: { xs: '0.875rem', sm: '0.9rem' }
                       }}
                     >
-                      รหัส: <strong>{user.studentProfile.studentNo}</strong>
+                      รหัสนักศึกษา: <strong>{user.studentProfile.studentNo}</strong>
                     </Typography>
                   </>
                 )}

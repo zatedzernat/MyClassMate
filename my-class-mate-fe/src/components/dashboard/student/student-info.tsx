@@ -77,20 +77,15 @@ export function StudentInfo({
 
   // Handle form submission
   const handleSubmitUpdateData = async () => {
-    if (!studentData) return;
-
-    // Get userId from localStorage or other source
-    const userId = localStorage.getItem('user-id');
-    if (!userId) {
-      setUpdateError('ไม่พบข้อมูลผู้ใช้');
-      return;
-    }
+    if (!studentData?.studentId) {
+        throw new Error('Student ID is required for updating profile.');
+      }
 
     setIsUpdating(true);
     setUpdateError(null);
 
     try {
-      const response = await updateStudentProfile(userId, formData);
+      await updateStudentProfile(studentData?.studentId, formData);
 
       setUpdateSuccess(true);
       handleCloseEditDialog();
@@ -179,20 +174,12 @@ export function StudentInfo({
                       fontSize: { xs: '0.875rem', sm: '0.9rem' }
                     }}
                   >
-                    รหัส: {studentData.studentNo}
+                    รหัสนักศึกษา: {studentData.studentNo}
                   </Typography>
                 </Box>
 
                 {/* Contact Information */}
-                {(studentData.address || studentData.phoneNumber) && (
-                  <Box sx={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: { xs: 1, sm: 2 },
-                    justifyContent: { xs: 'center', sm: 'flex-start' },
-                    alignItems: 'center'
-                  }}>
-                    {studentData.address && (
+                {studentData.address && (
                       <Typography
                         color="text.secondary"
                         variant="body2"
@@ -202,19 +189,9 @@ export function StudentInfo({
                       >
                         📍 {studentData.address}
                       </Typography>
-                    )}
+                )}
 
-                    {studentData.address && studentData.phoneNumber && (
-                      <Box sx={{
-                        width: 4,
-                        height: 4,
-                        borderRadius: '50%',
-                        backgroundColor: 'text.secondary',
-                        display: { xs: 'none', sm: 'block' }
-                      }} />
-                    )}
-
-                    {studentData.phoneNumber && (
+                {studentData.phoneNumber && (
                       <Typography
                         color="text.secondary"
                         variant="body2"
@@ -224,8 +201,6 @@ export function StudentInfo({
                       >
                         📞 {studentData.phoneNumber}
                       </Typography>
-                    )}
-                  </Box>
                 )}
 
                 {/* Remark */}
@@ -280,17 +255,6 @@ export function StudentInfo({
 
         <DialogContent sx={{ pt: 1 }}>
           <Stack spacing={3}>
-            {/* Student ID (Read-only) */}
-            <TextField
-              label="รหัสนักศึกษา"
-              value={formData.studentId}
-              disabled
-              fullWidth
-              variant="outlined"
-              size="medium"
-              sx={{ marginTop: '8px' }}
-            />
-
             {/* Address */}
             <TextField
               label="ที่อยู่"
@@ -303,6 +267,7 @@ export function StudentInfo({
               variant="outlined"
               size="medium"
               placeholder="กรุณากรอกที่อยู่ของนักศึกษา"
+              sx={{ marginTop: '8px' }}
             />
 
             {/* Phone Number */}

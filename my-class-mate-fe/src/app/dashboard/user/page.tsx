@@ -27,107 +27,12 @@ import { UploadIcon } from '@phosphor-icons/react';
 import Papa from 'papaparse';
 import { UserRequest, UserResponse } from '@/api/data/user-response';
 
-
-// const mockUsers = [
-//   {
-//     username: 'USR-010',
-//     password: '123456',
-//     nameTh: 'Alcides Antonio',
-//     avatar: '/assets/avatar-10.png',
-//     email: 'alcides.antonio@devias.io',
-//     // createdAt: dayjs().subtract(2, 'hours').toDate(),
-//     role: 'USER',
-//   },
-//   {
-//     username: 'USR-009',
-//     password: '123456',
-//     nameTh: 'Marcus Finn',
-//     avatar: '/assets/avatar-9.png',
-//     email: 'marcus.finn@devias.io',
-//     // createdAt: dayjs().subtract(2, 'hours').toDate(),
-//     role: 'USER',
-//   },
-//   {
-//     username: 'USR-008',
-//     password: '123456',
-//     nameTh: 'Jie Yan',
-//     avatar: '/assets/avatar-8.png',
-//     email: 'jie.yan.song@devias.io',
-//     // createdAt: dayjs().subtract(2, 'hours').toDate(),
-//     role: 'USER',
-//   },
-//   {
-//     username: 'USR-007',
-//     password: '123456',
-//     nameTh: 'Nasimiyu Danai',
-//     avatar: '/assets/avatar-7.png',
-//     email: 'nasimiyu.danai@devias.io',
-//     // createdAt: dayjs().subtract(2, 'hours').toDate(),
-//     role: 'USER',
-//   },
-//   {
-//     username: 'USR-006',
-//     password: '123456',
-//     nameTh: 'Iulia Albu',
-//     avatar: '/assets/avatar-6.png',
-//     email: 'iulia.albu@devias.io',
-//     // createdAt: dayjs().subtract(2, 'hours').toDate(),
-//     role: 'USER',
-//   },
-//   {
-//     username: 'USR-005',
-//     password: '123456',
-//     nameTh: 'Fran Perez',
-//     avatar: '/assets/avatar-5.png',
-//     email: 'fran.perez@devias.io',
-//     // createdAt: dayjs().subtract(2, 'hours').toDate(),
-//     role: 'ADMIN',
-//   },
-
-//   {
-//     username: 'USR-004',
-//     password: '123456',
-//     nameTh: 'Penjani Inyene',
-//     avatar: '/assets/avatar-4.png',
-//     email: 'penjani.inyene@devias.io',
-//     // createdAt: dayjs().subtract(2, 'hours').toDate(),
-//     role: 'USER',
-//   },
-//   {
-//     username: 'USR-003',
-//     password: '123456',
-//     nameTh: 'Carson Darrin',
-//     avatar: '/assets/avatar-3.png',
-//     email: 'carson.darrin@devias.io',
-//     // createdAt: dayjs().subtract(2, 'hours').toDate(),
-//     role: 'USER',
-//   },
-//   {
-//     username: 'USR-002',
-//     password: '123456',
-//     nameTh: 'Siegbert Gottfried',
-//     avatar: '/assets/avatar-2.png',
-//     email: 'siegbert.gottfried@devias.io',
-//     // createdAt: dayjs().subtract(2, 'hours').toDate(),
-//     role: 'ADMIN',
-//   },
-//   {
-//     username: 'USR-001',
-//     password: '123456',
-//     nameTh: 'Miron Vitold',
-//     avatar: '/assets/avatar-1.png',
-//     email: 'miron.vitold@devias.io',
-//     // createdAt: dayjs().subtract(2, 'hours').toDate(),
-//     role: 'ADMIN',
-//   },
-// ] satisfies User[];
-
 export default function Page(): React.JSX.Element {
   const page = 0;
   const rowsPerPage = 5;
 
   const [users, setUsers] = useState<UserResponse[]>([]); // State to store users
-  const [selectedRole, setSelectedRole] = useState<Role>(Role.ALL); // Role filter
+  const [selectedRole, setSelectedRole] = useState<Role>(Role.STUDENT); // Role filter
 
   // const paginatedCustomers = applyPagination(users, page, rowsPerPage);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
