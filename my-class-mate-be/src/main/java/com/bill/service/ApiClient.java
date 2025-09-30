@@ -26,7 +26,7 @@ import static com.bill.exceptionhandler.ErrorEnum.ERROR_INTERNAL_API_CALL;
 public class ApiClient {
     private final RestTemplate restTemplate = new RestTemplate();
 
-    @Value("${external.fastapi.url}")
+    @Value("${app.fast-api.url}")
     private String FASTAPI_URL;
 
     public <T> T postMultipartSafe(String endpoint, Long userId, List<MultipartFile> files, Class<T> responseType, String fileBody) {

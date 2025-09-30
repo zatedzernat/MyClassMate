@@ -40,7 +40,7 @@ import java.util.List;
 
 import static com.bill.constant.Constants.PASSWORD_VALUE;
 import static com.bill.exceptionhandler.ErrorEnum.*;
-import static com.bill.service.CommonService.getCellValue;
+import static com.bill.service.AppUtils.getCellValue;
 
 @Slf4j
 @Service

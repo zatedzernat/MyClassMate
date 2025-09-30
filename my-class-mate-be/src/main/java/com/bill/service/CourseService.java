@@ -29,7 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.bill.exceptionhandler.ErrorEnum.*;
-import static com.bill.service.CommonService.getCellValue;
+import static com.bill.service.AppUtils.getCellValue;
 
 @Slf4j
 @Service
@@ -289,6 +289,7 @@ public class CourseService {
                 Long studentId = studentProfile.getStudentId();
                 var enrollments = new ArrayList<Enrollment>();
                 var enrollment = enrollmentRepository.findByStudentIdAndCourseId(studentId, courseId);
+                // insert if empty or not enroll yet
                 if (enrollment.isEmpty()) {
                     var newEnrollment = Enrollment.builder()
                             .studentId(studentId)
@@ -316,6 +317,8 @@ public class CourseService {
             var course = courseRepository.findById(schedule.getCourseId())
                     .orElseThrow(() -> new AppException(ERROR_COURSE_NOT_FOUND.getCode(), ERROR_COURSE_NOT_FOUND.getMessage()));
             var response = modelMapper.map(schedule, TodayCourseResponse.class);
+            response.setCourseScheduleId(schedule.getId());
+            response.setCourseId(course.getId());
             response.setCourseCode(course.getCourseCode());
             response.setCourseName(course.getCourseName());
             responses.add(response);

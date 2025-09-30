@@ -151,6 +151,8 @@ public class ParticipationService {
                 participationRequest.setScore(score);
                 participationRequest.setIsScored(true);
                 participationRequests.add(participationRequest);
+            } else {
+                log.info("evaluateParticipationRequest participationRequestId = {} has score already", participationRequestId);
             }
         }
         participationRequestRepository.saveAll(participationRequests);

@@ -22,7 +22,7 @@ CREATE TABLE myclassmate."users" (
   "surname_th" VARCHAR(100) NOT NULL,
   "name_en" VARCHAR(100) NOT NULL,
   "surname_en" VARCHAR(100) NOT NULL,
-  "email" VARCHAR(100) UNIQUE NOT NULL,
+  "email" VARCHAR(100) UNIQUE NULL,
   "role" VARCHAR(10) NOT NULL,
   "is_deleted" BOOLEAN NOT NULL,
   "created_at" TIMESTAMP NOT NULL,

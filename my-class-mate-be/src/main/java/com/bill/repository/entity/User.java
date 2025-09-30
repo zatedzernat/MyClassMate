@@ -43,7 +43,7 @@ public class User {
     @Column(name = "surname_en",  length = 100, nullable = false)
     String surnameEn;
 
-    @Column(name = "email", length = 100, unique = true, nullable = false)
+    @Column(name = "email", length = 100, unique = true)
     String email;
 
     @Enumerated(EnumType.STRING)
