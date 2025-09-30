@@ -78,8 +78,7 @@ public class UserService {
 
     public List<UserResponse> getUsers(RoleEnum role) {
         log.info("getUsers role = {}", role);
-        // var users = userRepository.findByIsDeletedFalse();
-        var users = userRepository.findAll();
+         var users = userRepository.findByIsDeletedFalse();
         List<User> filteredUsers = new ArrayList<>(users);
 
         if (role != null) {
@@ -141,7 +140,9 @@ public class UserService {
                 .orElseThrow(() -> new AppException(ERROR_USER_NOT_FOUND.getCode(), ERROR_USER_NOT_FOUND.getMessage()));
         var now = LocalDateTime.now();
 
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        if (StringUtils.isNotBlank(request.getPassword())) {
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
         user.setNameTh(request.getNameTh());
         user.setSurnameTh(request.getSurnameTh());
         user.setNameEn(request.getNameEn());

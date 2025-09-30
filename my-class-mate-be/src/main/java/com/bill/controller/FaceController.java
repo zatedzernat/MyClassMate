@@ -1,5 +1,7 @@
 package com.bill.controller;
 
+import com.bill.constant.RequireRole;
+import com.bill.constant.RoleEnum;
 import com.bill.model.response.AttendanceResponse;
 import com.bill.model.response.FaceRegisterResponse;
 import com.bill.service.FaceService;
@@ -22,12 +24,14 @@ import java.util.List;
 public class FaceController {
     FaceService faceService;
 
+    @RequireRole({RoleEnum.ADMIN, RoleEnum.LECTURER, RoleEnum.STAFF})
     @PostMapping(value = "/v1/face-register/{userId}")
     public FaceRegisterResponse faceRegister(@PathVariable Long userId,
                                              @RequestParam("files") List<MultipartFile> files) {
         return faceService.faceRegister(userId, files);
     }
 
+    @RequireRole({RoleEnum.ADMIN, RoleEnum.LECTURER, RoleEnum.STAFF})
     @PostMapping(value = "/v1/attendance/{courseId}/{courseScheduleId}")
     public AttendanceResponse attendance(@PathVariable Long courseId,
                                          @PathVariable Long courseScheduleId,
