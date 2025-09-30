@@ -40,14 +40,6 @@ export function UserRegisterFaces({ userResponse, onUploadComplete, onDataUpdate
   const [isUploading, setIsUploading] = React.useState(false);
   const [uploadProgress, setUploadProgress] = React.useState(0);
   const [cameraLoading, setCameraLoading] = React.useState(false);
-  const [isRefreshing, setIsRefreshing] = React.useState(false);
-
-  // Local state to track upload completion (for immediate UI update)
-  const [localUploadState, setLocalUploadState] = React.useState<{
-    isCompleted: boolean;
-    uploadedCount: number;
-    uploadDate: string;
-  } | null>(null);
 
   // Dialog states
   const [errorDialog, setErrorDialog] = React.useState<{ open: boolean; title: string; message: string }>({
@@ -63,29 +55,9 @@ export function UserRegisterFaces({ userResponse, onUploadComplete, onDataUpdate
 
   const REQUIRED_IMAGES = 4;
 
-  // Determine upload status from either local state or userResponse
-  const isAlreadyUploaded = localUploadState?.isCompleted || userResponse?.isUploadedImage === true;
-  const uploadedCount = localUploadState?.uploadedCount || userResponse?.imageCount || 0;
-
   // Show error dialog
   const showError = (title: string, message: string) => {
     setErrorDialog({ open: true, title, message });
-  };
-
-  // Refresh user data after upload
-  const refreshUserData = async () => {
-    if (!onDataUpdate) return;
-
-    setIsRefreshing(true);
-    try {
-      await onDataUpdate();
-      console.log('User data refreshed successfully');
-    } catch (error) {
-      console.error('Failed to refresh user data:', error);
-      // Don't show error to user as the upload was successful
-    } finally {
-      setIsRefreshing(false);
-    }
   };
 
   // Initialize camera with ultra-high quality settings
@@ -394,6 +366,27 @@ export function UserRegisterFaces({ userResponse, onUploadComplete, onDataUpdate
     setImagePreviewDialog({ open: false, imageUrl: '', index: -1 });
   };
 
+  // Reset UI to initial state (same as create page)
+  const resetToInitialState = () => {
+    // Stop camera
+    stopCamera();
+
+    // Clear captured images and URLs
+    capturedImageUrls.forEach(url => URL.revokeObjectURL(url));
+    setCapturedImages([]);
+    setCapturedImageUrls([]);
+
+    // Reset upload states
+    setIsUploading(false);
+    setUploadProgress(0);
+
+    // Clear any dialogs
+    setErrorDialog({ open: false, title: '', message: '' });
+    setImagePreviewDialog({ open: false, imageUrl: '', index: -1 });
+
+    console.log('UI reset to initial state');
+  };
+
   // Upload images
   const handleUpload = async () => {
     if (capturedImages.length !== REQUIRED_IMAGES) {
@@ -427,48 +420,24 @@ export function UserRegisterFaces({ userResponse, onUploadComplete, onDataUpdate
       clearInterval(progressInterval);
       setUploadProgress(100);
 
+      // Reset UI to initial state instead of showing success state
+      setTimeout(() => {
+        resetToInitialState();
+        
+        // Refresh user data in background
+        onDataUpdate?.();
 
-      // Set local upload state for immediate UI update
-      setLocalUploadState({
-        isCompleted: true,
-        uploadedCount: REQUIRED_IMAGES,
-        uploadDate: new Date().toISOString()
-      });
-
-      stopCamera();
-
-      // Clear captured images since upload is successful
-      capturedImageUrls.forEach(url => URL.revokeObjectURL(url));
-      setCapturedImages([]);
-      setCapturedImageUrls([]);
-
-      // Refresh user data in background
-      await refreshUserData();
-
-      // Notify parent component
-      onUploadComplete?.(true);
-
+        // Notify parent component
+        onUploadComplete?.(true);
+      }, 1000); // Small delay to show 100% progress
 
     } catch (error: any) {
       console.error('Upload error:', error);
       showError('เกิดข้อผิดพลาดในการอัปโหลด', error.message || 'กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่');
       onUploadComplete?.(false);
-    } finally {
       setIsUploading(false);
       setUploadProgress(0);
     }
-  };
-
-  // Handle re-registration
-  const handleReRegister = () => {
-    // Clear local upload state to show registration UI
-    setLocalUploadState(null);
-
-    // Reset all states for re-registration
-    setCapturedImages([]);
-    setCapturedImageUrls([]);
-    setUploadProgress(0);
-    setIsUploading(false);
   };
 
   // Cleanup on unmount
@@ -479,81 +448,7 @@ export function UserRegisterFaces({ userResponse, onUploadComplete, onDataUpdate
     };
   }, []);
 
-  // Render uploaded state UI
-  if (isAlreadyUploaded) {
-    return (
-      <Card>
-        <CardHeader
-          title="ลงทะเบียนภาพใบหน้า"
-          subheader="คุณได้ลงทะเบียนภาพใบหน้าเรียบร้อยแล้ว"
-        />
-        <Divider />
-        <CardContent>
-          <Box sx={{ textAlign: 'center', py: 4 }}>
-            <Typography variant="h5" color="success.main" gutterBottom fontWeight={600}>
-              ✅ ลงทะเบียนสำเร็จแล้ว
-            </Typography>
-            <Typography variant="h6" color="text.secondary" sx={{ mb: 3 }}>
-              คุณได้อัปโหลดภาพใบหน้า {uploadedCount} ภาพเรียบร้อยแล้ว
-            </Typography>
-            <Alert severity="success" sx={{ mb: 3, textAlign: 'left' }}>
-              <Typography variant="body1" fontWeight={600} gutterBottom>
-                สถานะ: พร้อมใช้งาน {isRefreshing && '(กำลังอัปเดต...)'}
-              </Typography>
-              <Typography variant="body2">
-                • ระบบจดจำใบหน้าของคุณได้แล้ว<br />
-                • คุณสามารถเข้าเรียนผ่านระบบ Face Recognition ได้<br />
-                • ภาพที่อัปโหลดมีคุณภาพเพียงพอสำหรับการจดจำ
-              </Typography>
-            </Alert>
-
-            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
-              <Button
-                variant="outlined"
-                onClick={handleReRegister}
-                size="large"
-                sx={{ minWidth: 180 }}
-                disabled={isRefreshing}
-              >
-                🔄 ลงทะเบียนใหม่
-              </Button>
-              <Button
-                variant="contained"
-                onClick={() => onUploadComplete?.(true)}
-                size="large"
-                color="success"
-                sx={{ minWidth: 180 }}
-                disabled={isRefreshing}
-              >
-                ✅ เสร็จสิ้น
-              </Button>
-            </Box>
-
-            {isRefreshing && (
-              <Box sx={{ mt: 2 }}>
-                <LinearProgress />
-                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                  กำลังอัปเดตข้อมูล...
-                </Typography>
-              </Box>
-            )}
-          </Box>
-        </CardContent>
-
-        <Divider />
-
-        <CardActions sx={{ justifyContent: 'center', py: 2 }}>
-          <Chip
-            label={`${uploadedCount}/${REQUIRED_IMAGES} ภาพ - สำเร็จ`}
-            color="success"
-            size="medium"
-          />
-        </CardActions>
-      </Card>
-    );
-  }
-
-  // Render normal registration UI if not uploaded yet
+  // Always render registration UI (no success state)
   return (
     <>
       <Card>
@@ -783,6 +678,11 @@ export function UserRegisterFaces({ userResponse, onUploadComplete, onDataUpdate
                     กำลังอัปโหลด... {uploadProgress}%
                   </Typography>
                   <LinearProgress variant="determinate" value={uploadProgress} />
+                  {uploadProgress === 100 && (
+                    <Typography variant="body2" color="success.main" sx={{ mt: 1 }}>
+                      อัปโหลดสำเร็จ! กำลังรีเซ็ตหน้าจอ...
+                    </Typography>
+                  )}
                 </Box>
               )}
             </Box>
@@ -806,7 +706,7 @@ export function UserRegisterFaces({ userResponse, onUploadComplete, onDataUpdate
             color="primary"
             size="large"
           >
-            {isUploading ? 'กำลังอัปโหลด...' : 'อัปโหลดภาพ'}
+            {isUploading ? `กำลังอัปโหลด... ${uploadProgress}%` : 'อัปโหลดภาพ'}
           </Button>
         </CardActions>
 

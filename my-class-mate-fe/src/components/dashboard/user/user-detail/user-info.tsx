@@ -4,30 +4,40 @@ import CardContent from '@mui/material/CardContent';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Chip from '@mui/material/Chip';
+import CircularProgress from '@mui/material/CircularProgress';
 import { UserResponse } from '@/api/data/user-response';
 import { getRoleLabel, Role } from '@/util/role-enum';
 
 interface UsersInfoProps {
   user: UserResponse | null;
-  onToggleDetailsForm: () => void;
-  showDetailsForm: boolean;
+  onDataUpdate: () => Promise<void>; // Callback for data refresh
+  isUploadImage: boolean; // Flag to show upload UI
+  onToggleUploadImage: () => void; // Toggle upload UI function
 }
 
 export function UserInfo({
   user,
-  onToggleDetailsForm,
-  showDetailsForm
+  onDataUpdate,
+  isUploadImage,
+  onToggleUploadImage
 }: UsersInfoProps): React.JSX.Element {
   // Show loading state if user is null
   if (!user) {
     return (
       <Card sx={{ minHeight: 120 }}>
         <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 80 }}>
+          <CircularProgress size={24} sx={{ mr: 2 }} />
           <Typography>Loading user information...</Typography>
         </CardContent>
       </Card>
     );
   }
+
+  // Check if user has uploaded face images
+  const hasUploadedImages = user?.isUploadedImage || false;
+  const imageCount = user?.imageCount || 0;
 
   return (
     <Card sx={{ minHeight: 120 }}>
@@ -141,35 +151,47 @@ export function UserInfo({
               >
                 {user.email}
               </Typography>
+
+              {/* Face Registration Status for Students */}
+              {user.role === Role.STUDENT && (
+                <Box sx={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 1,
+                  justifyContent: { xs: 'center', sm: 'flex-start' },
+                  alignItems: 'center',
+                  mt: 1
+                }}>
+                  <Chip
+                    label={hasUploadedImages ? `ลงทะเบียนใบหน้าแล้ว` : 'ยังไม่ลงทะเบียนใบหน้า'}
+                    color={hasUploadedImages ? 'success' : 'warning'}
+                    size="small"
+                  />
+                </Box>
+              )}
             </Stack>
           </Box>
 
-          {/* Enhanced Status Badge - Only show for STUDENT role */}
-          {user.role === Role.STUDENT && (
-            <Box sx={{ 
-              flexShrink: 0,
-              px: { xs: 2, sm: 3 },
-              py: 1,
-              borderRadius: 2,
-              backgroundColor: user.isUploadedImage ? 'success.light' : 'error.light',
-              color: user.isUploadedImage ? 'success.dark' : 'error.dark',
-              textAlign: 'center',
-              border: '1px solid',
-              borderColor: user.isUploadedImage ? 'success.main' : 'error.main',
-              minWidth: { xs: 100, sm: 120 },
-            }}>
-              <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
-                {user.isUploadedImage ? (
-                  <>✓ พร้อมใช้งาน</>
-                ) : (
-                  <>❌ ยังไม่พร้อม</>
-                )}
-              </Typography>
-              <Typography variant="caption" sx={{ fontSize: '0.625rem', display: 'block', mt: 0.25 }}>
-                {user.isUploadedImage ? 'สแกนใบหน้าได้' : 'ต้องอัปโหลดภาพ'}
-              </Typography>
-            </Box>
-          )}
+          {/* Action Buttons */}
+          <Box sx={{
+            display: 'flex',
+            flexDirection: { xs: 'row', sm: 'column' },
+            gap: 1,
+            alignItems: 'center'
+          }}>
+            {/* Upload Image Button - Only for Students */}
+            {user.role === Role.STUDENT && (
+              <Button
+                variant={isUploadImage ? 'contained' : 'outlined'}
+                onClick={onToggleUploadImage}
+                size="medium"
+                color='primary'
+                sx={{ minWidth: 120 }}
+              >
+                {isUploadImage ? '📱 ซ่อนกล้อง' : '📷 ลงทะเบียนใบหน้า'}
+              </Button>
+            )}
+          </Box>
         </Box>
       </CardContent>
     </Card>

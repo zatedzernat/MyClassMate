@@ -2,7 +2,7 @@ import { FaceValidationResponse, UploadFaceImagesResponse } from "./data/face-re
 
 // Validate single face image
 export async function validateFaceImage(
-  userId: string, 
+  userId: string,
   imageFile: File | Blob
 ): Promise<FaceValidationResponse> {
   const formData = new FormData();
@@ -28,7 +28,7 @@ export async function validateFaceImage(
   } catch (error: any) {
     console.error('Face validation error:', error);
     throw new Error(
-      error.message || 
+      error.message ||
       'เกิดข้อผิดพลาดในการตรวจสอบใบหน้า'
     );
   }
@@ -36,7 +36,7 @@ export async function validateFaceImage(
 
 // Upload multiple face images (4 images required)
 export async function uploadFaceImages(
-  userId: string, 
+  userId: string,
   imageFiles: (File | Blob)[]
 ): Promise<UploadFaceImagesResponse> {
   if (imageFiles.length !== 4) {
@@ -44,7 +44,7 @@ export async function uploadFaceImages(
   }
 
   const formData = new FormData();
-  
+
   // Add all 4 images to FormData
   imageFiles.forEach((imageFile, index) => {
     formData.append('files', imageFile, `face-upload-${index + 1}-${Date.now()}.jpg`);
@@ -56,9 +56,9 @@ export async function uploadFaceImages(
       body: formData,
       headers: {
         'x-role': localStorage.getItem("user-role") || ""
-        // Don't set Content-Type for FormData, let browser handle it
       },
     });
+
 
     const data = await response.json();
 
@@ -72,7 +72,7 @@ export async function uploadFaceImages(
   } catch (error: any) {
     console.error('Face upload error:', error);
     throw new Error(
-      error.message || 
+      error.message ||
       'เกิดข้อผิดพลาดในการอัปโหลดภาพใบหน้า'
     );
   }
@@ -80,7 +80,7 @@ export async function uploadFaceImages(
 
 // Upload single face image (for individual uploads)
 export async function uploadSingleFaceImage(
-  userId: string, 
+  userId: string,
   imageFile: File | Blob,
   imageIndex: number = 0
 ): Promise<{ success: boolean; message: string; imageId: string; currentCount: number }> {
@@ -108,7 +108,7 @@ export async function uploadSingleFaceImage(
   } catch (error: any) {
     console.error('Face upload error:', error);
     throw new Error(
-      error.message || 
+      error.message ||
       'เกิดข้อผิดพลาดในการอัปโหลดภาพใบหน้า'
     );
   }

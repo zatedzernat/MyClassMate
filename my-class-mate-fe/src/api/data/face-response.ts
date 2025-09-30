@@ -1,12 +1,19 @@
 // Simple types for face validation
 export interface FaceValidationResponse {
-    success: boolean;
-    message: string;
-    faceDetected: boolean;
-    confidence: number;
-  }
-  
-  export interface UploadFaceImagesResponse {
-    userId: string;
-    imageCount: number;
-  }
+  attendanceId: string;
+  studentId: string;
+  studentNo: string;
+  studentNameTh: string;
+  studentNameEn: string;
+  courseScheduleId: string;
+  courseId: string;
+  courseCode: string;
+  createdAt: string;
+  status: string;
+  statusDesc: string;
+}
+
+export interface UploadFaceImagesResponse {
+  userId: string;
+  imageCount: number;
+}
