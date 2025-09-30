@@ -36,7 +36,6 @@ public class SummaryAndNotiService {
     @Transactional
     public void runSummary() {
         var now = LocalDateTime.now();
-        log.info("Running scheduler at {}", now);
         var todayCourseSchedules = courseService.getTodayCourses();
 
         for (var courseSchedule : todayCourseSchedules) {
