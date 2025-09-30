@@ -28,6 +28,10 @@ public enum ErrorEnum {
     ERROR_USER_NOT_STUDENT("ERR022", "can not get student profile from other role"),
     ERROR_ENROLLMENT_NOT_FOUND("ERR023", "enrollment not found for this studentId: %s"),
     ERROR_SCHEDULE_NOT_FOUND("ERR023", "course schedule not found courseScheduleId: %s"),
+    ERROR_USER_NOT_LECTURER("ERR024", "user is not lecturer, can not perform this action"),
+    ERROR_PARTICIPATION_NOT_FOUND("ERR025", "participation not found"),
+    ERROR_PARTICIPATION_CLOSED("ERR026", "this participation already closed"),
+    ERROR_STUDENT_ATTENDANCE_NOT_FOUND("ERR027", "attendance not found for studentId: %s, courseScheduleId: %s"),
     ;
 
     private final String code;

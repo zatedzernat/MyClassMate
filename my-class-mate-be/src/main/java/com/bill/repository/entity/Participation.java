@@ -30,7 +30,7 @@ public class Participation {
     @Column(name = "round", nullable = false)
     Integer round;
 
-    @Column(name = "topic", length = 255, nullable = false)
+    @Column(name = "topic", length = 255)
     String topic;
 
     @Enumerated(EnumType.STRING)
@@ -43,6 +43,6 @@ public class Participation {
     @Column(name = "created_at", nullable = false)
     LocalDateTime createdAt;
 
-    @Column(name = "closed_at", nullable = false)
+    @Column(name = "closed_at")
     LocalDateTime closedAt;
 }

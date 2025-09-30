@@ -34,7 +34,7 @@ public class UserController {
         return userService.login(request);
     }
 
-    @RequireRole({RoleEnum.ADMIN, RoleEnum.LECTURER, RoleEnum.STAFF})
+    @RequireRole({RoleEnum.ADMIN, RoleEnum.LECTURER, RoleEnum.STAFF, RoleEnum.STUDENT})
     @GetMapping(value = "/{userId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public UserResponse getUser(@PathVariable Long userId) {
         return userService.getUser(userId, true);

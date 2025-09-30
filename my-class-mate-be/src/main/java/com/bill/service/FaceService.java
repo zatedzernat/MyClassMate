@@ -87,15 +87,18 @@ public class FaceService {
                 status = AttendanceStatusEnum.LATE;
             }
 
-            var attendance = Attendance.builder()
-                    .studentId(studentId)
-                    .courseId(courseId)
-                    .courseScheduleId(courseScheduleId)
-                    .createdAt(now)
-                    .status(status)
-                    .build();
-
-            attendance = attendanceRepository.save(attendance);
+            var attendance = attendanceRepository.findByStudentIdAndCourseScheduleId(studentId, courseScheduleId);
+            // insert only first time attendance
+            if (attendance == null) {
+                attendance = Attendance.builder()
+                        .studentId(studentId)
+                        .courseId(courseId)
+                        .courseScheduleId(courseScheduleId)
+                        .createdAt(now)
+                        .status(status)
+                        .build();
+                attendance = attendanceRepository.save(attendance);
+            }
 
             var studentProfile = studentProfileService.getStudentProfile(studentId);
             var course = courseRepository.findById(courseId)

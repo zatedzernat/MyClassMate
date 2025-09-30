@@ -89,7 +89,7 @@ public class CourseController {
         return courseService.importStudentToCourse(courseId, file);
     }
 
-    @RequireRole({RoleEnum.ADMIN, RoleEnum.LECTURER, RoleEnum.STAFF})
+    @RequireRole({RoleEnum.ADMIN, RoleEnum.LECTURER, RoleEnum.STAFF, RoleEnum.STUDENT})
     @GetMapping(value = "/today-schedules", produces = MediaType.APPLICATION_JSON_VALUE)
     public List<TodayCourseResponse> getTodayCourses() {
         return courseService.getTodayCourses();
