@@ -8,6 +8,7 @@ export const navItems = [
   // { key: 'account', title: 'Account', href: paths.dashboard.account, icon: 'user' },
   // { key: 'error', title: 'Error', href: paths.errors.notFound, icon: 'x-square' },
   { key: 'users', title: 'ข้อมูลผู้ใช้งาน', href: paths.dashboard.user, icon: 'users' },
+  { key: 'course', title: 'ข้อมูลรายวิชา', href: paths.dashboard.course, icon: 'course' },
 ] satisfies NavItemConfig[];
 
 export const navItemsForStudent = [

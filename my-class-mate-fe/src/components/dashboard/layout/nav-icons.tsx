@@ -1,3 +1,4 @@
+import { BookIcon } from '@phosphor-icons/react';
 import type { Icon } from '@phosphor-icons/react/dist/lib/types';
 import { CameraIcon } from '@phosphor-icons/react/dist/ssr';
 import { ChartPieIcon } from '@phosphor-icons/react/dist/ssr/ChartPie';
@@ -14,5 +15,6 @@ export const navIcons = {
   'x-square': XSquare,
   user: UserIcon,
   users: UsersIcon,
-  camera: CameraIcon
+  camera: CameraIcon,
+  course: BookIcon
 } as Record<string, Icon>;
