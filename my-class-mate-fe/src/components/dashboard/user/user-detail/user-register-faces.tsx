@@ -394,11 +394,6 @@ export function UserRegisterFaces({ userResponse, onUploadComplete, onDataUpdate
       return;
     }
 
-    const userId = localStorage.getItem('user-id');
-    if (!userId) {
-      showError('ไม่พบข้อมูลผู้ใช้', 'กรุณาลงชื่อเข้าใช้ใหม่');
-      return;
-    }
 
     setIsUploading(true);
     setUploadProgress(0);
@@ -415,7 +410,10 @@ export function UserRegisterFaces({ userResponse, onUploadComplete, onDataUpdate
         });
       }, 200);
 
-      const response = await uploadFaceImages(userId, capturedImages);
+      if (!userResponse?.userId) {
+        throw new Error('User ID is required for uploading face images.');
+      }
+      await uploadFaceImages(userResponse.userId, capturedImages);
 
       clearInterval(progressInterval);
       setUploadProgress(100);
