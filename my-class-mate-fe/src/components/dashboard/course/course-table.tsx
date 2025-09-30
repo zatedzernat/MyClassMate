@@ -203,12 +203,8 @@ export function CoursesTable({
               <TableCell>ชื่อวิชา</TableCell>
               <TableCell>ปีการศึกษา</TableCell>
               <TableCell>ภาคเรียน</TableCell>
-              <TableCell>วัน</TableCell>
-              <TableCell>เวลา</TableCell>
+              <TableCell>วันเเละเวลาที่มีการเรียนการสอน</TableCell>
               <TableCell>ห้องเรียน</TableCell>
-              <TableCell>อาจารย์</TableCell>
-              <TableCell>นักเรียน</TableCell>
-              <TableCell>สถานะ</TableCell>
               <TableCell align="center">จัดการ</TableCell>
             </TableRow>
           </TableHead>
@@ -253,45 +249,11 @@ export function CoursesTable({
                   <TableCell>{row.academicYear}</TableCell>
                   <TableCell>{row.semester}</TableCell>
                   <TableCell>
-                    <Chip 
-                      label={getDayLabel(row.dayOfWeek)} 
-                      size="small" 
-                      color="primary" 
-                      variant="outlined" 
-                    />
-                  </TableCell>
-                  <TableCell>
                     <Typography variant="body2">
-                      {formatTime(row.startTime)} - {formatTime(row.endTime)}
+                     {getDayLabel(row.dayOfWeek)} {formatTime(row.startTime)} - {formatTime(row.endTime)}
                     </Typography>
                   </TableCell>
                   <TableCell>{row.room}</TableCell>
-                  <TableCell>
-                    <Typography variant="body2" noWrap sx={{ maxWidth: 150 }}>
-                      {lecturerNames || '-'}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <Typography variant="body2">
-                        {activeEnrollments}/{enrollmentCount}
-                      </Typography>
-                      {enrollmentCount > 0 && (
-                        <Chip 
-                          label={activeEnrollments} 
-                          size="small" 
-                          color={activeEnrollments > 0 ? "success" : "default"}
-                        />
-                      )}
-                    </Stack>
-                  </TableCell>
-                  <TableCell>
-                    <Chip 
-                      label="เปิดสอน" 
-                      size="small" 
-                      color="success" 
-                    />
-                  </TableCell>
                   <TableCell align="center">
                     <Stack direction="row" spacing={1} justifyContent="center">
                       <IconButton
