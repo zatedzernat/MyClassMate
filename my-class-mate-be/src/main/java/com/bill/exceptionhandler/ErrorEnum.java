@@ -32,6 +32,7 @@ public enum ErrorEnum {
     ERROR_PARTICIPATION_NOT_FOUND("ERR025", "participation not found"),
     ERROR_PARTICIPATION_CLOSED("ERR026", "this participation already closed"),
     ERROR_STUDENT_ATTENDANCE_NOT_FOUND("ERR027", "attendance not found for studentId: %s, courseScheduleId: %s"),
+    ERROR_PARTICIPATION_REQUEST_NOT_FOUND("ERR028", "participation request not found, participationRequestId: %s"),
     ;
 
     private final String code;

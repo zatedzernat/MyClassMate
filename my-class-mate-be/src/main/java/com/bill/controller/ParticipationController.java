@@ -3,6 +3,7 @@ package com.bill.controller;
 import com.bill.constant.RequireRole;
 import com.bill.constant.RoleEnum;
 import com.bill.model.request.CreateParticipationRequest;
+import com.bill.model.request.EvaluateParticipationRequest;
 import com.bill.model.request.RequestParticipationRequest;
 import com.bill.model.response.ParticipationResponse;
 import com.bill.model.response.RequestParticipationResponse;
@@ -44,7 +45,7 @@ public class ParticipationController {
     }
 
     @RequireRole({RoleEnum.ADMIN, RoleEnum.LECTURER, RoleEnum.STAFF, RoleEnum.STUDENT})
-    @PostMapping(value = "/request", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/requests", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public RequestParticipationResponse requestParticipation(@RequestBody @Valid RequestParticipationRequest request) {
         return participationService.requestParticipation(request);
     }
@@ -53,5 +54,11 @@ public class ParticipationController {
     @GetMapping(value = "/requests/{participationId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public List<RequestParticipationResponse> getParticipationRequests(@PathVariable Long participationId) {
         return participationService.getParticipationRequests(participationId);
+    }
+
+    @RequireRole({RoleEnum.ADMIN, RoleEnum.LECTURER, RoleEnum.STAFF})
+    @PutMapping(value = "/requests/evaluate", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public void evaluateParticipationRequest(@RequestBody @Valid EvaluateParticipationRequest request) {
+        participationService.evaluateParticipationRequest(request);
     }
 }

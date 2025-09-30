@@ -4,6 +4,7 @@ import com.bill.constant.ParticipationStatusEnum;
 import com.bill.constant.RoleEnum;
 import com.bill.exceptionhandler.AppException;
 import com.bill.model.request.CreateParticipationRequest;
+import com.bill.model.request.EvaluateParticipationRequest;
 import com.bill.model.request.RequestParticipationRequest;
 import com.bill.model.response.ParticipationResponse;
 import com.bill.model.response.RequestParticipationResponse;
@@ -134,6 +135,25 @@ public class ParticipationService {
             responses.add(response);
         }
         return responses;
+    }
+
+    @Transactional
+    public void evaluateParticipationRequest(EvaluateParticipationRequest request) {
+        var participationRequests = new ArrayList<ParticipationRequest>();
+        for (var evaluate : request.getEvaluates()) {
+            var participationRequestId = evaluate.getParticipationRequestId();
+            var participationRequest = participationRequestRepository.findById(participationRequestId)
+                    .orElseThrow(() -> new AppException(ERROR_PARTICIPATION_REQUEST_NOT_FOUND.getCode(), ERROR_PARTICIPATION_REQUEST_NOT_FOUND.format(participationRequestId)));
+
+            if (Boolean.FALSE.equals(participationRequest.getIsScored())) {
+                var score = evaluate.getScore();
+                log.info("evaluateParticipationRequest participationRequestId = {}, score = {}", participationRequestId, score);
+                participationRequest.setScore(score);
+                participationRequest.setIsScored(true);
+                participationRequests.add(participationRequest);
+            }
+        }
+        participationRequestRepository.saveAll(participationRequests);
     }
 
     private ParticipationResponse mapToParticipationResponse(Participation participation) {
