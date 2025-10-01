@@ -179,11 +179,7 @@ export async function createCourse(courseData: CreateCourseRequest): Promise<Cre
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'x-role': localStorage.getItem('user-role') || 'ADMIN',
-          ...(typeof window !== 'undefined' && localStorage.getItem('access-token') && {
-            'Authorization': `Bearer ${localStorage.getItem('access-token')}`
-          })
+          'x-role': localStorage.getItem('user-role') || '',
         },
         body: JSON.stringify(courseData)
       });
@@ -228,7 +224,7 @@ export async function createCourse(courseData: CreateCourseRequest): Promise<Cre
 
 // Export for convenience
 // Export for convenience
-export { DayOfWeek, CreateCourseRequest } from './data/course-response';
+export { DayOfWeek} from './data/course-response';
 export type { 
     CourseResponse, 
     CourseFilter, 
