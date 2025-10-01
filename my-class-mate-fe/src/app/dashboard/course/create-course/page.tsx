@@ -384,7 +384,6 @@ export default function Page(): React.JSX.Element {
                         </Box>
                     </Stack>
 
-                    // Update the button disabled condition to be more explicit
                     {showSchedulePreview && (
                         <Button
                             variant="contained"
