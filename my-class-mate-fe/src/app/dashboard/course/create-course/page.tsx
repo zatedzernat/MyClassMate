@@ -32,13 +32,14 @@ import DialogTitle from '@mui/material/DialogTitle';
 
 import { CourseRequest, DayOfWeek } from '@/api/data/course-response';
 import { paths } from '@/paths';
-import { courseInit, createCourse, CreateCourseRequest } from '@/api/course-api';
+import { courseInit, createCourse } from '@/api/course-api';
 import ErrorDialog from '@/components/error/error-dialog';
 
 // Add imports at the top
 import { getUsers } from '@/api/user-api';
 import { UserResponse } from '@/api/data/user-response';
 import { Role } from '@/util/role-enum';
+import { CreateCourseRequest } from '@/api/data/course-create';
 
 
 
@@ -50,7 +51,7 @@ export default function Page(): React.JSX.Element {
         courseCode: '',
         courseName: '',
         academicYear: 2568,
-        semester: 2,
+        semester: 1,
         room: '',
         startTime: '09:00:00',
         endTime: '12:00:00',
