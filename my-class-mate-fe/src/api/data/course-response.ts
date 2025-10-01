@@ -6,7 +6,7 @@ export interface CourseRequest {
     room: string;
     startTime: string; // Format: "HH:mm:ss"
     endTime: string;   // Format: "HH:mm:ss"
-    dayOfWeek: string;
+    dayOfWeek: DayOfWeek;
     startDate: string; // Format: "YYYY-MM-DD"
     endDate: string;   // Format: "YYYY-MM-DD"
   }

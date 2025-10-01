@@ -10,6 +10,7 @@ export const paths = {
     userDetail: '/dashboard/user/user-detail',
     student: '/dashboard/student',
     course: '/dashboard/course',
+    createCourse: '/dashboard/course/create-course',
   },
   errors: { notFound: '/errors/not-found' },
 } as const;

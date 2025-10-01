@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import type { Metadata } from 'next';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
@@ -27,8 +28,10 @@ import { getCourses } from '@/api/course-api';
 import { CourseResponse, CourseFilter, DayOfWeek } from '@/api/data/course-response';
 import { CoursesTable } from '@/components/dashboard/course/course-table';
 import ErrorDialog from '@/components/error/error-dialog';
+import { paths } from '@/paths';
 
 export default function Page(): React.JSX.Element {
+  const router = useRouter();
   const page = 0;
   const rowsPerPage = 10;
 
@@ -119,22 +122,19 @@ export default function Page(): React.JSX.Element {
     setSearchTerm('');
   };
 
-  // Dialog handlers
-  const handleOpenCreateDialog = () => {
-    setOpenCreateDialog(true);
-  };
-
-  const handleCloseCreateDialog = () => {
-    setOpenCreateDialog(false);
-  };
-
-  const handleCloseErrorDialog = () => {
-    setErrorMessage(null);
+  // Navigate to create course page
+  const handleCreateCourse = () => {
+    router.push(paths.dashboard.createCourse);
   };
 
   // Toast handlers
   const showToast = (message: string, severity: AlertColor = "success") => {
     setToast({ open: true, message, severity });
+  };
+
+  // Error dialog close handler
+  const handleCloseErrorDialog = () => {
+    setErrorMessage(null);
   };
 
   const handleCloseToast = () => {
@@ -172,7 +172,7 @@ export default function Page(): React.JSX.Element {
           <Button
             startIcon={<PlusIcon fontSize="var(--icon-fontSize-md)" />}
             variant="contained"
-            onClick={handleOpenCreateDialog}
+            onClick={handleCreateCourse}
           >
             เพิ่มรายวิชา
           </Button>
@@ -241,92 +241,6 @@ export default function Page(): React.JSX.Element {
         />
       )}
 
-      {/* Create Course Dialog - Placeholder */}
-      <Dialog open={openCreateDialog} onClose={handleCloseCreateDialog} fullWidth maxWidth="md">
-        <DialogTitle>เพิ่มรายวิชาใหม่</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField
-              label="รหัสวิชา"
-              placeholder="เช่น CU0001"
-              fullWidth
-            />
-            <TextField
-              label="ชื่อวิชา"
-              placeholder="เช่น การเขียนโปรแกรมคอมพิวเตอร์"
-              fullWidth
-            />
-            <Stack direction="row" spacing={2}>
-              <FormControl fullWidth>
-                <InputLabel>ปีการศึกษา</InputLabel>
-                <Select defaultValue={2568} label="ปีการศึกษา">
-                  <MenuItem value={2567}>2567</MenuItem>
-                  <MenuItem value={2568}>2568</MenuItem>
-                  <MenuItem value={2569}>2569</MenuItem>
-                </Select>
-              </FormControl>
-              <FormControl fullWidth>
-                <InputLabel>ภาคเรียน</InputLabel>
-                <Select defaultValue={2} label="ภาคเรียน">
-                  <MenuItem value={1}>ภาคเรียนที่ 1</MenuItem>
-                  <MenuItem value={2}>ภาคเรียนที่ 2</MenuItem>
-                  <MenuItem value={3}>ภาคเรียนที่ 3</MenuItem>
-                </Select>
-              </FormControl>
-            </Stack>
-            <Stack direction="row" spacing={2}>
-              <TextField label="ห้องเรียน" placeholder="เช่น 108/8" fullWidth />
-              <FormControl fullWidth>
-                <InputLabel>วันในสัปดาห์</InputLabel>
-                <Select label="วันในสัปดาห์">
-                  {Object.values(DayOfWeek).map((day) => (
-                    <MenuItem key={day} value={day}>
-                      วัน{getDayLabel(day)}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Stack>
-            <Stack direction="row" spacing={2}>
-              <TextField
-                label="เวลาเริ่ม"
-                type="time"
-                InputLabelProps={{ shrink: true }}
-                fullWidth
-              />
-              <TextField
-                label="เวลาสิ้นสุด"
-                type="time"
-                InputLabelProps={{ shrink: true }}
-                fullWidth
-              />
-            </Stack>
-            <Stack direction="row" spacing={2}>
-              <TextField
-                label="วันที่เริ่มเรียน"
-                type="date"
-                InputLabelProps={{ shrink: true }}
-                fullWidth
-              />
-              <TextField
-                label="วันที่เรียนจบ"
-                type="date"
-                InputLabelProps={{ shrink: true }}
-                fullWidth
-              />
-            </Stack>
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseCreateDialog}>ยกเลิก</Button>
-          <Button variant="contained" onClick={() => {
-            showToast('ฟีเจอร์นี้ยังไม่พร้อมใช้งาน', 'info');
-            handleCloseCreateDialog();
-          }}>
-            บันทึก
-          </Button>
-        </DialogActions>
-      </Dialog>
 
       {/* Error Dialog */}
       <ErrorDialog

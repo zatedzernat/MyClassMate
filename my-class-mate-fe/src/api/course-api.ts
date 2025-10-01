@@ -5,6 +5,7 @@ import {
   CourseFilter,
   DayOfWeek 
 } from './data/course-response';
+import { CourseInitRequest, CourseInitResponse, CourseSchedulePreview } from './data/course-init-response';
 
 // API Configuration
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8080';
@@ -120,6 +121,51 @@ export async function getCourses(filter?: CourseFilter): Promise<CourseListRespo
     };
   }
 }
+
+
+/**
+ * Initialize course schedules - Preview course schedule dates
+ */
+export async function courseInit(initRequest: CourseInitRequest): Promise<CourseInitResponse> {
+      logger.debug('[CourseAPI]: Initializing course schedules with data:', initRequest);
+  
+      const response = await fetch(`${BASE_URL}/${API_VERSION}/courses/init`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-role': localStorage.getItem('user-role') || '',
+        },
+        body: JSON.stringify(initRequest)
+      });
+  
+      logger.debug(`[CourseAPI]: Course init response status: ${response.status}`);
+
+      const resData = await response.json();
+      logger.debug('[CourseAPI]: Course init raw response data:', resData);
+
+      if (!response.ok) {
+        const errorMessage = resData?.message || resData?.code || 'Unknown error occurred';
+        throw new Error(errorMessage);
+      }
+  
+      // Handle response - should be an array of schedule previews
+      if (!Array.isArray(resData)) {
+        logger.error('[CourseAPI]: Expected array response for course init:', resData);
+        throw new Error('รูปแบบข้อมูลตารางเรียนไม่ถูกต้อง');
+      }
+  
+      // Map the schedule previews
+      const schedules: CourseSchedulePreview[] = resData.map((schedule: any) => ({
+        scheduleDate: schedule.scheduleDate,
+        startTime: schedule.startTime,
+        endTime: schedule.endTime,
+        room: schedule.room
+      }));
+  
+      logger.debug(`[CourseAPI]: Successfully generated ${schedules.length} course schedules`);
+  
+      return {data: schedules,};
+  }
 
 // Export for convenience
 export { DayOfWeek } from './data/course-response';
