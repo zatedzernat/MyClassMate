@@ -6,6 +6,7 @@ import {
   DayOfWeek 
 } from './data/course-response';
 import { CourseInitRequest, CourseInitResponse, CourseSchedulePreview } from './data/course-init-response';
+import { CreateCourseRequest, CreateCourseResponse } from './data/course-create';
 
 // API Configuration
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8080';
@@ -167,6 +168,69 @@ export async function courseInit(initRequest: CourseInitRequest): Promise<Course
       return {data: schedules,};
   }
 
+
+  /**
+ * Create a new course with schedules and lecturers
+ */
+export async function createCourse(courseData: CreateCourseRequest): Promise<CreateCourseResponse> {
+      logger.debug('[CourseAPI]: Creating course with data:', courseData);
+  
+      const response = await fetch(`${BASE_URL}/${API_VERSION}/courses`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'x-role': localStorage.getItem('user-role') || 'ADMIN',
+          ...(typeof window !== 'undefined' && localStorage.getItem('access-token') && {
+            'Authorization': `Bearer ${localStorage.getItem('access-token')}`
+          })
+        },
+        body: JSON.stringify(courseData)
+      });
+  
+      logger.debug(`[CourseAPI]: Create course response status: ${response.status}`);
+  
+      const resData = await response.json();
+      logger.debug('[CourseAPI]: Create course raw response data:', resData);
+  
+      if (!response.ok) {
+        const errorMessage = resData?.message || resData?.code || 'Unknown error occurred';
+        logger.error(`[CourseAPI]: Create course HTTP error ${response.status}: ${errorMessage}`);
+        throw new Error(`เกิดข้อผิดพลาดในการสร้างรายวิชา (${response.status}): ${errorMessage}`);
+      }
+  
+      // Map the response to CourseResponse format
+      const createdCourse: CourseResponse = {
+        courseId: resData.courseId,
+        courseCode: resData.courseCode,
+        courseName: resData.courseName,
+        academicYear: resData.academicYear,
+        semester: resData.semester,
+        room: resData.room,
+        startTime: resData.startTime,
+        endTime: resData.endTime,
+        dayOfWeek: resData.dayOfWeek as DayOfWeek,
+        startDate: resData.startDate,
+        endDate: resData.endDate,
+        createdBy: resData.createdBy,
+        createdAt: resData.createdAt,
+        updatedAt: resData.updatedAt,
+        lecturers: resData.lecturers || [],
+        schedules: resData.schedules || [],
+        enrollments: resData.enrollments || []
+      };
+  
+      logger.debug(`[CourseAPI]: Successfully created course with ID: ${createdCourse.courseId}`);
+  
+      return {data: createdCourse,};
+  }
+
+
 // Export for convenience
-export { DayOfWeek } from './data/course-response';
-export type { CourseResponse, CourseFilter, CourseListResponse } from './data/course-response';
+// Export for convenience
+export { DayOfWeek, CreateCourseRequest } from './data/course-response';
+export type { 
+    CourseResponse, 
+    CourseFilter, 
+    CourseListResponse,
+  } from './data/course-response';

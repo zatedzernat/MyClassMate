@@ -32,13 +32,14 @@ import DialogTitle from '@mui/material/DialogTitle';
 
 import { CourseRequest, DayOfWeek } from '@/api/data/course-response';
 import { paths } from '@/paths';
-import { courseInit } from '@/api/course-api';
+import { courseInit, createCourse, CreateCourseRequest } from '@/api/course-api';
 import ErrorDialog from '@/components/error/error-dialog';
 
 // Add imports at the top
 import { getUsers } from '@/api/user-api';
 import { UserResponse } from '@/api/data/user-response';
 import { Role } from '@/util/role-enum';
+
 
 
 export default function Page(): React.JSX.Element {
@@ -91,7 +92,7 @@ export default function Page(): React.JSX.Element {
         }
     };
 
-    // Validation function
+    // Also update the validation function to include lecturer validation
     const validateForm = (): boolean => {
         const newErrors: { [key: string]: string } = {};
 
@@ -184,30 +185,65 @@ export default function Page(): React.JSX.Element {
         }
     };
 
-    // Function to confirm and create course
+    // Update the handleConfirmCreate function
     const handleConfirmCreate = async () => {
+        // Validate lecturer selection first
+        if (selectedLecturers.size === 0) {
+            showToast('กรุณาเลือกอาจารย์ผู้สอนอย่างน้อย 1 คน', 'warning');
+            return;
+        }
+
         setLoading(true);
 
         try {
-            // TODO: Call actual create course API with formData and schedulePreview
-            console.log('Creating course with schedule:', {
-                courseData: formData,
-                schedules: schedulePreview
-            });
+            // Get current user ID from localStorage (you might need to adjust this based on your auth system)
+            const currentUserId = Number(localStorage.getItem('user-id')) || 1;
 
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            // Prepare the create course request data
+            const courseData: CreateCourseRequest = {
+                courseCode: formData.courseCode,
+                courseName: formData.courseName,
+                academicYear: formData.academicYear,
+                semester: formData.semester,
+                room: formData.room,
+                startTime: formData.startTime,
+                endTime: formData.endTime,
+                dayOfWeek: formData.dayOfWeek,
+                startDate: formData.startDate,
+                endDate: formData.endDate,
+                createdBy: currentUserId,
+                lecturerIds: Array.from(selectedLecturers),
+                schedules: schedulePreview.map(schedule => ({
+                    scheduleDate: schedule.scheduleDate,
+                    startTime: schedule.startTime,
+                    endTime: schedule.endTime,
+                    room: schedule.room,
+                    remark: schedule.remark || undefined // Only include remark if it exists
+                }))
+            };
 
-            showToast('สร้างรายวิชาสำเร็จ', 'success');
+            console.log('Creating course with data:', courseData);
+
+            // Call the create course API
+            const result = await createCourse(courseData);
+
+
+            // Show success message with course details
+            showToast(
+                `สร้างรายวิชา ${result.data.courseCode}: ${result.data.courseName} สำเร็จ`,
+                'success'
+            );
+
+            console.log('Course created successfully:', result.data);
 
             // Navigate back to course list after short delay
             setTimeout(() => {
                 router.push(paths.dashboard.course);
-            }, 1500);
+            }, 2000);
 
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error creating course:', error);
-            showToast('เกิดข้อผิดพลาดในการสร้างรายวิชา', 'error');
+            setErrorDialogMessage(error.message);
         } finally {
             setLoading(false);
         }
@@ -348,13 +384,13 @@ export default function Page(): React.JSX.Element {
                         </Box>
                     </Stack>
 
-                    {/* Conditional Create Course Button */}
+                    // Update the button disabled condition to be more explicit
                     {showSchedulePreview && (
                         <Button
                             variant="contained"
                             onClick={handleConfirmCreate}
                             startIcon={loading ? <CircularProgress size={16} color="inherit" /> : <FloppyDiskIcon />}
-                            disabled={loading || selectedLecturers.size === 0}
+                            disabled={loading || selectedLecturers.size === 0 || schedulePreview.length === 0}
                             size="large"
                             sx={{ minWidth: 200 }}
                         >
@@ -580,7 +616,7 @@ export default function Page(): React.JSX.Element {
                         />
                         <Divider />
                         <CardContent>
-                            <Stack spacing={3}>   
+                            <Stack spacing={3}>
                                 {/* Enhanced Schedule Table */}
                                 <Box sx={{ overflowX: 'auto' }}>
                                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
