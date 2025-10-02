@@ -3,7 +3,8 @@ import {
     CourseResponse,
     CourseListResponse,
     CourseFilter,
-    DayOfWeek
+    DayOfWeek,
+    UpdateCourseRequest
 } from './data/course-response';
 import { CourseInitRequest, CourseInitResponse, CourseSchedulePreview } from './data/course-init-response';
 import { CreateCourseRequest, CreateCourseResponse } from './data/course-create';
@@ -123,6 +124,68 @@ export async function getCourses(filter?: CourseFilter): Promise<CourseListRespo
     }
 }
 
+/**
+ * Get course by ID
+ */
+export async function getCourseById(courseId: string): Promise<CourseResponse | null> {
+    try {
+      logger.debug('[CourseAPI]: Fetching course by ID:', courseId);
+  
+      const response = await fetch(`${BASE_URL}/${API_VERSION}/courses/${encodeURIComponent(courseId)}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-role': localStorage.getItem('user-role') || '',
+        },
+      });
+  
+      logger.debug(`[CourseAPI]: Get course by ID response status: ${response.status}`);
+  
+      if (!response.ok) {
+        const resData = await response.json();
+        const errorMessage = resData?.message || resData?.code || 'Unknown error occurred';
+        logger.error(`[CourseAPI]: Get course by ID HTTP error ${response.status}: ${errorMessage}`);
+        throw new Error(errorMessage);
+      }
+  
+      const resData = await response.json();
+      logger.debug('[CourseAPI]: Get course by ID raw response data:', resData);
+  
+      // Map the response to CourseResponse format
+      const course: CourseResponse = {
+        courseId: resData.courseId,
+        courseCode: resData.courseCode,
+        courseName: resData.courseName,
+        academicYear: resData.academicYear,
+        semester: resData.semester,
+        room: resData.room,
+        startTime: resData.startTime,
+        endTime: resData.endTime,
+        dayOfWeek: resData.dayOfWeek as DayOfWeek,
+        startDate: resData.startDate,
+        endDate: resData.endDate,
+        createdBy: resData.createdBy,
+        createdAt: resData.createdAt,
+        updatedAt: resData.updatedAt,
+        lecturers: resData.lecturers || [],
+        schedules: resData.schedules || [],
+        enrollments: resData.enrollments || []
+      };
+  
+      logger.debug(`[CourseAPI]: Successfully fetched course: ${course.courseCode}`);
+      return course;
+  
+    } catch (error: any) {
+      logger.error('[CourseAPI]: Error fetching course by ID:', error);
+      
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        throw new Error('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต');
+      }
+      
+      throw error;
+    }
+  }
+
 
 /**
  * Initialize course schedules - Preview course schedule dates
@@ -221,12 +284,14 @@ export async function createCourse(courseData: CreateCourseRequest): Promise<Cre
     return { data: createdCourse, };
 }
 
-export async function updateCourse(courseId: number, courseRequest: CreateCourseRequest): Promise<void> {
+export async function updateCourse(courseId: string, courseRequest: UpdateCourseRequest): Promise<void> {
     if (!courseId) throw new Error("courseCode is required for update");
 
     const role = localStorage.getItem("user-role") || "";
 
-    const response = await fetch(`/api/my-class-mate/v1/users/${encodeURIComponent(courseId)}`, {
+    console.log('Updating course:', courseId, courseRequest);
+
+    const response = await fetch(`/api/my-class-mate/v1/courses/${encodeURIComponent(courseId)}`, {
         method: 'PUT',
         body: JSON.stringify(courseRequest),
         headers: {

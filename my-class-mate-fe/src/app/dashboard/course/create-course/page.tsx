@@ -10,7 +10,6 @@ import Divider from '@mui/material/Divider';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
-import OutlinedInput from '@mui/material/OutlinedInput';
 import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
@@ -135,7 +134,15 @@ export default function Page(): React.JSX.Element {
     const handleInputChange = (field: keyof CourseRequest) => (
         event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | { target: { value: unknown } }
     ) => {
-        const value = event.target.value;
+        let value = event.target.value;
+        
+        // Ensure time fields have proper format with seconds
+        if (field === 'startTime' || field === 'endTime') {
+            if (typeof value === 'string' && value.length === 5) {
+                value = value + ':00';
+            }
+        }
+        
         setFormData(prev => ({
             ...prev,
             [field]: value
@@ -162,17 +169,26 @@ export default function Page(): React.JSX.Element {
         setLoading(true);
 
         try {
-            // Step 1: Call courseInit API to preview schedule
             console.log('Generating course schedule preview...');
+
+            // Ensure time format consistency
+            const formatTime = (time: string): string => {
+                if (time && time.length === 5) {
+                    return time + ':00';
+                }
+                return time;
+            };
 
             const initRequest = {
                 dayOfWeek: formData.dayOfWeek,
                 startDate: formData.startDate,
                 endDate: formData.endDate,
-                startTime: formData.startTime,
-                endTime: formData.endTime,
+                startTime: formatTime(formData.startTime),
+                endTime: formatTime(formData.endTime),
                 room: formData.room
             };
+
+            console.log('Init request:', initRequest);
 
             const initResponse = await courseInit(initRequest);
 
@@ -180,6 +196,7 @@ export default function Page(): React.JSX.Element {
             setSchedulePreview(initResponse.data);
             setShowSchedulePreview(true);
         } catch (error: any) {
+            console.error('Error in handleCreateSchedulePreview:', error);
             setErrorDialogMessage(error.message || 'เกิดข้อผิดพลาดในการสร้างตารางเรียน');
         } finally {
             setLoading(false);
@@ -197,8 +214,16 @@ export default function Page(): React.JSX.Element {
         setLoading(true);
 
         try {
-            // Get current user ID from localStorage (you might need to adjust this based on your auth system)
+            // Get current user ID from localStorage
             const currentUserId = Number(localStorage.getItem('user-id')) || 1;
+
+            // Ensure time format consistency
+            const formatTime = (time: string): string => {
+                if (time && time.length === 5) {
+                    return time + ':00';
+                }
+                return time;
+            };
 
             // Prepare the create course request data
             const courseData: CreateCourseRequest = {
@@ -207,8 +232,8 @@ export default function Page(): React.JSX.Element {
                 academicYear: formData.academicYear,
                 semester: formData.semester,
                 room: formData.room,
-                startTime: formData.startTime,
-                endTime: formData.endTime,
+                startTime: formatTime(formData.startTime),
+                endTime: formatTime(formData.endTime),
                 dayOfWeek: formData.dayOfWeek,
                 startDate: formData.startDate,
                 endDate: formData.endDate,
@@ -216,10 +241,10 @@ export default function Page(): React.JSX.Element {
                 lecturerIds: Array.from(selectedLecturers),
                 schedules: schedulePreview.map(schedule => ({
                     scheduleDate: schedule.scheduleDate,
-                    startTime: schedule.startTime,
-                    endTime: schedule.endTime,
+                    startTime: formatTime(schedule.startTime),
+                    endTime: formatTime(schedule.endTime),
                     room: schedule.room,
-                    remark: schedule.remark || undefined // Only include remark if it exists
+                    remark: schedule.remark || undefined
                 }))
             };
 
@@ -227,7 +252,6 @@ export default function Page(): React.JSX.Element {
 
             // Call the create course API
             const result = await createCourse(courseData);
-
 
             // Show success message with course details
             showToast(

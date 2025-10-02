@@ -10,6 +10,16 @@ export interface CourseRequest {
     startDate: string; // Format: "YYYY-MM-DD"
     endDate: string;   // Format: "YYYY-MM-DD"
   }
+
+  export interface UpdateCourseRequest {
+    courseCode: string;
+    courseName: string;
+    academicYear: number;
+    semester: number;
+    room: string;
+    lecturerIds: number[];
+    schedules: CourseSchedule[];
+  }
   
   export interface LecturerInfo {
     lecturerId: number;
@@ -39,7 +49,7 @@ export interface CourseRequest {
   }
   
   export interface CourseResponse {
-    courseId: number;
+    courseId: string;
     courseCode: string;
     courseName: string;
     academicYear: number;
