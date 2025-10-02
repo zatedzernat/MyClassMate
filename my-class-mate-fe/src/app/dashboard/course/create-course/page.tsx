@@ -496,7 +496,6 @@ export default function Page(): React.JSX.Element {
                                                 >
                                                     <MenuItem value={1}>ภาคเรียนที่ 1</MenuItem>
                                                     <MenuItem value={2}>ภาคเรียนที่ 2</MenuItem>
-                                                    <MenuItem value={3}>ภาคเรียนที่ 3</MenuItem>
                                                 </Select>
                                             </FormControl>
                                         </Stack>

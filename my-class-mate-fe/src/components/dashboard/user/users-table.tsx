@@ -67,18 +67,6 @@ export function UsersTable({
 
   const router = useRouter();
 
-  const selectOne = (id: string) => {
-    setSelected((prev) => new Set(prev).add(id));
-  };
-
-  const deselectOne = (id: string) => {
-    setSelected((prev) => {
-      const newSet = new Set(prev);
-      newSet.delete(id);
-      return newSet;
-    });
-  };
-
   const handleOpenEditDialog = (user: UserResponse) => {
     setSelectedUser(user);
     setOpenEditDialog(true);

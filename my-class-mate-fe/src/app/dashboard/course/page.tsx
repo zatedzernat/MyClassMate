@@ -24,7 +24,7 @@ import Snackbar from "@mui/material/Snackbar";
 import MuiAlert, { AlertColor } from "@mui/material/Alert";
 import CircularProgress from '@mui/material/CircularProgress';
 
-import { getCourses } from '@/api/course-api';
+import { getCourses} from '@/api/course-api';
 import { CourseResponse, CourseFilter, DayOfWeek } from '@/api/data/course-response';
 import { CoursesTable } from '@/components/dashboard/course/course-table';
 import ErrorDialog from '@/components/error/error-dialog';
@@ -33,7 +33,6 @@ import { paths } from '@/paths';
 export default function Page(): React.JSX.Element {
   const router = useRouter();
   const page = 0;
-  const rowsPerPage = 10;
 
   // Course state
   const [courses, setCourses] = useState<CourseResponse[]>([]);
@@ -43,11 +42,8 @@ export default function Page(): React.JSX.Element {
   // Filter state
   const [academicYear, setAcademicYear] = useState<number>(2568);
   const [semester, setSemester] = useState<number>(1);
-  const [selectedDay, setSelectedDay] = useState<DayOfWeek | ''>('');
-  const [searchTerm, setSearchTerm] = useState<string>('');
 
   // Dialog state
-  const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Toast state
@@ -65,8 +61,6 @@ export default function Page(): React.JSX.Element {
       const filter: CourseFilter = {
         academicYear,
         semester,
-        ...(selectedDay && { dayOfWeek: selectedDay as DayOfWeek }),
-        ...(searchTerm.trim() && { search: searchTerm.trim() })
       };
 
       console.log('Fetching courses with filter:', filter);
@@ -95,7 +89,7 @@ export default function Page(): React.JSX.Element {
   // Initial load and when filters change
   useEffect(() => {
     fetchCourses();
-  }, [academicYear, semester, selectedDay, searchTerm]);
+  }, [academicYear, semester]);
 
   // Handle filter changes
   const handleAcademicYearChange = (event: SelectChangeEvent<number>) => {
@@ -106,30 +100,9 @@ export default function Page(): React.JSX.Element {
     setSemester(Number(event.target.value));
   };
 
-  const handleDayChange = (event: SelectChangeEvent<string>) => {
-    setSelectedDay(event.target.value as DayOfWeek | '');
-  };
-
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value);
-  };
-
-  // Reset filters
-  const handleResetFilters = () => {
-    setAcademicYear(2568);
-    setSemester(2);
-    setSelectedDay('');
-    setSearchTerm('');
-  };
-
   // Navigate to create course page
   const handleCreateCourse = () => {
     router.push(paths.dashboard.createCourse);
-  };
-
-  // Toast handlers
-  const showToast = (message: string, severity: AlertColor = "success") => {
-    setToast({ open: true, message, severity });
   };
 
   // Error dialog close handler
@@ -222,12 +195,6 @@ export default function Page(): React.JSX.Element {
         <Box sx={{ textAlign: 'center', py: 6 }}>
           <Typography variant="h6" color="text.secondary" gutterBottom>
             ไม่พบรายวิชา
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {searchTerm || selectedDay 
-              ? 'ลองเปลี่ยนเงื่อนไขการค้นหาหรือตัวกรอง' 
-              : `ไม่มีรายวิชาในปีการศึกษา ${academicYear} ภาคเรียนที่ ${semester}`
-            }
           </Typography>
         </Box>
       ) : (
