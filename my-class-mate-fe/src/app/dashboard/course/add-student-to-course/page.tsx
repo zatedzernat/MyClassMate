@@ -333,7 +333,7 @@ export default function AddStudentToCoursePage(): React.JSX.Element {
                                     <TableHead>
                                         <TableRow sx={{ bgcolor: 'grey.50' }}>
                                             <TableCell align="center" sx={{ fontWeight: 600 }}>
-                                                ลำดับที่
+                                                เลขที่
                                             </TableCell>
                                             <TableCell sx={{ fontWeight: 600 }}>
                                                 รหัสนักศึกษา
