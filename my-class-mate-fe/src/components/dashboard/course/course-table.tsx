@@ -45,8 +45,6 @@ export function CoursesTable({
   onUpdated: onUpdated,
   onError: onError,
 }: CoursesTableProps): React.JSX.Element {
-  const [openEditDialog, setOpenEditDialog] = useState(false);
-  const [selectedCourse, setSelectedCourse] = useState<CourseResponse | null>(null);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState<CourseResponse | null>(null);
   const [openDetailDialog, setOpenDetailDialog] = useState(false);
@@ -140,6 +138,14 @@ export function CoursesTable({
     setCourseDetail(null);
   };
 
+  const handleAddStudent = (course: CourseResponse) => {
+    const courseParams = new URLSearchParams({
+      courseId: course.courseId.toString(),
+      courseName: `${course.courseCode}: ${course.courseName}`
+    });
+    router.push(`${paths.dashboard.course}/add-student-to-course?${courseParams}`);
+  };
+
 
   // Format date display with day of week
   const formatDateWithDay = (date: string): string => {
@@ -193,6 +199,21 @@ export function CoursesTable({
                   <TableCell>{row.room}</TableCell>
                   <TableCell align="center">
                     <Stack direction="row" spacing={1} justifyContent="center">
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddStudent(row);
+                          console.log('Add student to course:', row.courseId);
+                        }}
+                        title="เพิ่มนักเรียน"
+                      >
+                        <img
+                          src="/assets/add-user.png"
+                          alt="Add Student"
+                          style={{ width: 20, height: 20 }}
+                        />
+                      </IconButton>
                       <IconButton
                         size="small"
                         onClick={(e) => {
@@ -293,9 +314,23 @@ export function CoursesTable({
                 </Typography>
                 {courseDetail.enrollments.length > 0 ? (
                   <Box sx={{ maxHeight: 150, overflowY: 'auto' }}>
-                    {courseDetail.enrollments.map((enrollment) => (
-                      <Typography key={enrollment.enrollmentId} variant="body2">
-                        • {enrollment.studentNameTh} ({enrollment.studentNo}) - {enrollment.status}
+                    {courseDetail.enrollments.map((enrollment, index) => (
+                      <Typography
+                        key={index}
+                        variant="body2"
+                        sx={{ mb: 0.5 }}
+                      >
+                        • {index + 1}. {enrollment.studentNameTh}
+                        {enrollment.studentNameEn && (
+                          <span style={{ color: '#666', marginLeft: '8px' }}>
+                            ({enrollment.studentNameEn})
+                          </span>
+                        )}
+                        {enrollment.studentNo && (
+                          <span style={{ color: '#1976d2', marginLeft: '8px', fontSize: '0.875rem' }}>
+                            รหัส: {enrollment.studentNo}
+                          </span>
+                        )}
                       </Typography>
                     ))}
                   </Box>

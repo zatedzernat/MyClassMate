@@ -4,7 +4,8 @@ import {
     CourseListResponse,
     CourseFilter,
     DayOfWeek,
-    UpdateCourseRequest
+    UpdateCourseRequest,
+    ImportStudentToCourseResponse
 } from './data/course-response';
 import { CourseInitRequest, CourseInitResponse, CourseSchedulePreview } from './data/course-init-response';
 import { CreateCourseRequest, CreateCourseResponse } from './data/course-create';
@@ -127,64 +128,64 @@ export async function getCourses(filter?: CourseFilter): Promise<CourseListRespo
 /**
  * Get course by ID
  */
-export async function getCourseById(courseId: string): Promise<CourseResponse | null> {
+export async function getCourseById(courseId: string): Promise<CourseResponse> {
     try {
-      logger.debug('[CourseAPI]: Fetching course by ID:', courseId);
-  
-      const response = await fetch(`${BASE_URL}/${API_VERSION}/courses/${encodeURIComponent(courseId)}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-role': localStorage.getItem('user-role') || '',
-        },
-      });
-  
-      logger.debug(`[CourseAPI]: Get course by ID response status: ${response.status}`);
-  
-      if (!response.ok) {
+        logger.debug('[CourseAPI]: Fetching course by ID:', courseId);
+
+        const response = await fetch(`${BASE_URL}/${API_VERSION}/courses/${encodeURIComponent(courseId)}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-role': localStorage.getItem('user-role') || '',
+            },
+        });
+
+        logger.debug(`[CourseAPI]: Get course by ID response status: ${response.status}`);
+
+        if (!response.ok) {
+            const resData = await response.json();
+            const errorMessage = resData?.message || resData?.code || 'Unknown error occurred';
+            logger.error(`[CourseAPI]: Get course by ID HTTP error ${response.status}: ${errorMessage}`);
+            throw new Error(errorMessage);
+        }
+
         const resData = await response.json();
-        const errorMessage = resData?.message || resData?.code || 'Unknown error occurred';
-        logger.error(`[CourseAPI]: Get course by ID HTTP error ${response.status}: ${errorMessage}`);
-        throw new Error(errorMessage);
-      }
-  
-      const resData = await response.json();
-      logger.debug('[CourseAPI]: Get course by ID raw response data:', resData);
-  
-      // Map the response to CourseResponse format
-      const course: CourseResponse = {
-        courseId: resData.courseId,
-        courseCode: resData.courseCode,
-        courseName: resData.courseName,
-        academicYear: resData.academicYear,
-        semester: resData.semester,
-        room: resData.room,
-        startTime: resData.startTime,
-        endTime: resData.endTime,
-        dayOfWeek: resData.dayOfWeek as DayOfWeek,
-        startDate: resData.startDate,
-        endDate: resData.endDate,
-        createdBy: resData.createdBy,
-        createdAt: resData.createdAt,
-        updatedAt: resData.updatedAt,
-        lecturers: resData.lecturers || [],
-        schedules: resData.schedules || [],
-        enrollments: resData.enrollments || []
-      };
-  
-      logger.debug(`[CourseAPI]: Successfully fetched course: ${course.courseCode}`);
-      return course;
-  
+        logger.debug('[CourseAPI]: Get course by ID raw response data:', resData);
+
+        // Map the response to CourseResponse format
+        const course: CourseResponse = {
+            courseId: resData.courseId,
+            courseCode: resData.courseCode,
+            courseName: resData.courseName,
+            academicYear: resData.academicYear,
+            semester: resData.semester,
+            room: resData.room,
+            startTime: resData.startTime,
+            endTime: resData.endTime,
+            dayOfWeek: resData.dayOfWeek as DayOfWeek,
+            startDate: resData.startDate,
+            endDate: resData.endDate,
+            createdBy: resData.createdBy,
+            createdAt: resData.createdAt,
+            updatedAt: resData.updatedAt,
+            lecturers: resData.lecturers || [],
+            schedules: resData.schedules || [],
+            enrollments: resData.enrollments || []
+        };
+
+        logger.debug(`[CourseAPI]: Successfully fetched course: ${course.courseCode}`);
+        return course;
+
     } catch (error: any) {
-      logger.error('[CourseAPI]: Error fetching course by ID:', error);
-      
-      if (error.name === 'TypeError' && error.message.includes('fetch')) {
-        throw new Error('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต');
-      }
-      
-      throw error;
+        logger.error('[CourseAPI]: Error fetching course by ID:', error);
+
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            throw new Error('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต');
+        }
+
+        throw error;
     }
-  }
+}
 
 
 /**
@@ -327,6 +328,80 @@ export async function deleteCourse(courseId: string): Promise<void> {
     }
 }
 
+export async function importStudentToCourse(courseId: string, file: File): Promise<ImportStudentToCourseResponse> {
+    const role = localStorage.getItem("user-role") || "";
+
+    const formData = new FormData();
+    formData.append("file", file); // field name is 'file'
+
+    const response = await fetch(`/api/my-class-mate/v1/courses/${encodeURIComponent(courseId)}/import-student-to-course`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'x-role': role
+            // Note: do NOT set Content-Type, the browser will set multipart/form-data automatically
+        }
+    });
+
+    const resData = await response.json();
+
+    if (!response.ok) {
+        const errorMessage = resData?.message || resData?.code || 'Unknown error occurred';
+        throw new Error(errorMessage);
+    }
+
+    return { createdRow: resData.createdRow, invalidStudentNos: resData.invalidStudentNos || [] };
+
+}
+
+export async function exportStudentToCourse(courseId: string, courseCode: string): Promise<void> {
+    const role = localStorage.getItem("user-role") || "";
+
+    const response = await fetch(`/api/my-class-mate/v1/courses/${encodeURIComponent(courseId)}/export-student-to-course`, {
+        method: "GET",
+        headers: {
+            "x-role": role,
+        },
+    });
+
+    if (!response.ok) {
+        const resData = await response.json().catch(() => ({}));
+        const errorMessage = resData?.message || resData?.code || "Unknown error occurred";
+        throw new Error(errorMessage);
+    }
+
+    // Get the file blob
+    const blob = await response.blob();
+
+    // Create a link and trigger download
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+
+    // Create custom filename - ignore backend filename
+    const timestamp = new Date().toISOString().split('T')[0];
+    let fileName = `students_course_${courseId}_${timestamp}.xlsx`;
+
+    if (courseId) {
+        fileName = `students_${courseId}_${timestamp}.xlsx`;
+        if (courseCode) {
+            // Clean course name for filename (remove special characters and limit length)
+            const cleanCourseName = courseCode
+                .replace(/[^a-zA-Z0-9ก-๙\s]/g, '') // Remove special characters
+                .replace(/\s+/g, '_') // Replace spaces with underscores
+                .slice(0, 30); // Limit length
+            fileName = `students_in_course_${cleanCourseName}_${timestamp}.xlsx`;
+        }
+    }
+
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+
+    // Cleanup
+    a.remove();
+    window.URL.revokeObjectURL(url);
+}
 
 // Export for convenience
 // Export for convenience
