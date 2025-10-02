@@ -40,7 +40,6 @@ import ErrorDialog from '@/components/error/error-dialog';
 import { getUsers } from '@/api/user-api';
 import { UserResponse } from '@/api/data/user-response';
 import { Role } from '@/util/role-enum';
-import { CreateCourseRequest } from '@/api/data/course-create';
 
 export default function Page(): React.JSX.Element {
     const router = useRouter();
@@ -324,27 +323,7 @@ export default function Page(): React.JSX.Element {
 
         } catch (error: any) {
             console.error('Error updating course:', error);
-
-            let errorMessage = 'เกิดข้อผิดพลาดในการอัปเดตรายวิชา';
-
-            if (error.message) {
-                if (error.message.includes('duplicate') || error.message.includes('409')) {
-                    errorMessage = `รหัสวิชา ${formData.courseCode} มีอยู่แล้วในระบบ กรุณาใช้รหัสวิชาอื่น`;
-                } else if (error.message.includes('400')) {
-                    errorMessage = 'ข้อมูลที่ส่งไม่ถูกต้อง กรุณาตรวจสอบข้อมูลอีกครั้ง';
-                } else if (error.message.includes('network') || error.message.includes('fetch')) {
-                    errorMessage = 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต';
-                } else {
-                    errorMessage = error.message;
-                }
-            }
-
-            showToast(errorMessage, 'error');
-
-            if (error.message.length > 100) {
-                setErrorDialogMessage(error.message);
-            }
-
+            setErrorDialogMessage(error.message);
         } finally {
             setLoading(false);
         }
