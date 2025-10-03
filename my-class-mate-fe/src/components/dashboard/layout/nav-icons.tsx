@@ -1,4 +1,4 @@
-import { BookIcon } from '@phosphor-icons/react';
+import { BookIcon, CalendarIcon, PenIcon, PersonIcon, PersonSimpleIcon } from '@phosphor-icons/react';
 import type { Icon } from '@phosphor-icons/react/dist/lib/types';
 import { CameraIcon } from '@phosphor-icons/react/dist/ssr';
 import { ChartPieIcon } from '@phosphor-icons/react/dist/ssr/ChartPie';
@@ -16,5 +16,6 @@ export const navIcons = {
   user: UserIcon,
   users: UsersIcon,
   camera: CameraIcon,
-  course: BookIcon
+  course: BookIcon,
+  todayCourse: CalendarIcon,
 } as Record<string, Icon>;

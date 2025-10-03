@@ -16,7 +16,7 @@ import { paths } from '@/paths';
 import { isNavItemActive } from '@/lib/is-nav-item-active';
 import { Logo } from '@/components/core/logo';
 
-import { navItems, navItemsForStudent } from './config';
+import { navItems, navItemsForAdmin, navItemsForStudent } from './config';
 import { navIcons } from './nav-icons';
 
 export function SideNav(): React.JSX.Element {
@@ -30,7 +30,18 @@ export function SideNav(): React.JSX.Element {
   }, []);
 
   // Determine which navigation items to show based on user role
-  const currentNavItems = userRole === 'STUDENT' ? navItemsForStudent : navItems;
+  const getCurrentNavItems = (role: string | null) => {
+    switch (role) {
+      case 'STUDENT':
+        return navItemsForStudent;
+      case 'ADMIN':
+        return navItemsForAdmin;
+      default:
+        return navItems; // Default to lecturer navigation
+    }
+  };
+
+  const currentNavItems = getCurrentNavItems(userRole);
 
   return (
     <Box

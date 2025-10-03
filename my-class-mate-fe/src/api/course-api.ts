@@ -5,7 +5,8 @@ import {
     CourseFilter,
     DayOfWeek,
     UpdateCourseRequest,
-    ImportStudentToCourseResponse
+    ImportStudentToCourseResponse,
+    TodayCourseResponse
 } from './data/course-response';
 import { CourseInitRequest, CourseInitResponse, CourseSchedulePreview } from './data/course-init-response';
 import { CreateCourseRequest, CreateCourseResponse } from './data/course-create';
@@ -401,6 +402,76 @@ export async function exportStudentToCourse(courseId: string, courseCode: string
     // Cleanup
     a.remove();
     window.URL.revokeObjectURL(url);
+}
+
+export async function getTodayCourses(): Promise<TodayCourseResponse[]> {
+    try {
+        logger.debug('[CourseAPI]: Fetching today\'s course schedules');
+
+        const role = localStorage.getItem('user-role') || '';
+        
+        const response = await fetch(`${BASE_URL}/${API_VERSION}/courses/today-schedules`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-role': role,
+            },
+        });
+
+        logger.debug(`[CourseAPI]: Get today's courses response status: ${response.status}`);
+
+        const resData = await response.json();
+
+        if (!response.ok) {
+            const errorMessage = resData?.message || resData?.code || 'Unknown error occurred';
+            logger.error(`[CourseAPI]: Get today's courses HTTP error ${response.status}: ${errorMessage}`);
+            throw new Error(errorMessage);
+        }
+
+        logger.debug('[CourseAPI]: Get today\'s courses raw response data:', resData);
+
+        // Handle different response formats
+        let courses: TodayCourseResponse[];
+
+        if (Array.isArray(resData)) {
+            // Direct array response
+            courses = resData;
+        } else if (resData.data && Array.isArray(resData.data)) {
+            // Wrapped response with data array
+            courses = resData.data;
+        } else if (resData.courses && Array.isArray(resData.courses)) {
+            // Response with courses property
+            courses = resData.courses;
+        } else {
+            logger.error('[CourseAPI]: Unexpected response format for today\'s courses:', resData);
+            throw new Error('รูปแบบข้อมูลจากเซิร์ฟเวอร์ไม่ถูกต้อง');
+        }
+
+        // Map and validate course data
+        const mappedTodayCourses: TodayCourseResponse[] = courses.map((course: any) => ({
+            courseScheduleId: course.courseScheduleId,
+            courseId: course.courseId,
+            courseCode: course.courseCode,
+            courseName: course.courseName,
+            scheduleDate: course.scheduleDate,
+            startTime: course.startTime,
+            endTime: course.endTime,
+            room: course.room,
+            remark: course.remark || ''
+        }));
+
+        logger.debug(`[CourseAPI]: Successfully fetched ${mappedTodayCourses.length} today's courses`);
+        return mappedTodayCourses;
+
+    } catch (error: any) {
+        logger.error('[CourseAPI]: Error fetching today\'s courses:', error);
+
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            throw new Error('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต');
+        }
+
+        throw error;
+    }
 }
 
 // Export for convenience

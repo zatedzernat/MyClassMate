@@ -191,3 +191,15 @@ export interface ImportStudentToCourseResponse {
   createdRow: number;
   invalidStudentNos: number[];
 }
+
+export interface TodayCourseResponse {
+  courseScheduleId: number;
+  courseId: number;
+  courseCode: string;
+  courseName: string;
+  scheduleDate: string;
+  startTime: string;
+  endTime: string;
+  room: string;
+  remark: string;
+}
