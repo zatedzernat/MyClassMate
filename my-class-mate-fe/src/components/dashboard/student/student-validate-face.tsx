@@ -11,19 +11,18 @@ import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
-import { UserResponse } from '@/api/data/user-response';
-import { validateFaceImage } from '@/api/face-api'; // Add your API import
+import { validateFaceImage } from '@/api/face-api';
+import { TodayCourseResponse } from '@/api/data/course-response';
 
-interface UserValidateFaceProps {
-  user: UserResponse | null;
+interface StudentValidateFaceProps {
+  todayCourse: TodayCourseResponse;
   onScanComplete?: (success: boolean) => void;
 }
 
-export function UserValidateFace({
-  user,
+export function StudentValidateFace({
+  todayCourse,
   onScanComplete
-}: UserValidateFaceProps): React.JSX.Element {
-
+}: StudentValidateFaceProps): React.JSX.Element {
   const [isCapturing, setIsCapturing] = React.useState(false);
   const [captureResult, setCaptureResult] = React.useState<'success' | 'failed' | null>(null);
   const [cameraActive, setCameraActive] = React.useState(false);
@@ -34,11 +33,17 @@ export function UserValidateFace({
   const videoRef = React.useRef<HTMLVideoElement>(null);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
-  if (!user) {
+
+
+
+
+  if (!todayCourse) {
     return (
       <Card>
         <CardContent>
-          <Typography>Loading user information...</Typography>
+          <Alert severity="warning">
+            <Typography>ไม่พบข้อมูลรายวิชาสำหรับวันนี้</Typography>
+          </Alert>
         </CardContent>
       </Card>
     );
@@ -153,29 +158,29 @@ export function UserValidateFace({
       setCameraError('กรุณาเปิดกล้องก่อนถ่ายภาพ');
       return;
     }
-  
+
     setIsCapturing(true);
     setCaptureResult(null);
-  
+
     try {
       const video = videoRef.current;
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
-  
+
       if (!ctx) {
         throw new Error('Cannot get canvas context');
       }
-  
+
       // Set canvas size to match video
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
-  
+
       // Draw the current video frame to canvas (mirrored)
       ctx.save();
       ctx.scale(-1, 1); // Mirror horizontally
       ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
       ctx.restore();
-  
+
       // Convert canvas to blob
       const blob = await new Promise<Blob>((resolve, reject) => {
         canvas.toBlob((blob) => {
@@ -186,7 +191,7 @@ export function UserValidateFace({
           }
         }, 'image/jpeg', 0.9);
       });
-  
+
       // Convert blob to base64 for preview
       const base64 = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
@@ -194,49 +199,56 @@ export function UserValidateFace({
         reader.onerror = reject;
         reader.readAsDataURL(blob);
       });
-  
+
       console.log('Captured image:', {
         size: blob.size,
         type: blob.type,
-        base64Length: base64.length
+        base64Length: base64.length,
+        courseId: todayCourse.courseId,
       });
-  
-      // **Call validateFaceImage API correctly**
+
+      // Call validateFaceImage API with today's course context
       try {
-        console.log('Validating face image...');
-        
+        console.log('Validating face image for course:', todayCourse.courseCode);
+
         // Call the API with userId string and blob directly
-        const validationResponse = await validateFaceImage(user.userId.toString(), blob);
-        
+        const validationResponse = await validateFaceImage(
+          todayCourse.courseId.toString(),
+          todayCourse.courseScheduleId.toString(),
+          blob
+        );
+
         console.log('✅ Face validation result:', validationResponse);
-        
+
         // Check if validation was successful and face was detected
-        if (validationResponse.success && validationResponse.faceDetected) {
-          // Add to saved images array only after successful validation
-          setSavedImages(prev => [...prev, base64]);
-          setCaptureResult('success');
-          
-          if (onScanComplete) {
-            onScanComplete(true);
-          }
-        } else {
-          // Face not detected or validation failed
-          setCaptureResult('failed');
-          setCameraError(validationResponse.message || 'ไม่พบใบหน้าในภาพ กรุณาลองใหม่');
-          return;
+        // Add to saved images array only after successful validation
+        setSavedImages(prev => [...prev, base64]);
+        setCaptureResult('success');
+
+        // Call onScanComplete with success
+        if (onScanComplete) {
+          onScanComplete(true);
         }
-        
+
       } catch (validationError: any) {
         console.error('❌ Face validation failed:', validationError);
         setCaptureResult('failed');
         setCameraError(validationError.message || 'เกิดข้อผิดพลาดในการตรวจสอบใบหน้า');
+
+        if (onScanComplete) {
+          onScanComplete(false);
+        }
         return;
       }
-  
+
     } catch (error) {
       console.error('Error capturing image:', error);
       setCaptureResult('failed');
       setCameraError('เกิดข้อผิดพลาดในการบันทึกภาพ');
+
+      if (onScanComplete) {
+        onScanComplete(false);
+      }
     } finally {
       setIsCapturing(false);
     }
@@ -264,13 +276,14 @@ export function UserValidateFace({
     };
   }, []);
 
+  // Format time display
+  const formatTime = (time: string): string => {
+    if (!time) return '';
+    return time.substring(0, 5); // Display as HH:MM
+  };
+
   return (
     <Card>
-      <CardHeader
-        title={`ภายถ่ายใบหน้า - ${user.nameTh} ${user.surnameTh}`}
-      />
-      <Divider />
-
       <CardContent sx={{
         display: 'flex',
         flexDirection: 'column',
@@ -282,7 +295,7 @@ export function UserValidateFace({
           sx={{
             position: 'relative',
             width: '100%',
-            maxWidth: { xs: 250, sm: 350, md: 500 },
+            maxWidth: { xs: 250, sm: 400, md: 500, lg: 600 }, // Expanded sizes
             aspectRatio: '4/3',
             border: '3px solid',
             borderColor: cameraError ? 'error.main' :
@@ -370,7 +383,7 @@ export function UserValidateFace({
               <Box sx={{ textAlign: 'center', color: 'white' }}>
                 <CircularProgress color="primary" size={60} sx={{ mb: 2 }} />
                 <Typography variant="h6">
-                  กำลังบันทึกภาพ...
+                  กำลังตรวจสอบใบหน้า...
                 </Typography>
                 <Typography variant="body2" sx={{ mt: 1, opacity: 0.8 }}>
                   กรุณารอสักครู่
@@ -397,10 +410,10 @@ export function UserValidateFace({
               }}
             >
               <Typography variant="h6">
-                {captureResult === 'success' ? '✓ บันทึกสำเร็จ!' : '✗ บันทึกไม่สำเร็จ!'}
+                {captureResult === 'success' ? '✓ ตรวจสอบสำเร็จ!' : '✗ ตรวจสอบไม่สำเร็จ!'}
               </Typography>
               <Typography variant="body2" sx={{ mt: 0.5, opacity: 0.9 }}>
-                {captureResult === 'success' ? 'บันทึกภาพได้เรียบร้อย' : 'กรุณาลองใหม่อีกครั้ง'}
+                {captureResult === 'success' ? 'ยืนยันตัวตนเรียบร้อย' : 'กรุณาลองใหม่อีกครั้ง'}
               </Typography>
             </Box>
           )}
@@ -411,7 +424,7 @@ export function UserValidateFace({
           {captureResult === 'success' && (
             <Alert severity="success" sx={{ mb: 3 }}>
               <Typography variant="body1">
-                <strong>บันทึกภาพสำเร็จ!</strong> ระบบได้บันทึกภาพของคุณเรียบร้อยแล้ว
+                <strong>ยืนยันตัวตนสำเร็จ!</strong> ระบบได้ยืนยันตัวตนของคุณสำหรับรายวิชา {todayCourse.courseCode} เรียบร้อยแล้ว
               </Typography>
             </Alert>
           )}
@@ -419,38 +432,17 @@ export function UserValidateFace({
           {captureResult === 'failed' && (
             <Alert severity="error" sx={{ mb: 3 }}>
               <Typography variant="body1">
-                <strong>บันทึกภาพไม่สำเร็จ!</strong> กรุณาลองใหม่อีกครั้ง
+                <strong>ยืนยันตัวตนไม่สำเร็จ!</strong> {cameraError || 'กรุณาลองใหม่อีกครั้ง'}
               </Typography>
             </Alert>
           )}
-
-          <Typography
-            variant="body1"
-            color="text.secondary"
-            sx={{
-              textAlign: 'center',
-              px: 2,
-              lineHeight: 1.6
-            }}
-          >
-            {cameraError
-              ? 'กรุณาแก้ไขปัญหาการเข้าถึงกล้องก่อนใช้งาน'
-              : isRequestingPermission
-                ? 'กำลังเปิดกล้อง กรุณารอสักครู่...'
-                : isCapturing
-                  ? 'กำลังบันทึกภาพ กรุณาอย่าขยับ...'
-                  : cameraActive
-                    ? '📸 กดปุ่ม "ถ่ายภาพ" เพื่อบันทึกภาพใบหน้า'
-                    : '📹 เปิดกล้องเพื่อเริ่มการถ่ายภาพ'
-            }
-          </Typography>
         </Box>
 
         {/* Preview saved images */}
         {savedImages.length > 0 && (
           <Box sx={{ mt: 4, width: '100%', maxWidth: 600 }}>
             <Typography variant="h6" sx={{ mb: 2, textAlign: 'center' }}>
-              ภาพที่บันทึกแล้ว ({savedImages.length} รูป)
+              ภาพที่ยืนยันแล้ว ({savedImages.length} รูป)
             </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'center' }}>
               {savedImages.map((image, index) => (
@@ -467,7 +459,7 @@ export function UserValidateFace({
                 >
                   <img
                     src={image}
-                    alt={`Captured ${index + 1}`}
+                    alt={`Validated ${index + 1}`}
                     style={{
                       width: '100%',
                       height: '100%',
@@ -521,7 +513,7 @@ export function UserValidateFace({
               size="large"
               disabled={isCapturing}
               sx={{
-                minWidth: 120,
+                minWidth: 150,
                 py: 1.5,
                 fontSize: '1.1rem',
                 backgroundColor: 'primary.main',
@@ -530,9 +522,9 @@ export function UserValidateFace({
                 }
               }}
             >
-              {isCapturing ? 'กำลังถ่าย...' : '📸 ถ่ายภาพ'}
+              {isCapturing ? 'กำลังตรวจสอบ...' : '🔍 ตรวจสอบใบหน้า'}
             </Button>
-            
+
             {savedImages.length > 0 && (
               <Button
                 variant="outlined"
@@ -544,7 +536,7 @@ export function UserValidateFace({
                 🗑️ ลบภาพทั้งหมด
               </Button>
             )}
-            
+
             <Button
               variant="outlined"
               onClick={handleStopCamera}

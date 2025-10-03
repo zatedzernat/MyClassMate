@@ -1,36 +1,27 @@
-import { FaceValidationResponse, UploadFaceImagesResponse } from "./data/face-response";
+import { UploadFaceImagesResponse } from "./data/face-response";
 
 // Validate single face image
 export async function validateFaceImage(
-  userId: string,
+  courseId: string,
+  courseScheduleId: string,
   imageFile: File | Blob
-): Promise<FaceValidationResponse> {
+): Promise<void> {
   const formData = new FormData();
-  formData.append('userId', userId);
-  formData.append('image', imageFile, `face-validation-${Date.now()}.jpg`);
+  formData.append('file', imageFile, `face-validation-${Date.now()}.jpg`);
 
-  try {
-    const response = await fetch('/api/face/validate', {
-      method: 'POST',
-      body: formData,
-      headers: {
-        'x-role': localStorage.getItem("user-role") || ""
-        // Don't set Content-Type for FormData, let browser handle it
-      },
-    });
+  const response = await fetch(`/api/my-class-mate/v1/attendance/${courseId}/${courseScheduleId}`, {
+    method: 'POST',
+    body: formData,
+    headers: {
+      'x-role': localStorage.getItem("user-role") || ""
+    },
+  });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
 
-    const data: FaceValidationResponse = await response.json();
-    return data;
-  } catch (error: any) {
-    console.error('Face validation error:', error);
-    throw new Error(
-      error.message ||
-      'เกิดข้อผิดพลาดในการตรวจสอบใบหน้า'
-    );
+  if (!response.ok) {
+    const resData = await response.json().catch(() => ({}));
+    const errorMessage = resData?.message || resData?.code || "Unknown error occurred";
+    throw new Error(errorMessage);
   }
 }
 

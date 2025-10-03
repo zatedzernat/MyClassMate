@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Box,
   Typography,
@@ -23,8 +24,10 @@ import { CalendarIcon } from '@phosphor-icons/react/dist/ssr/Calendar';
 import { getTodayCourses } from '@/api/course-api';
 import { TodayCourseResponse } from '@/api/data/course-response';
 import ErrorDialog from '@/components/error/error-dialog';
+import { paths } from '@/paths';
 
-export default function Page(): React.JSX.Element {
+export default function TodayCoursesPage(): React.JSX.Element {
+  const router = useRouter();
   const [courses, setCourses] = useState<TodayCourseResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -79,10 +82,12 @@ export default function Page(): React.JSX.Element {
     });
   };
 
-  // Handle attendance check button
+  // Handle attendance check button - navigate to student check-in page
   const handleAttendanceCheck = (course: TodayCourseResponse) => {
-    console.log('Check attendance for course:', course.courseId);
-    // TODO: Navigate to attendance page or open attendance dialog
+    console.log('Navigating to check-in for course:', course.courseId, course.courseCode);
+    
+    // Navigate to student check-in page with courseId as query parameter
+    router.push(`${paths.dashboard.todayCourses}/student-check-in?courseId=${course.courseId}`);
   };
 
   const handleCloseErrorDialog = () => {
@@ -99,9 +104,6 @@ export default function Page(): React.JSX.Element {
           </Typography>
           <Typography variant="h6" color="text.secondary">
             ข้อมูลรายวิชาที่มีเรียนประจำวัน
-          </Typography>
-          <Typography variant="body2" color="primary.main" sx={{ mt: 1 }}>
-            GET localhost:8080/my-class-mate/v1/courses/today-schedules
           </Typography>
         </Box>
 
@@ -163,6 +165,8 @@ export default function Page(): React.JSX.Element {
                       <TableCell sx={{ fontWeight: 600, textAlign: 'center', minWidth: 100 }}>
                         หมายเหตุ
                       </TableCell>
+                      <TableCell sx={{ fontWeight: 600, textAlign: 'center', minWidth: 120 }}>
+                      </TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -208,6 +212,11 @@ export default function Page(): React.JSX.Element {
                             </Typography>
                           </TableCell>
                           <TableCell align="center">
+                            <Typography variant="body2" color="success.main">
+                              {course.remark || '-'}
+                            </Typography>
+                          </TableCell>
+                          <TableCell align="center">
                             <Button
                               variant="contained"
                               size="small"
@@ -215,7 +224,11 @@ export default function Page(): React.JSX.Element {
                               sx={{ 
                                 minWidth: 100,
                                 fontSize: '0.75rem',
-                                py: 0.5
+                                py: 0.5,
+                                backgroundColor: 'primary.main',
+                                '&:hover': {
+                                  backgroundColor: 'primary.dark',
+                                }
                               }}
                             >
                               เช็คชื่อเข้าเรียน
@@ -229,19 +242,6 @@ export default function Page(): React.JSX.Element {
               </TableContainer>
             </CardContent>
           </Card>
-        )}
-
-        {/* Refresh Button */}
-        {!loading && (
-          <Box sx={{ textAlign: 'center' }}>
-            <Button
-              variant="outlined"
-              onClick={fetchTodayCourses}
-              startIcon={<CalendarIcon size={16} />}
-            >
-              รีเฟรชตารางเรียน
-            </Button>
-          </Box>
         )}
       </Stack>
 
