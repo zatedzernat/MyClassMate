@@ -97,11 +97,6 @@ export default function StudentCheckInPage(): React.JSX.Element {
                 message: `เช็คชื่อเข้าเรียนสำเร็จ! รายวิชา ${todayCourse?.courseCode}`,
                 severity: 'success'
             });
-
-            // Auto redirect after 3 seconds
-            setTimeout(() => {
-                router.push(paths.dashboard.todayCourses);
-            }, 3000);
         } else {
             setToast({
                 open: true,
@@ -268,9 +263,6 @@ export default function StudentCheckInPage(): React.JSX.Element {
                             </Typography>
                             <Typography variant="body1">
                                 คุณได้เช็คชื่อเข้าเรียนรายวิชา <strong>{todayCourse.courseCode}: {todayCourse.courseName}</strong> เรียบร้อยแล้ว
-                            </Typography>
-                            <Typography variant="body2" sx={{ mt: 1, opacity: 0.8 }}>
-                                ระบบจะนำคุณกลับไปหน้าตารางเรียนในอีก 3 วินาที...
                             </Typography>
                         </Alert>
                     )}
