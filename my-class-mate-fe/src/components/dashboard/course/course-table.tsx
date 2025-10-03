@@ -35,6 +35,7 @@ interface CoursesTableProps {
   rowsPerPage?: number;
   onUpdated?: () => void;
   onError?: (message: string) => void;
+  onShowToast?: (message: string, severity: 'success' | 'error') => void;
 }
 
 export function CoursesTable({
@@ -44,6 +45,7 @@ export function CoursesTable({
   rowsPerPage = 0,
   onUpdated: onUpdated,
   onError: onError,
+  onShowToast: onShowToast = noop
 }: CoursesTableProps): React.JSX.Element {
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState<CourseResponse | null>(null);
@@ -115,6 +117,7 @@ export function CoursesTable({
       // Call the onUpdated callback to refresh the course list
       if (onUpdated) {
         onUpdated();
+        onShowToast(`ลบรายวิชา ${courseToDelete.courseCode} เรียบร้อยแล้ว`, 'success');
       }
 
     } catch (error: any) {

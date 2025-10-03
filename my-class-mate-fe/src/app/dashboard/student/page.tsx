@@ -9,6 +9,13 @@ import { getStudentProfile } from '@/api/student-api';
 import { Box, Container } from '@mui/system';
 import { StudentInfo } from '@/components/dashboard/student/student-info';
 import { StudentResponse } from '@/api/data/student-response';
+import { Alert, Snackbar } from '@mui/material';
+
+interface ToastState {
+  open: boolean;
+  message: string;
+  severity: 'success' | 'error' | 'warning' | 'info';
+}
 
 export default function Page(): React.JSX.Element {
   const searchParams = useSearchParams();
@@ -17,6 +24,12 @@ export default function Page(): React.JSX.Element {
   const [loading, setLoading] = useState(true);
   const [showDetailsForm, setShowDetailsForm] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Toast state
+  const [toast, setToast] = useState<ToastState>({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
 
   useEffect(() => {
     const fetchStudent = async () => {
@@ -46,8 +59,21 @@ export default function Page(): React.JSX.Element {
     fetchStudent();
   }, [userId]);
 
-  const handleToggleDetailsForm = () => {
-    setShowDetailsForm(!showDetailsForm);
+  // Handle toast close
+  const handleCloseToast = (event?: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setToast(prev => ({ ...prev, open: false }));
+  };
+
+  // Function to show toast from child components
+  const showToast = (message: string, severity: 'success' | 'error' | 'warning' | 'info' = 'success') => {
+    setToast({
+      open: true,
+      message,
+      severity
+    });
   };
 
   // Callback to refresh student data after updates
@@ -57,8 +83,14 @@ export default function Page(): React.JSX.Element {
 
     try {
       const response = await getStudentProfile(targetUserId);
-    
-        setStudentData(response);
+
+      setStudentData(response);
+      // Show error toast
+      setToast({
+        open: true,
+        message: 'เเก้ไขข้อมูลนักศึกษาเรียบร้อยแล้ว',
+        severity: 'success'
+      });
 
     } catch (error: any) {
       console.error('Error refreshing student data:', error);
@@ -129,6 +161,47 @@ export default function Page(): React.JSX.Element {
           </Box>
         </Stack>
       </Stack>
+
+      {/* Toast Notification */}
+      <Snackbar
+        open={toast.open}
+        autoHideDuration={6000}
+        onClose={handleCloseToast}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          severity={toast.severity}
+          onClose={handleCloseToast}
+          sx={{
+            '&.MuiAlert-filledSuccess': {
+              backgroundColor: '#388e3c',
+              color: '#ffffff',
+              fontWeight: 500,
+            },
+            '&.MuiAlert-filledError': {
+              backgroundColor: '#f44336',
+              color: '#ffffff',
+              fontWeight: 500,
+            },
+            '&.MuiAlert-filledWarning': {
+              backgroundColor: '#ff9800',
+              color: '#ffffff',
+              fontWeight: 500,
+            },
+            '&.MuiAlert-filledInfo': {
+              backgroundColor: '#2196f3',
+              color: '#ffffff',
+              fontWeight: 500,
+            },
+            fontSize: '0.95rem',
+            borderRadius: '8px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          }}
+        >
+          {toast.message}
+        </Alert>
+      </Snackbar>
+
     </Container>
   );
 }

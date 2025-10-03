@@ -205,6 +205,7 @@ export default function Page(): React.JSX.Element {
           rowsPerPage={courses.length}
           onUpdated={fetchCourses}
           onError={setErrorMessage}
+          onShowToast={(message, severity) => setToast({ open: true, message, severity })}
         />
       )}
 
@@ -219,7 +220,7 @@ export default function Page(): React.JSX.Element {
       {/* Toast Notification */}
       <Snackbar
         open={toast.open}
-        autoHideDuration={6000}
+        autoHideDuration={3000}
         onClose={handleCloseToast}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >

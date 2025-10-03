@@ -313,6 +313,7 @@ export default function Page(): React.JSX.Element {
 
             // Reset changes flag
             setHasChanges(false);
+            setToast({ open: true, message: 'บันทึกการแก้ไขรายวิชาเรียบร้อยแล้ว', severity: 'success' });
 
             // Navigate back to course list after short delay
             setTimeout(() => {
