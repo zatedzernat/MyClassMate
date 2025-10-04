@@ -4,9 +4,11 @@ import com.bill.constant.AttendanceStatusEnum;
 import com.bill.model.CourseScheduleAttendanceProjection;
 import com.bill.model.response.CourseEnrollmentResponse;
 import com.bill.model.response.CourseResponse;
+import com.bill.repository.AttendanceRepository;
 import com.bill.repository.AttendanceSummaryRepository;
 import com.bill.repository.CourseScheduleRepository;
 import com.bill.repository.UserRepository;
+import com.bill.repository.entity.Attendance;
 import com.bill.repository.entity.AttendanceSummary;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -27,9 +29,10 @@ import static com.bill.service.AppUtils.toThaiBuddhistDate;
 @RequiredArgsConstructor
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 public class SummaryAndNotiService {
-    private final UserRepository userRepository;
     CourseService courseService;
     EmailService emailService;
+    AttendanceRepository attendanceRepository;
+    UserRepository userRepository;
     CourseScheduleRepository courseScheduleRepository;
     AttendanceSummaryRepository attendanceSummaryRepository;
 
@@ -53,15 +56,36 @@ public class SummaryAndNotiService {
                         now.toLocalDate()
                 );
 
+                // today attendance
+                var todayAttendance = currentAttendances.stream()
+                        .filter(atn -> now.toLocalDate().equals(atn.getScheduleDate()))
+                        .findFirst()
+                        .orElseThrow();
+                insertAttendanceWhenAbsent(todayAttendance, studentId, courseId, courseScheduleId, now);
+
                 int totalPresent = countAttendanceByStatus(currentAttendances, AttendanceStatusEnum.PRESENT);
                 int totalLate = countAttendanceByStatus(currentAttendances, AttendanceStatusEnum.LATE);
                 int totalAbsent = countAttendanceByStatus(currentAttendances, AttendanceStatusEnum.ABSENT);
 
+                // upsert attendance summary
                 var attendanceSummary = upsertAttendanceSummary(studentId, courseId, totalPresent, totalLate, totalAbsent, now);
 
                 // email noti
-                sendNotiEmail(courseScheduleId, enrollment, studentId, course, now, currentAttendances, attendanceSummary);
+                sendNotiEmail(courseScheduleId, enrollment, studentId, course, now, todayAttendance, attendanceSummary);
             }
+        }
+    }
+
+    private void insertAttendanceWhenAbsent(CourseScheduleAttendanceProjection todayAttendance, Long studentId, Long courseId, Long courseScheduleId, LocalDateTime now) {
+        if (AttendanceStatusEnum.ABSENT.equals(todayAttendance.getStatus())) {
+            // insert attendance for absent
+            attendanceRepository.save(Attendance.builder()
+                    .studentId(studentId)
+                    .courseId(courseId)
+                    .courseScheduleId(courseScheduleId)
+                    .status(AttendanceStatusEnum.ABSENT)
+                    .createdAt(now)
+                    .build());
         }
     }
 
@@ -101,17 +125,14 @@ public class SummaryAndNotiService {
         return attendanceSummary;
     }
 
-    private void sendNotiEmail(Long courseScheduleId, CourseEnrollmentResponse enrollment, Long studentId, CourseResponse course, LocalDateTime now, List<CourseScheduleAttendanceProjection> currentAttendances, AttendanceSummary attendanceSummary) {
+    private void sendNotiEmail(Long courseScheduleId, CourseEnrollmentResponse enrollment, Long studentId, CourseResponse course, LocalDateTime now, CourseScheduleAttendanceProjection todayAttendance, AttendanceSummary attendanceSummary) {
         var studentEmail = userRepository.findById(studentId).orElseThrow().getEmail();
         if (StringUtils.isNotBlank(studentEmail)) {
             var buddhistDate = toThaiBuddhistDate(now.toLocalDate());
             var subject = String.format(EMAIL_SUBJECT_TEMPLATE, course.getCourseCode(), buddhistDate);
 
             // set today status color
-            var todayAttendance = currentAttendances.stream()
-                    .filter(atn -> now.toLocalDate().equals(atn.getScheduleDate()))
-                    .findFirst()
-                    .orElseThrow();
+
             var todayStatusText = todayAttendance.getStatus().getDesc();
             var todayStatusColor = getStatusColor(todayAttendance);
 
