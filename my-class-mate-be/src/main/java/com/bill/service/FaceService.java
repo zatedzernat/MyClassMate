@@ -59,10 +59,11 @@ public class FaceService {
     @Transactional
     public AttendanceResponse attendance(Long courseId, Long courseScheduleId, MultipartFile file) {
         var faceRegEndpoint = "/v1/face-recognition";
-        var response = apiClient.postMultipartSafe(faceRegEndpoint, null, List.of(file), FastAPIFaceRegResponse.class, "file");
+        var fastApiResponse = apiClient.postMultipartSafe(faceRegEndpoint, null, List.of(file), FastAPIFaceRegResponse.class, "file");
 
-        if ("Success".equals(response.getStatus())) {
-            var studentId = response.getUserId();
+        if ("Success".equals(fastApiResponse.getStatus())) {
+            log.info("attendance fast-api courseId = {}, courseScheduleId = {}, fastApiResponse = {}", courseId, courseScheduleId, fastApiResponse);
+            var studentId = fastApiResponse.getUserId();
             // validate student enrollment
             enrollmentRepository.findByStudentIdAndCourseId(studentId, courseId)
                     .orElseThrow(() -> new AppException(
@@ -87,7 +88,8 @@ public class FaceService {
                 status = AttendanceStatusEnum.LATE;
             }
 
-            var attendance = attendanceRepository.findByStudentIdAndCourseScheduleId(studentId, courseScheduleId);
+            var attendance = attendanceRepository.findFirstByStudentIdAndCourseScheduleIdOrderByIdDesc(studentId, courseScheduleId);
+
             // insert only first time attendance
             if (attendance == null) {
                 attendance = Attendance.builder()
@@ -104,7 +106,8 @@ public class FaceService {
             var course = courseRepository.findById(courseId)
                     .orElseThrow(() -> new AppException(ERROR_COURSE_NOT_FOUND.getCode(), ERROR_COURSE_NOT_FOUND.getMessage()));
 
-            return AttendanceResponse.builder()
+
+            var response =  AttendanceResponse.builder()
                     .attendanceId(attendance.getId())
                     .studentId(studentId)
                     .studentNo(studentProfile.getStudentNo())
@@ -117,6 +120,8 @@ public class FaceService {
                     .status(status)
                     .statusDesc(status.getDesc())
                     .build();
+            log.info("attendance response = {}", response);
+            return response;
         } else {
             throw new AppException(ERROR_INTERNAL_API_CALL.getCode(), ERROR_INTERNAL_API_CALL.getMessage());
         }

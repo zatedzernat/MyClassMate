@@ -105,7 +105,7 @@ public class ParticipationService {
         }
 
         // validate student attendance
-        var attendance = attendanceRepository.findByStudentIdAndCourseScheduleId(studentId, courseScheduleId);
+        var attendance = attendanceRepository.findFirstByStudentIdAndCourseScheduleIdOrderByIdDesc(studentId, courseScheduleId);
         if (attendance == null) {
             throw new AppException(ERROR_STUDENT_ATTENDANCE_NOT_FOUND.getCode(), ERROR_STUDENT_ATTENDANCE_NOT_FOUND.format(studentId, courseScheduleId));
         }

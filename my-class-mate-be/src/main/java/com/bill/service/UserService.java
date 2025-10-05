@@ -9,6 +9,7 @@ import com.bill.model.request.LoginRequest;
 import com.bill.model.request.UpdateUserRequest;
 import com.bill.model.response.ImportExcelResponse;
 import com.bill.model.response.UserResponse;
+import com.bill.repository.AttendanceSummaryRepository;
 import com.bill.repository.IdentityRepository;
 import com.bill.repository.StudentProfileRepository;
 import com.bill.repository.UserRepository;
@@ -319,9 +320,15 @@ public class UserService {
                 String remark = getCellValue(row.getCell(12));
 
                 // ตรวจสอบค่าว่างที่จำเป็น
-                if (username.isBlank() || nameTh.isBlank() || surnameTh.isBlank() ||
-                        nameEn.isBlank() || surnameEn.isBlank() || email.isBlank() || roleStr.isBlank()) {
-                    throw new AppException(ERROR_IMPORT_INVALID_EXCEL.getCode(), "blank field at row = " + (i + 1));
+                if (StringUtils.isBlank(username)
+                        || StringUtils.isBlank(nameTh)
+                        || StringUtils.isBlank(surnameTh)
+                        || StringUtils.isBlank(nameEn)
+                        || StringUtils.isBlank(surnameEn)
+                        || StringUtils.isBlank(email)
+                        || StringUtils.isBlank(roleStr)) {
+                    throw new AppException(ERROR_IMPORT_INVALID_EXCEL.getCode(),
+                            "blank field at row = " + (i + 1));
                 }
 
                 RoleEnum role = RoleEnum.valueOf(roleStr.trim().toUpperCase());
@@ -421,6 +428,8 @@ public class UserService {
         user.setIsDeleted(true);
         user.setUpdatedAt(LocalDateTime.now());
         user = userRepository.save(user);
+
+        identityRepository.deleteByUserId(userId);
 
         return mapToUserResponse(user, true);
     }

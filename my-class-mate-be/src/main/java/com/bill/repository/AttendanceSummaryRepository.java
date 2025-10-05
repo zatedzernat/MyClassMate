@@ -7,4 +7,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface AttendanceSummaryRepository extends JpaRepository<AttendanceSummary, Long> {
     AttendanceSummary findByStudentIdAndCourseId(Long studentId, Long courseId);
+
+    void deleteByStudentId(Long studentId);
 }

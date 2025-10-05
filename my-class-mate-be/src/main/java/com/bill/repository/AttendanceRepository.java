@@ -6,5 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
-    Attendance findByStudentIdAndCourseScheduleId(Long studentId, Long courseScheduleId);
+    Attendance findFirstByStudentIdAndCourseScheduleIdOrderByIdDesc(Long studentId, Long courseScheduleId);
 }
