@@ -190,7 +190,7 @@ export default function Page(): React.JSX.Element {
                     lecturerIds: course.lecturers.map(lecturer => Number(lecturer.lecturerId)),
                 });
 
-                setSchedules(course.schedules || []);
+                setSchedules((course.schedules || []).map((s: any) => ({ ...s, isDeleted: false })));
 
                 // Set selected lecturers
                 if (course.lecturers) {
@@ -300,7 +300,8 @@ export default function Page(): React.JSX.Element {
                     startTime: schedule.startTime,
                     endTime: schedule.endTime,
                     room: schedule.room,
-                    remark: schedule.remark || undefined
+                    remark: schedule.remark || undefined,
+                    isDeleted: schedule.isDeleted === true
                 })),
                 lecturerIds: Array.from(selectedLecturers),
             };
@@ -429,7 +430,9 @@ export default function Page(): React.JSX.Element {
 
     // Function to delete a schedule row
     const handleDeleteScheduleRow = (index: number, schedule: any) => {
-        setSchedules(prev => prev.filter((_, i) => i !== index));
+        setSchedules(prev => prev.map((s, i) =>
+            i === index ? { ...s, isDeleted: true } : s
+        ));
         showToast(`ลบตารางเรียนครั้งที่ ${index + 1} สำเร็จ`, 'info');
         setHasChanges(true);
     };
@@ -745,7 +748,7 @@ export default function Page(): React.JSX.Element {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {schedules.map((schedule, index) => (
+                                        {schedules.filter(s => !s.isDeleted).map((schedule, index) => (
                                             <tr
                                                 key={index}
                                                 style={{
