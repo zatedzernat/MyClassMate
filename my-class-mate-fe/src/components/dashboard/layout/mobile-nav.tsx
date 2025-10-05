@@ -17,7 +17,7 @@ import { paths } from '@/paths';
 import { isNavItemActive } from '@/lib/is-nav-item-active';
 import { Logo } from '@/components/core/logo';
 
-import { navItems } from './config';
+import { navItems, navItemsForAdmin, navItemsForStudent } from './config';
 import { navIcons } from './nav-icons';
 
 export interface MobileNavProps {
@@ -28,6 +28,27 @@ export interface MobileNavProps {
 
 export function MobileNav({ open, onClose }: MobileNavProps): React.JSX.Element {
   const pathname = usePathname();
+  const [userRole, setUserRole] = React.useState<string | null>(null);
+  
+    React.useEffect(() => {
+      // Get user role from localStorage
+      const role = localStorage.getItem('user-role');
+      setUserRole(role);
+    }, []);
+
+  // Determine which navigation items to show based on user role
+    const getCurrentNavItems = (role: string | null) => {
+      switch (role) {
+        case 'STUDENT':
+          return navItemsForStudent;
+        case 'ADMIN':
+          return navItemsForAdmin;
+        default:
+          return navItems; // Default to lecturer navigation
+      }
+    };
+  
+    const currentNavItems = getCurrentNavItems(userRole);
 
   return (
     <Drawer
@@ -64,7 +85,7 @@ export function MobileNav({ open, onClose }: MobileNavProps): React.JSX.Element 
       </Stack>
       <Divider sx={{ borderColor: 'var(--mui-palette-neutral-700)' }} />
       <Box component="nav" sx={{ flex: '1 1 auto', p: '12px' }}>
-        {renderNavItems({ pathname, items: navItems })}
+        {renderNavItems({ pathname, items: currentNavItems })}
       </Box>
       <Divider sx={{ borderColor: 'var(--mui-palette-neutral-700)' }} />
       <Stack spacing={2} sx={{ p: '12px' }}>

@@ -40,8 +40,12 @@ export default function Page(): React.JSX.Element {
   const [totalCourses, setTotalCourses] = useState(0);
 
   // Filter state
-  const [academicYear, setAcademicYear] = useState<number>(2568);
-  const [semester, setSemester] = useState<number>(1);
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth() + 1;
+  const currentYear = currentDate.getFullYear() + 543;
+
+  const [academicYear, setAcademicYear] = useState<number>(currentYear);
+  const [semester, setSemester] = useState<number>(currentMonth <= 6 ? 1 : 2);
 
   // Dialog state
   const [errorMessage, setErrorMessage] = useState<string | null>(null);

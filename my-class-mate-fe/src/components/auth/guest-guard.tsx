@@ -34,8 +34,11 @@ export function GuestGuard({ children }: GuestGuardProps): React.JSX.Element | n
       const userRole = localStorage.getItem('user-role') || user.role;
       
       if (userRole === 'STUDENT') {
-        logger.debug('[GuestGuard]: Student role detected, redirecting to camera page');
-        router.replace(paths.dashboard.student || '/dashboard/camera');
+        logger.debug('[GuestGuard]: Student role detected, redirecting to student page');
+        router.replace(paths.dashboard.student || '/dashboard/student');
+      } else if (userRole === 'LECTURER' || userRole === 'STAFF') {
+        logger.debug('[GuestGuard]: lecturer or staff role detected, redirecting to course page');
+        router.replace(paths.dashboard.course || '/dashboard/course');
       } else {
         // Default fallback - redirect to overview if role is unknown
         logger.debug('[GuestGuard]: Unknown role, redirecting to dashboard overview');
