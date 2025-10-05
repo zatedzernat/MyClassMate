@@ -20,4 +20,6 @@ public interface ParticipationRepository extends JpaRepository<Participation, Lo
     Integer findMaxRoundByCourseScheduleId(@Param("courseScheduleId") Long courseScheduleId);
 
     List<Participation> findByCourseScheduleIdAndStatus(Long courseScheduleId, ParticipationStatusEnum status);
+
+    void deleteByCourseScheduleId(Long courseScheduleId);
 }

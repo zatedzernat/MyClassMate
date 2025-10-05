@@ -44,6 +44,9 @@ public class CourseService {
     CourseLecturerRepository courseLecturerRepository;
     EnrollmentRepository enrollmentRepository;
     CourseJdbcRepository courseJdbcRepository;
+    AttendanceRepository attendanceRepository;
+    AttendanceSummaryRepository attendanceSummaryRepository;
+    ParticipationRepository participationRepository;
 
     public List<InitCourseResponse> initCourse(InitCourseRequest request) {
         var dayOfWeek = request.getDayOfWeek();
@@ -150,6 +153,8 @@ public class CourseService {
         courseScheduleRepository.deleteByCourseId(courseId);
         courseLecturerRepository.deleteByCourseId(courseId);
         enrollmentRepository.deleteByCourseId(courseId);
+        attendanceRepository.deleteByCourseId(courseId);
+        attendanceSummaryRepository.deleteByCourseId(courseId);
     }
 
     @Transactional
@@ -165,12 +170,41 @@ public class CourseService {
         course.setUpdatedAt(now);
         courseRepository.save(course);
 
-        courseScheduleRepository.deleteByCourseId(courseId);
+        // delete course lecturer
         courseLecturerRepository.deleteByCourseId(courseId);
         insertCourseLecturer(request.getLecturerIds(), courseId);
-        insertCourseSchedule(request.getSchedules(), courseId, now);
+
+        // update course schedule
+        updateCourseSchedule(request.getSchedules(), courseId, now);
 
         return mapToCourseResponse(course);
+    }
+
+    private void updateCourseSchedule(List<CourseScheduleRequest> schedules, Long courseId, LocalDateTime now) {
+        var courseSchedules = new ArrayList<CourseSchedule>();
+        for (var schedule : schedules) {
+            var courseScheduleId = schedule.getCourseScheduleId();
+            var existingSchedule = courseScheduleRepository.findById(courseScheduleId)
+                    .orElseThrow(() -> new AppException(ERROR_SCHEDULE_NOT_FOUND.getCode(), ERROR_SCHEDULE_NOT_FOUND.getMessage()));
+
+            if (Boolean.TRUE.equals(schedule.getIsDeleted())) {
+                courseScheduleRepository.deleteById(courseScheduleId);
+                attendanceRepository.deleteByCourseScheduleId(courseScheduleId);
+                participationRepository.deleteByCourseScheduleId(courseScheduleId);
+            } else {
+                existingSchedule.setCourseId(courseId);
+                existingSchedule.setScheduleDate(schedule.getScheduleDate());
+                existingSchedule.setStartTime(schedule.getStartTime());
+                existingSchedule.setEndTime(schedule.getEndTime());
+                existingSchedule.setRoom(schedule.getRoom());
+                existingSchedule.setRemark(schedule.getRemark());
+                existingSchedule.setUpdatedAt(now);
+
+                courseSchedules.add(existingSchedule);
+            }
+        }
+
+        courseScheduleRepository.saveAll(courseSchedules);
     }
 
     @Transactional

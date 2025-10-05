@@ -13,6 +13,7 @@ import java.time.LocalTime;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CourseScheduleRequest {
+    Long courseScheduleId;
     @NotNull
     LocalDate scheduleDate;
     @NotNull
@@ -22,4 +23,5 @@ public class CourseScheduleRequest {
     @NotNull
     String room;
     String remark;
+    Boolean isDeleted;
 }
