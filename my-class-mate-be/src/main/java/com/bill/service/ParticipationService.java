@@ -85,8 +85,8 @@ public class ParticipationService {
         return mapToParticipationResponse(participation);
     }
 
-    public List<ParticipationResponse> getOpenParticipations(Long courseScheduleId) {
-        var participations = participationRepository.findByCourseScheduleIdAndStatus(courseScheduleId, ParticipationStatusEnum.OPEN);
+    public List<ParticipationResponse> getParticipations(Long courseScheduleId) {
+        var participations = participationRepository.findByCourseScheduleIdOrderByRoundAsc(courseScheduleId);
 
         return mapToParticipationResponse(participations);
     }

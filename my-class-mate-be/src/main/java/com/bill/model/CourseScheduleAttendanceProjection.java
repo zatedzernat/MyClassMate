@@ -3,6 +3,7 @@ package com.bill.model;
 import com.bill.constant.AttendanceStatusEnum;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public interface CourseScheduleAttendanceProjection {
     Long getCourseScheduleId();
@@ -20,4 +21,6 @@ public interface CourseScheduleAttendanceProjection {
     String getStudentNameEn();
 
     AttendanceStatusEnum getStatus();
+
+    LocalDateTime getAttendedAt();
 }

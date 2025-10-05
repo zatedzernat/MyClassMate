@@ -13,13 +13,15 @@ import java.util.List;
 public interface ParticipationRepository extends JpaRepository<Participation, Long> {
 
     @Query(value = """
-        SELECT COALESCE(MAX(round), 0)
-        FROM   participations
-        WHERE  course_schedule_id = :courseScheduleId
-        """, nativeQuery = true)
+            SELECT COALESCE(MAX(round), 0)
+            FROM   participations
+            WHERE  course_schedule_id = :courseScheduleId
+            """, nativeQuery = true)
     Integer findMaxRoundByCourseScheduleId(@Param("courseScheduleId") Long courseScheduleId);
 
     List<Participation> findByCourseScheduleIdAndStatus(Long courseScheduleId, ParticipationStatusEnum status);
 
     void deleteByCourseScheduleId(Long courseScheduleId);
+
+    List<Participation> findByCourseScheduleIdOrderByRoundAsc(Long courseScheduleId);
 }
