@@ -26,6 +26,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import static com.bill.exceptionhandler.ErrorEnum.*;
@@ -357,6 +358,8 @@ public class CourseService {
             response.setCourseName(course.getCourseName());
             responses.add(response);
         }
+
+        responses.sort(Comparator.comparing(TodayCourseResponse::getScheduleDate).thenComparing(TodayCourseResponse::getCourseCode));
         return responses;
     }
 

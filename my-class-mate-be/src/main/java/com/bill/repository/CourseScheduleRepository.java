@@ -39,4 +39,22 @@ public interface CourseScheduleRepository extends JpaRepository<CourseSchedule, 
             group by a.id;
             """, nativeQuery = true)
     CourseScheduleParticipationProjection findTotalParticipationsByStudentIdAndCourseScheduleId(Long studentId, Long courseScheduleId);
+
+    @Query(value = """
+            select
+            a.id as courseScheduleId,
+            b.student_id,
+            e.student_no,
+            concat(d.name_th, ' ', d.surname_th) as studentNameTh,
+            concat(d.name_en, ' ', d.surname_en) as studentNameEn,
+            coalesce(c.status, 'ABSENT') as status
+            from course_schedules a
+            left join enrollments b on a.course_id = b.course_id
+            left join attendances c on b.student_id = c.student_id and a.id = c.course_schedule_id and a.course_id = c.course_id
+            left join users d on b.student_id = d.id
+            left join student_profiles e on b.student_id = e.student_id
+            where a.course_id = :courseId
+            order by a.id, b.student_id
+            """, nativeQuery = true)
+    List<CourseScheduleAttendanceProjection> findCourseScheduleAttendanceByCourseId(Long courseId);
 }

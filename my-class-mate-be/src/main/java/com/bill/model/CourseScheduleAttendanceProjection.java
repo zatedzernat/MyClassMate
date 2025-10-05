@@ -11,5 +11,13 @@ public interface CourseScheduleAttendanceProjection {
 
     LocalDate getScheduleDate();
 
+    Long getStudentId();
+
+    String getStudentNo();
+
+    String getStudentNameTh();
+
+    String getStudentNameEn();
+
     AttendanceStatusEnum getStatus();
 }
