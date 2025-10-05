@@ -182,17 +182,17 @@ export default function TodayCoursesPage(): React.JSX.Element {
                       courses.map((course) => (
                         <TableRow key={course.courseId} hover>
                           <TableCell>
-                            <Typography variant="body2" sx={{ color: 'success.main' }}>
+                            <Typography variant="body2">
                               {getCurrentDate()}
                             </Typography>
                           </TableCell>
                           <TableCell>
-                            <Typography variant="body2" sx={{ color: 'success.main', fontWeight: 500 }}>
+                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
                               {course.courseCode}
                             </Typography>
                           </TableCell>
                           <TableCell>
-                            <Typography variant="body2" sx={{ color: 'success.main' }}>
+                            <Typography variant="body2">
                               {course.courseName}
                             </Typography>
                           </TableCell>
@@ -212,7 +212,7 @@ export default function TodayCoursesPage(): React.JSX.Element {
                             </Typography>
                           </TableCell>
                           <TableCell align="center">
-                            <Typography variant="body2" color="success.main">
+                            <Typography variant="body2">
                               {course.remark || '-'}
                             </Typography>
                           </TableCell>
