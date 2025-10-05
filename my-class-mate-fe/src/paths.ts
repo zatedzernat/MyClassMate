@@ -12,7 +12,8 @@ export const paths = {
     course: '/dashboard/course',
     createCourse: '/dashboard/course/create-course',
     editCourse: '/dashboard/course/edit-course',
-    todayCourses: '/dashboard/today-courses'
+    todayCourses: '/dashboard/today-courses',
+    participation: '/dashboard/participation',
   },
   errors: { notFound: '/errors/not-found' },
 } as const;
