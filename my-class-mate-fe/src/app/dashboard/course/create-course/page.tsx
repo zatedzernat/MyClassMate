@@ -45,12 +45,16 @@ import { CreateCourseRequest } from '@/api/data/course-create';
 export default function Page(): React.JSX.Element {
     const router = useRouter();
 
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth() + 1; // 0-11 → 1-12
+    const currentYear = currentDate.getFullYear() + 543; // แปลงเป็น พ.ศ.
+
     // Form state
     const [formData, setFormData] = useState<CourseRequest>({
         courseCode: '',
         courseName: '',
-        academicYear: 2568,
-        semester: 1,
+        academicYear: currentYear,
+        semester: currentMonth <= 6 ? 1 : 2,
         room: '',
         startTime: '09:00:00',
         endTime: '12:00:00',
@@ -340,6 +344,12 @@ export default function Page(): React.JSX.Element {
         }));
     };
 
+    // Function to delete a schedule row
+    const handleDeleteScheduleRow = (index: number, schedule: any) => {
+        setSchedulePreview(prev => prev.filter((_, i) => i !== index));
+        showToast(`ลบตารางเรียนครั้งที่ ${index + 1} สำเร็จ`, 'info');
+    };
+
     // Get day labels in Thai
     const getDayLabel = (day: DayOfWeek): string => {
         const dayLabels = {
@@ -449,9 +459,8 @@ export default function Page(): React.JSX.Element {
                                         {formData.room && <Chip label={`ห้อง ${formData.room}`} size="small" />}
                                         {selectedLecturers.size > 0 && (
                                             <Chip
-                                                label={`อาจารย์ ${selectedLecturers.size} คน`}
+                                                label={`จำนวนอาจารย์ผู้สอน ${selectedLecturers.size} คน`}
                                                 size="small"
-                                                color="secondary"
                                             />
                                         )}
                                     </Stack>
@@ -684,13 +693,20 @@ export default function Page(): React.JSX.Element {
                                                         {schedule.remark || '-'}
                                                     </td>
                                                     <td style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'center' }}>
-                                                        <Button
+                                                        <IconButton
                                                             size="small"
-                                                            variant="outlined"
                                                             onClick={() => handleEditScheduleRow(index, schedule)}
+                                                            title="แก้ไข"
                                                         >
-                                                            แก้ไข
-                                                        </Button>
+                                                            <img src="/assets/edit.png" alt="Edit" style={{ width: 20, height: 20 }} />
+                                                        </IconButton>
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => handleDeleteScheduleRow(index, schedule)}
+                                                            title="ลบ"
+                                                        >
+                                                            <img src="/assets/delete.png" alt="Delete" style={{ width: 20, height: 20 }}/>
+                                                        </IconButton>
                                                     </td>
                                                 </tr>
                                             ))}
@@ -746,7 +762,7 @@ export default function Page(): React.JSX.Element {
                                                     .map(lecturer => (
                                                         <Chip
                                                             key={lecturer.userId}
-                                                            label={`${lecturer.nameTh} (${lecturer.nameEn})`}
+                                                            label={`${lecturer.nameTh} ${lecturer.surnameTh} (${lecturer.nameEn} ${lecturer.surnameEn})`}
                                                             color="success"
                                                             size="small"
                                                             onDelete={() => handleLecturerToggle(Number(lecturer.userId))}
@@ -801,7 +817,7 @@ export default function Page(): React.JSX.Element {
                                                                 fontWeight: isSelected ? 'bold' : 'normal',
                                                                 color: isSelected ? '#2e7d32' : 'inherit'
                                                             }}>
-                                                                {lecturer.nameTh}
+                                                                {lecturer.nameTh} {lecturer.surnameTh}
                                                             </td>
                                                             <td style={{
                                                                 padding: '12px',
@@ -809,7 +825,7 @@ export default function Page(): React.JSX.Element {
                                                                 fontWeight: isSelected ? 'bold' : 'normal',
                                                                 color: isSelected ? '#2e7d32' : 'inherit'
                                                             }}>
-                                                                {lecturer.nameEn}
+                                                                {lecturer.nameEn} {lecturer.surnameEn}
                                                             </td>
                                                         </tr>
                                                     );

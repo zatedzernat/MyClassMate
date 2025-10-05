@@ -432,7 +432,7 @@ export function StudentValidateFace({
                   </Typography>
                 ) : (
                   <Typography variant="h6" color="text.secondary" textAlign="center">
-                    กดปุ่ม "เริ่มกล้อง" เพื่อเปิดกล้อง
+                    กดปุ่ม "เปิดกล้อง" เพื่อเปิดกล้อง
                   </Typography>
                 )}
               </Box>
@@ -532,7 +532,7 @@ export function StudentValidateFace({
                 fontSize: '1.1rem'
               }}
             >
-              {isRequestingPermission ? 'กำลังเปิด...' : '🎥 เริ่มกล้อง'}
+              {isRequestingPermission ? 'กำลังเปิด...' : '🎥 เปิดกล้อง'}
             </Button>
           ) : (
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>

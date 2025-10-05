@@ -427,6 +427,13 @@ export default function Page(): React.JSX.Element {
         }));
     };
 
+    // Function to delete a schedule row
+    const handleDeleteScheduleRow = (index: number, schedule: any) => {
+        setSchedules(prev => prev.filter((_, i) => i !== index));
+        showToast(`ลบตารางเรียนครั้งที่ ${index + 1} สำเร็จ`, 'info');
+        setHasChanges(true);
+    };
+
     // Get day labels in Thai
     const getDayLabel = (day: DayOfWeek): string => {
         const dayLabels = {
@@ -608,9 +615,8 @@ export default function Page(): React.JSX.Element {
                                     {formData.room && <Chip label={`ห้อง ${formData.room}`} size="small" />}
                                     {selectedLecturers.size > 0 && (
                                         <Chip
-                                            label={`อาจารย์ ${selectedLecturers.size} คน`}
+                                            label={`จำนวนอาจารย์ผู้สอน ${selectedLecturers.size} คน`}
                                             size="small"
-                                            color="secondary"
                                         />
                                     )}
                                 </Stack>
@@ -768,13 +774,20 @@ export default function Page(): React.JSX.Element {
                                                     {schedule.remark || '-'}
                                                 </td>
                                                 <td style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'center' }}>
-                                                    <Button
+                                                    <IconButton
                                                         size="small"
-                                                        variant="outlined"
                                                         onClick={() => handleEditScheduleRow(index, schedule)}
+                                                        title="แก้ไข"
                                                     >
-                                                        แก้ไข
-                                                    </Button>
+                                                        <img src="/assets/edit.png" alt="Edit" style={{ width: 20, height: 20 }} />
+                                                    </IconButton>
+                                                    <IconButton
+                                                            size="small"
+                                                            onClick={() => handleDeleteScheduleRow(index, schedule)}
+                                                            title="ลบ"
+                                                        >
+                                                            <img src="/assets/delete.png" alt="Delete" style={{ width: 20, height: 20 }}/>
+                                                    </IconButton>
                                                 </td>
                                             </tr>
                                         ))}
@@ -833,7 +846,7 @@ export default function Page(): React.JSX.Element {
                                                 .map(lecturer => (
                                                     <Chip
                                                         key={lecturer.userId}
-                                                        label={`${lecturer.nameTh} (${lecturer.nameEn})`}
+                                                        label={`${lecturer.nameTh} ${lecturer.surnameTh} (${lecturer.nameEn} ${lecturer.surnameEn})`}
                                                         color="success"
                                                         size="small"
                                                         onDelete={() => handleLecturerToggle(Number(lecturer.userId))}
@@ -888,7 +901,7 @@ export default function Page(): React.JSX.Element {
                                                             fontWeight: isSelected ? 'bold' : 'normal',
                                                             color: isSelected ? '#2e7d32' : 'inherit'
                                                         }}>
-                                                            {lecturer.nameTh}
+                                                            {lecturer.nameTh} {lecturer.surnameTh}
                                                         </td>
                                                         <td style={{
                                                             padding: '12px',
@@ -896,7 +909,7 @@ export default function Page(): React.JSX.Element {
                                                             fontWeight: isSelected ? 'bold' : 'normal',
                                                             color: isSelected ? '#2e7d32' : 'inherit'
                                                         }}>
-                                                            {lecturer.nameEn}
+                                                            {lecturer.nameEn} {lecturer.surnameEn}
                                                         </td>
                                                     </tr>
                                                 );

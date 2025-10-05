@@ -333,7 +333,7 @@ export default function AddStudentToCoursePage(): React.JSX.Element {
                                     <TableHead>
                                         <TableRow sx={{ bgcolor: 'grey.50' }}>
                                             <TableCell align="center" sx={{ fontWeight: 600 }}>
-                                                เลขที่
+                                                ลำดับที่
                                             </TableCell>
                                             <TableCell sx={{ fontWeight: 600 }}>
                                                 รหัสนักศึกษา
@@ -358,11 +358,11 @@ export default function AddStudentToCoursePage(): React.JSX.Element {
                                         ) : (
                                             students
                                                 .sort((a, b) => a.studentId - b.studentId)
-                                                .map((student) => (
+                                                .map((student, index) => (
                                                     <TableRow key={student.studentId} hover>
                                                         <TableCell align="center">
                                                             <Typography variant="body2" sx={{ color: 'primary.main', fontWeight: 500 }}>
-                                                                {student.studentId}
+                                                            {index + 1}
                                                             </Typography>
                                                         </TableCell>
                                                         <TableCell>
