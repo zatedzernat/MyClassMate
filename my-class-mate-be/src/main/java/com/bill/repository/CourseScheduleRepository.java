@@ -16,7 +16,7 @@ public interface CourseScheduleRepository extends JpaRepository<CourseSchedule, 
 
     List<CourseSchedule> findByCourseIdOrderByScheduleDateAsc(Long courseId);
 
-    List<CourseSchedule> findByScheduleDate(LocalDate scheduleDate);
+    List<CourseSchedule> findByScheduleDateOrderByStartTimeAsc(LocalDate scheduleDate);
 
     @Query(value = """
             select a.id as courseScheduleId, a.course_id, a.schedule_date, coalesce(b.status, 'ABSENT') as status

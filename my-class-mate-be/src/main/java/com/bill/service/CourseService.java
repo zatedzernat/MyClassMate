@@ -312,7 +312,7 @@ public class CourseService {
 
     public List<TodayCourseResponse> getTodayCourses() {
         var responses = new ArrayList<TodayCourseResponse>();
-        var schedules = courseScheduleRepository.findByScheduleDate(LocalDate.now());
+        var schedules = courseScheduleRepository.findByScheduleDateOrderByStartTimeAsc(LocalDate.now());
         for (var schedule : schedules) {
             var course = courseRepository.findById(schedule.getCourseId())
                     .orElseThrow(() -> new AppException(ERROR_COURSE_NOT_FOUND.getCode(), ERROR_COURSE_NOT_FOUND.getMessage()));

@@ -26,7 +26,7 @@ public enum ErrorEnum {
     ERROR_INVALID_ROLE_FOR_LECTURER_ID("ERR020", "invalid role for lecturer id"),
     ERROR_INTERNAL_API_CALL("ERR021", "error calling fast api"),
     ERROR_USER_NOT_STUDENT("ERR022", "can not get student profile from other role"),
-    ERROR_ENROLLMENT_NOT_FOUND("ERR023", "enrollment not found for this studentId: %s"),
+    ERROR_ENROLLMENT_NOT_FOUND("ERR023", "ไม่พบการลงทะเบียนเรียนในรายวิชานี้ของรหัสนักศึกษา: %s"),
     ERROR_SCHEDULE_NOT_FOUND("ERR023", "course schedule not found courseScheduleId: %s"),
     ERROR_USER_NOT_LECTURER("ERR024", "user is not lecturer, can not perform this action"),
     ERROR_PARTICIPATION_NOT_FOUND("ERR025", "participation not found"),

@@ -64,11 +64,12 @@ public class FaceService {
         if ("Success".equals(fastApiResponse.getStatus())) {
             log.info("attendance fast-api courseId = {}, courseScheduleId = {}, fastApiResponse = {}", courseId, courseScheduleId, fastApiResponse);
             var studentId = fastApiResponse.getUserId();
+            var studentProfile = studentProfileService.getStudentProfile(studentId);
             // validate student enrollment
             enrollmentRepository.findByStudentIdAndCourseId(studentId, courseId)
                     .orElseThrow(() -> new AppException(
                             ERROR_ENROLLMENT_NOT_FOUND.getCode(),
-                            ERROR_ENROLLMENT_NOT_FOUND.format(studentId))
+                            ERROR_ENROLLMENT_NOT_FOUND.format(studentProfile.getStudentNo()))
                     );
 
             var schedule = courseScheduleRepository.findById(courseScheduleId)
@@ -102,7 +103,6 @@ public class FaceService {
                 attendance = attendanceRepository.save(attendance);
             }
 
-            var studentProfile = studentProfileService.getStudentProfile(studentId);
             var course = courseRepository.findById(courseId)
                     .orElseThrow(() -> new AppException(ERROR_COURSE_NOT_FOUND.getCode(), ERROR_COURSE_NOT_FOUND.getMessage()));
 
