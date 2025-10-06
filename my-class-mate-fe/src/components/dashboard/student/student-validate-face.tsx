@@ -11,14 +11,31 @@ import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemText from '@mui/material/ListItemText';
+import ListItemAvatar from '@mui/material/ListItemAvatar';
+import Avatar from '@mui/material/Avatar';
+import Chip from '@mui/material/Chip';
+import Paper from '@mui/material/Paper';
 import { validateFaceImage } from '@/api/face-api';
 import { TodayCourseResponse } from '@/api/data/course-response';
 import ErrorDialog from '@/components/error/error-dialog';
-import { set } from 'react-hook-form';
+import { CheckInStatus, getCheckInStatusLabel } from '@/util/check-in-status';
+import { UserCircleCheckIcon } from '@phosphor-icons/react';
 
 interface StudentValidateFaceProps {
   todayCourse: TodayCourseResponse;
   onScanComplete?: (success: boolean) => void;
+}
+
+interface CheckedInStudent {
+  id: string;
+  name: string;
+  studentNo: string;
+  status: CheckInStatus;
+  checkInTime: string;
+  image?: string;
 }
 
 export function StudentValidateFace({
@@ -26,11 +43,12 @@ export function StudentValidateFace({
   onScanComplete
 }: StudentValidateFaceProps): React.JSX.Element {
   const [isCapturing, setIsCapturing] = React.useState(false);
-  const [captureResult, setCaptureResult] = React.useState<'success' | 'failed' | null>(null);
   const [cameraActive, setCameraActive] = React.useState(false);
   const [cameraError, setCameraError] = React.useState<string | null>(null);
   const [isRequestingPermission, setIsRequestingPermission] = React.useState(false);
-  const [savedImages, setSavedImages] = React.useState<string[]>([]);
+  const [checkedInStudents, setCheckedInStudents] = React.useState<CheckedInStudent[]>([]);
+  const [lastCheckInResult, setLastCheckInResult] = React.useState<'success' | 'failed' | null>(null);
+
   // Error Dialog state
   const [errorDialogOpen, setErrorDialogOpen] = React.useState(false);
   const [errorDialogMessage, setErrorDialogMessage] = React.useState<string>('');
@@ -83,6 +101,19 @@ export function StudentValidateFace({
     }
   }, []);
 
+  const getStatusColor = (status: CheckInStatus): string => {
+    switch (status) {
+      case CheckInStatus.PRESENT:
+        return 'green';
+      case CheckInStatus.LATE:
+        return 'orange';
+      case CheckInStatus.ABSENT:
+        return 'red';
+      default:
+        return 'gray';
+    }
+  };
+
   // Handle page visibility change (when user switches tabs or minimizes browser)
   React.useEffect(() => {
     const handleVisibilityChange = () => {
@@ -123,6 +154,16 @@ export function StudentValidateFace({
     };
   }, [stopCamera]);
 
+  // Auto-clear last check-in result after 3 seconds
+  React.useEffect(() => {
+    if (lastCheckInResult) {
+      const timer = setTimeout(() => {
+        setLastCheckInResult(null);
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [lastCheckInResult]);
 
   if (!todayCourse) {
     return (
@@ -162,7 +203,9 @@ export function StudentValidateFace({
         const loadPromise = new Promise<void>((resolve, reject) => {
           const timeout = setTimeout(() => {
             console.log('⏰ Video load timeout');
-            setCameraError('การโหลดกล้องใช้เวลานานเกินไป');
+            const errorMsg = 'การโหลดกล้องใช้เวลานานเกินไป กรุณาลองใหม่อีกครั้ง';
+            setCameraError(errorMsg);
+            showErrorDialog(errorMsg);
             setIsRequestingPermission(false);
             reject(new Error('Load timeout'));
           }, 10000);
@@ -188,7 +231,9 @@ export function StudentValidateFace({
                     resolve();
                   } else {
                     console.log('❌ Video not working properly');
-                    setCameraError('กล้องไม่ทำงานปกติ กรุณาลองใหม่');
+                    const errorMsg = 'กล้องไม่ทำงานปกติ กรุณาตรวจสอบการเชื่อมต่อกล้องและลองใหม่';
+                    setCameraError(errorMsg);
+                    showErrorDialog(errorMsg);
                     setIsRequestingPermission(false);
                     cleanup();
                     reject(new Error('Video not working'));
@@ -197,7 +242,9 @@ export function StudentValidateFace({
               })
               .catch((playError) => {
                 console.error('❌ Error playing video:', playError);
-                setCameraError('ไม่สามารถเล่นวิดีโอได้');
+                const errorMsg = 'ไม่สามารถเล่นวิดีโอได้ กรุณาตรวจสอบการตั้งค่ากล้องและลองใหม่';
+                setCameraError(errorMsg);
+                showErrorDialog(errorMsg);
                 setIsRequestingPermission(false);
                 cleanup();
                 reject(playError);
@@ -206,7 +253,9 @@ export function StudentValidateFace({
 
           video.onerror = (error) => {
             console.error('❌ Video error:', error);
-            setCameraError('เกิดข้อผิดพลาดในการโหลดวิดีโอ');
+            const errorMsg = 'เกิดข้อผิดพลาดในการโหลดวิดีโอ กรุณาลองใหม่อีกครั้ง';
+            setCameraError(errorMsg);
+            showErrorDialog(errorMsg);
             setIsRequestingPermission(false);
             cleanup();
             reject(error);
@@ -220,12 +269,15 @@ export function StudentValidateFace({
       let errorMessage = 'ไม่สามารถเข้าถึงกล้องได้';
 
       if (error.name === 'NotAllowedError') {
-        errorMessage = 'การเข้าถึงกล้องถูกปฏิเสธ กรุณาอนุญาตการใช้กล้องและรีเฟรชหน้า';
+        errorMessage = 'การเข้าถึงกล้องถูกปฏิเสธ กรุณาอนุญาตการใช้กล้องในเบราว์เซอร์และรีเฟรชหน้า';
       } else if (error.name === 'NotFoundError') {
-        errorMessage = 'ไม่พบกล้อง กรุณาตรวจสอบว่ามีกล้องเชื่อมต่ออยู่';
+        errorMessage = 'ไม่พบกล้อง กรุณาตรวจสอบว่ามีกล้องเชื่อมต่ออยู่และไม่มีแอปพลิเคชันอื่นใช้งานอยู่';
+      } else if (error.name === 'NotReadableError') {
+        errorMessage = 'กล้องถูกใช้งานโดยแอปพลิเคชันอื่น กรุณาปิดแอปพลิเคชันอื่นและลองใหม่';
       }
 
       setCameraError(errorMessage);
+      showErrorDialog(errorMessage);
       setIsRequestingPermission(false);
       setCameraActive(false);
     }
@@ -233,12 +285,14 @@ export function StudentValidateFace({
 
   const captureImage = async () => {
     if (!videoRef.current || !canvasRef.current || !cameraActive) {
-      setCameraError('กรุณาเปิดกล้องก่อนถ่ายภาพ');
+      const errorMsg = 'กรุณาเปิดกล้องก่อนถ่ายภาพ';
+      setCameraError(errorMsg);
+      showErrorDialog(errorMsg);
       return;
     }
 
     setIsCapturing(true);
-    setCaptureResult(null);
+    setLastCheckInResult(null);
 
     try {
       const video = videoRef.current;
@@ -298,32 +352,81 @@ export function StudentValidateFace({
 
         console.log('✅ Face validation result:', validationResponse);
 
-        // Add to saved images array only after successful validation
-        setSavedImages(prev => [...prev, base64]);
-        setCaptureResult('success');
+        // Check if validation was successful and face was detected
+
+        setLastCheckInResult('success');
+
+        // Extract student information from validation response
+        const newStudent: CheckedInStudent = {
+          id: validationResponse.studentId.toString(),
+          name: validationResponse.studentNameTh,
+          studentNo: validationResponse.studentNo,
+          status: validationResponse.status,
+          checkInTime: validationResponse.createdAt 
+            ? new Date(validationResponse.createdAt).toLocaleTimeString('th-TH', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+              })
+            : new Date().toLocaleTimeString('th-TH', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+              }),
+          image: base64
+        };
+
+
+
+        // Add to checked-in students list (avoid duplicates based on studentCode or studentId)
+        setCheckedInStudents(prev => {
+          const existingIndex = prev.findIndex(student =>
+            student.studentNo === newStudent.studentNo ||
+            student.id === newStudent.id
+          );
+
+          if (existingIndex >= 0) {
+            // Update existing student's check-in time
+            const updated = [...prev];
+            updated[existingIndex] = {
+              ...updated[existingIndex],
+              checkInTime: newStudent.checkInTime,
+              image: base64 // Update with latest captured image
+            };
+            return updated;
+          } else {
+            // Add new student to the beginning of the list
+            return [newStudent, ...prev];
+          }
+        });
 
         // Call onScanComplete with success
         if (onScanComplete) {
           onScanComplete(true);
         }
 
+        // Clear any previous camera errors
+        setCameraError(null);
+
       } catch (validationError: any) {
         console.error('❌ Face validation failed:', validationError);
-        setCaptureResult('failed');
-        setCameraError(validationError.message || 'เกิดข้อผิดพลาดในการตรวจสอบใบหน้า');
-        setErrorDialogMessage(validationError.message || 'เกิดข้อผิดพลาดในการตรวจสอบใบหน้า');
-        setErrorDialogOpen(true);
+        setLastCheckInResult('failed');
+        let errorMsg = validationError.message || 'การตรวจสอบใบหน้าล้มเหลว กรุณาลองใหม่อีกครั้ง';
+
+        setCameraError(errorMsg);
+        showErrorDialog(errorMsg);
 
         if (onScanComplete) {
           onScanComplete(false);
         }
-        return;
       }
 
     } catch (error) {
       console.error('❌ Error capturing image:', error);
-      setCaptureResult('failed');
-      setCameraError('เกิดข้อผิดพลาดในการบันทึกภาพ');
+      setLastCheckInResult('failed');
+      const errorMsg = 'เกิดข้อผิดพลาดในการบันทึกภาพ กรุณาลองใหม่อีกครั้ง';
+      setCameraError(errorMsg);
+      showErrorDialog(errorMsg);
 
       if (onScanComplete) {
         onScanComplete(false);
@@ -335,7 +438,6 @@ export function StudentValidateFace({
 
   const handleStopCamera = () => {
     stopCamera();
-    setCaptureResult(null);
     setCameraError(null);
   };
 
@@ -344,9 +446,8 @@ export function StudentValidateFace({
     startCamera();
   };
 
-  const clearSavedImages = () => {
-    setSavedImages([]);
-    setCaptureResult(null);
+  const clearCheckedInList = () => {
+    setCheckedInStudents([]);
   };
 
   // Format time display
@@ -358,226 +459,298 @@ export function StudentValidateFace({
   return (
     <>
       <Card>
-        <CardContent sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          p: { xs: 2, sm: 3, md: 4 }
-        }}>
-          {/* Camera Container */}
-          <Box
-            sx={{
-              position: 'relative',
-              width: '100%',
-              maxWidth: { xs: 350, sm: 400, md: 600, lg: 700 }, // Expanded sizes
-              aspectRatio: '4/3',
-              border: '3px solid',
-              borderColor: cameraError ? 'error.main' :
-                captureResult === 'success' ? 'success.main' :
-                  captureResult === 'failed' ? 'error.main' :
-                    isCapturing ? 'primary.main' : '#e0e0e0',
-              borderRadius: 2,
-              overflow: 'hidden',
-              backgroundColor: '#000',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              mx: 'auto',
-            }}
-          >
-            {/* Video element */}
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                display: cameraActive ? 'block' : 'none',
-                transform: 'scaleX(-1)', // Mirror the video
-              }}
-            />
-
-            {/* Hidden canvas for capturing */}
-            <canvas
-              ref={canvasRef}
-              style={{ display: 'none' }}
-            />
-
-            {/* Camera not active overlay */}
-            {!cameraActive && (
-              <Box
-                sx={{
-                  textAlign: 'center',
-                  color: 'white',
-                  p: 3,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                {isRequestingPermission ? (
-                  <>
-                    <CircularProgress color="primary" size={50} sx={{ mb: 2 }} />
-                    <Typography variant="body1" color="text.secondary">
-                      กำลังเปิดกล้อง...
-                    </Typography>
-                  </>
-                ) : cameraError ? (
-                  <Typography variant="body1" color="error.main" textAlign="center">
-                    ❌ ไม่สามารถเข้าถึงกล้องได้
-                  </Typography>
-                ) : (
-                  <Typography variant="h6" color="text.secondary" textAlign="center">
-                    กดปุ่ม "เปิดกล้อง" เพื่อเปิดกล้อง
-                  </Typography>
-                )}
-              </Box>
-            )}
-
-            {/* Capturing overlay */}
-            {isCapturing && cameraActive && (
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: 'rgba(0,0,0,0.7)',
-                  zIndex: 10,
-                }}
-              >
-                <Box sx={{ textAlign: 'center', color: 'white' }}>
-                  <CircularProgress color="primary" size={60} sx={{ mb: 2 }} />
-                  <Typography variant="h6">
-                    กำลังตรวจสอบใบหน้า...
-                  </Typography>
-                  <Typography variant="body2" sx={{ mt: 1, opacity: 0.8 }}>
-                    กรุณารอสักครู่
-                  </Typography>
-                </Box>
-              </Box>
-            )}
-          </Box>
-
-          {/* Preview saved images */}
-          {savedImages.length > 0 && (
-            <Box sx={{ mt: 4, width: '100%', maxWidth: 600 }}>
-              <Typography variant="h6" sx={{ mb: 2, textAlign: 'center' }}>
-                ภาพที่ยืนยันแล้ว ({savedImages.length} รูป)
+        <CardHeader
+          title={
+            <Box>
+              <Typography variant="h6" component="div">
+                เช็คชื่อเข้าเรียน - Face Recognition
               </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'center' }}>
-                {savedImages.map((image, index) => (
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                รายวิชา: {todayCourse.courseCode} - {todayCourse.courseName}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                เวลา: {formatTime(todayCourse.startTime)} - {formatTime(todayCourse.endTime)} | ห้อง: {todayCourse.room}
+              </Typography>
+            </Box>
+          }
+        />
+        <Divider />
+
+        <CardContent sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
+          {/* Flexbox Layout - No Grid */}
+          <Box sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', md: 'row' },
+            gap: 3,
+            alignItems: 'flex-start'
+          }}>
+            {/* Camera Section - Left Side */}
+            <Box sx={{
+              flex: { xs: '1 1 100%', md: '1 1 65%' },
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center'
+            }}>
+
+              {/* Camera Container */}
+              <Box
+                sx={{
+                  position: 'relative',
+                  width: '100%',
+                  maxWidth: { xs: 350, sm: 450, md: 550 },
+                  aspectRatio: '4/3',
+                  border: '3px solid',
+                  borderColor: cameraError ? 'error.main' :
+                    lastCheckInResult === 'success' ? 'success.main' :
+                      lastCheckInResult === 'failed' ? 'error.main' :
+                        isCapturing ? 'primary.main' : '#e0e0e0',
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  backgroundColor: '#000',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  mx: 'auto',
+                }}
+              >
+                {/* Video element */}
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    display: cameraActive ? 'block' : 'none',
+                    transform: 'scaleX(-1)', // Mirror the video
+                  }}
+                />
+
+                {/* Hidden canvas for capturing */}
+                <canvas
+                  ref={canvasRef}
+                  style={{ display: 'none' }}
+                />
+
+                {/* Camera not active overlay */}
+                {!cameraActive && (
                   <Box
-                    key={index}
                     sx={{
-                      width: 80,
-                      height: 80,
-                      borderRadius: 1,
-                      overflow: 'hidden',
-                      border: '2px solid',
-                      borderColor: 'success.main',
+                      textAlign: 'center',
+                      color: 'white',
+                      p: 3,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                     }}
                   >
-                    <img
-                      src={image}
-                      alt={`Validated ${index + 1}`}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                      }}
-                    />
+                    {isRequestingPermission ? (
+                      <>
+                        <CircularProgress color="primary" size={50} sx={{ mb: 2 }} />
+                        <Typography variant="body1" color="text.secondary">
+                          กำลังเปิดกล้อง...
+                        </Typography>
+                      </>
+                    ) : cameraError ? (
+                      <Typography variant="body1" color="error.main" textAlign="center">
+                        ❌ ไม่สามารถเข้าถึงกล้องได้
+                      </Typography>
+                    ) : (
+                      <Typography variant="h6" color="text.secondary" textAlign="center">
+                        กดปุ่ม "เริ่มกล้อง" เพื่อเปิดกล้อง
+                      </Typography>
+                    )}
                   </Box>
-                ))}
+                )}
+
+                {/* Capturing overlay */}
+                {isCapturing && cameraActive && (
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: 'rgba(0,0,0,0.7)',
+                      zIndex: 10,
+                    }}
+                  >
+                    <Box sx={{ textAlign: 'center', color: 'white' }}>
+                      <CircularProgress color="primary" size={60} sx={{ mb: 2 }} />
+                      <Typography variant="h6">
+                        กำลังตรวจสอบใบหน้า...
+                      </Typography>
+                      <Typography variant="body2" sx={{ mt: 1, opacity: 0.8 }}>
+                        กรุณารอสักครู่
+                      </Typography>
+                    </Box>
+                  </Box>
+                )}
+              </Box>
+
+              {/* Camera Controls */}
+              <Box sx={{ mt: 3, display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
+                {cameraError ? (
+                  <Button
+                    variant="contained"
+                    onClick={handleRetryCamera}
+                    size="large"
+                    color="error"
+                    sx={{ minWidth: 120, py: 1.5 }}
+                  >
+                    ลองใหม่
+                  </Button>
+                ) : !cameraActive ? (
+                  <Button
+                    variant="contained"
+                    onClick={startCamera}
+                    size="large"
+                    disabled={isRequestingPermission}
+                    sx={{
+                      minWidth: 150,
+                      py: 1.5,
+                      fontSize: '1.1rem'
+                    }}
+                  >
+                    {isRequestingPermission ? 'กำลังเปิด...' : '🎥 เริ่มกล้อง'}
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      variant="contained"
+                      onClick={captureImage}
+                      size="large"
+                      disabled={isCapturing}
+                      sx={{
+                        minWidth: 150,
+                        py: 1.5,
+                        fontSize: '1.1rem',
+                        backgroundColor: 'primary.main',
+                        '&:hover': {
+                          backgroundColor: 'primary.dark',
+                        }
+                      }}
+                    >
+                      {isCapturing ? 'กำลังตรวจสอบ...' : '🔍 ตรวจสอบใบหน้า'}
+                    </Button>
+
+                    <Button
+                      variant="outlined"
+                      onClick={handleStopCamera}
+                      size="large"
+                      color="error"
+                      sx={{ minWidth: 120, py: 1.5 }}
+                    >
+                      ❌ ปิดกล้อง
+                    </Button>
+                  </>
+                )}
               </Box>
             </Box>
-          )}
-        </CardContent>
 
-        <Divider />
-        <CardActions sx={{
-          justifyContent: 'center',
-          p: 3,
-          backgroundColor: 'grey.50',
-          borderTop: '1px solid',
-          borderColor: 'divider'
-        }}>
-          {cameraError ? (
-            <Button
-              variant="contained"
-              onClick={handleRetryCamera}
-              size="large"
-              color="error"
-              sx={{ minWidth: 120, py: 1.5 }}
-            >
-              ลองใหม่
-            </Button>
-          ) : !cameraActive ? (
-            <Button
-              variant="contained"
-              onClick={startCamera}
-              size="large"
-              disabled={isRequestingPermission}
-              sx={{
-                minWidth: 150,
-                py: 1.5,
-                fontSize: '1.1rem'
-              }}
-            >
-              {isRequestingPermission ? 'กำลังเปิด...' : '🎥 เปิดกล้อง'}
-            </Button>
-          ) : (
-            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
-              <Button
-                variant="contained"
-                onClick={captureImage}
-                size="large"
-                disabled={isCapturing}
-                sx={{
-                  minWidth: 150,
-                  py: 1.5,
-                  fontSize: '1.1rem',
-                  backgroundColor: 'primary.main',
-                  '&:hover': {
-                    backgroundColor: 'primary.dark',
-                  }
-                }}
-              >
-                {isCapturing ? 'กำลังตรวจสอบ...' : '🔍 ตรวจสอบใบหน้า'}
-              </Button>
+            {/* Checked-in Students List - Right Side */}
+            <Box sx={{
+              flex: { xs: '1 1 100%', md: '1 1 35%' },
+              minWidth: { xs: '100%', md: 300 }
+            }}>
+              <Paper sx={{ p: 2, height: 'fit-content' }}>
+                {/* Header */}
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    นักเรียนที่เช็คชื่อแล้ว
+                  </Typography>
+                  <Chip
+                    label={`${checkedInStudents.length} คน`}
+                    color="primary"
+                    size="small"
+                  />
+                </Box>
 
-              {savedImages.length > 0 && (
-                <Button
-                  variant="outlined"
-                  onClick={clearSavedImages}
-                  size="large"
-                  color="warning"
-                  sx={{ minWidth: 120, py: 1.5 }}
-                >
-                  🗑️ ลบภาพทั้งหมด
-                </Button>
-              )}
-
-              <Button
-                variant="outlined"
-                onClick={handleStopCamera}
-                size="large"
-                color="error"
-                sx={{ minWidth: 120, py: 1.5 }}
-              >
-                ❌ ปิดกล้อง
-              </Button>
+                {/* Student List */}
+                <Box sx={{
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 2,
+                  maxHeight: 400,
+                  overflow: 'auto',
+                  backgroundColor: 'background.paper'
+                }}>
+                  {checkedInStudents.length === 0 ? (
+                    <Box sx={{ p: 3, textAlign: 'center' }}>
+                      <Typography color="text.secondary" variant="body2">
+                        ยังไม่มีนักเรียนเช็คชื่อ
+                      </Typography>
+                    </Box>
+                  ) : (
+                    <List sx={{ p: 0 }}>
+                      {checkedInStudents.map((student, index) => (
+                        <React.Fragment key={student.id}>
+                          <ListItem sx={{ py: 2 }}>
+                            <ListItemAvatar>
+                              <Avatar
+                                src={student.image}
+                                sx={{ width: 40, height: 40 }}
+                              >
+                                {student.name}
+                              </Avatar>
+                            </ListItemAvatar>
+                            <ListItemText
+                              primary={
+                                <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                                  {student.name}
+                                </Typography>
+                              }
+                              secondary={
+                                <Box>
+                                  <Typography variant="caption" color="text.secondary">
+                                    รหัส: {student.studentNo}
+                                  </Typography>
+                                  <br />
+                                  <Typography variant="caption">
+                                    เช็คชื่อ: {student.checkInTime}
+                                  </Typography>
+                                  <br />
+                                  <Box sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 0.5,
+                                    mt: 0.5
+                                  }}>
+                                    <UserCircleCheckIcon
+                                      size={20}
+                                      color={getStatusColor(student.status)}
+                                      style={{ flexShrink: 0 }}
+                                    />
+                                    <Typography
+                                      variant="caption"
+                                      sx={{
+                                        fontWeight: 600, fontSize: '0.8rem',
+                                      }}
+                                    >
+                                      สถานะ: {getCheckInStatusLabel(student.status)}
+                                    </Typography>
+                                  </Box>
+                                </Box>
+                              }
+                            />
+                          </ListItem>
+                          {index < checkedInStudents.length - 1 && <Divider />}
+                        </React.Fragment>
+                      ))}
+                    </List>
+                  )}
+                </Box>
+              </Paper>
             </Box>
-          )}
-        </CardActions>
+          </Box>
+        </CardContent>
       </Card>
 
       <ErrorDialog

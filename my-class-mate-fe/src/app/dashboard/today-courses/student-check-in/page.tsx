@@ -39,7 +39,6 @@ export default function StudentCheckInPage(): React.JSX.Element {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [errorDialogMessage, setErrorDialogMessage] = useState<string>('');
-    const [checkInComplete, setCheckInComplete] = useState(false);
 
     // Toast state
     const [toast, setToast] = useState<ToastState>({
@@ -91,7 +90,6 @@ export default function StudentCheckInPage(): React.JSX.Element {
     // Handle scan completion
     const handleScanComplete = (success: boolean) => {
         if (success) {
-            setCheckInComplete(true);
             setToast({
                 open: true,
                 message: `เช็คชื่อเข้าเรียนสำเร็จ! รายวิชา ${todayCourse?.courseCode}`,
@@ -255,41 +253,11 @@ export default function StudentCheckInPage(): React.JSX.Element {
                         </CardContent>
                     </Card>
 
-                    {/* Success Message */}
-                    {checkInComplete && (
-                        <Alert severity="success" sx={{ mb: 3 }}>
-                            <Typography variant="h6" gutterBottom>
-                                ✅ เช็คชื่อเข้าเรียนสำเร็จ!
-                            </Typography>
-                            <Typography variant="body1">
-                                คุณได้เช็คชื่อเข้าเรียนรายวิชา <strong>{todayCourse.courseCode}: {todayCourse.courseName}</strong> เรียบร้อยแล้ว
-                            </Typography>
-                        </Alert>
-                    )}
-
                     {/* Face Validation Component */}
-                    {!checkInComplete && (
-                        <StudentValidateFace
-                            todayCourse={todayCourse}
-                            onScanComplete={handleScanComplete}
-                        />
-                    )}
-
-                    {/* Completed Actions */}
-                    {checkInComplete && (
-                        <Box sx={{ textAlign: 'center' }}>
-                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="center">
-                                <Button
-                                    variant="contained"
-                                    onClick={handleBack}
-                                    startIcon={<ArrowLeftIcon size={20} />}
-                                    size="large"
-                                >
-                                    กลับไปหน้าตารางเรียน
-                                </Button>
-                            </Stack>
-                        </Box>
-                    )}
+                    <StudentValidateFace
+                        todayCourse={todayCourse}
+                        onScanComplete={handleScanComplete}
+                    />
                 </Stack>
             </Box>
 

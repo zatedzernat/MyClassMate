@@ -1,3 +1,4 @@
+import { CheckInStatus } from "@/util/check-in-status";
 
 export interface UploadFaceImagesResponse {
   userId: string;
@@ -10,10 +11,10 @@ export interface ValidateStudentFaceResponse {
   courseCode: string;
   courseScheduleId: number;
   createdAt: string;
-  status: string;
+  status: CheckInStatus;
   statusDesc: string;
   studentId: number;
-  studentSurname: string;
-  studentNickname: string;
+  studentNameEn: string;
+  studentNameTh: string;
   studentNo: string;
 }

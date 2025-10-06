@@ -1,3 +1,4 @@
+import { CheckInStatus } from "@/util/check-in-status";
 import { UploadFaceImagesResponse, ValidateStudentFaceResponse } from "./data/face-response";
 
 // Validate single face image
