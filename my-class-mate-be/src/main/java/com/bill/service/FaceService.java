@@ -82,7 +82,7 @@ public class FaceService {
             var now = LocalDateTime.now();
             var status = AttendanceStatusEnum.PRESENT;
 
-            int lateThresholdMinutes = 15;
+            int lateThresholdMinutes = 20;
             LocalTime lateLimit = schedule.getStartTime().plusMinutes(lateThresholdMinutes);
 
             if (now.toLocalTime().isAfter(lateLimit)) {
@@ -116,7 +116,7 @@ public class FaceService {
                     .courseId(courseId)
                     .courseScheduleId(courseScheduleId)
                     .courseCode(course.getCourseCode())
-                    .createdAt(now)
+                    .createdAt(attendance.getCreatedAt())
                     .status(status)
                     .statusDesc(status.getDesc())
                     .build();
