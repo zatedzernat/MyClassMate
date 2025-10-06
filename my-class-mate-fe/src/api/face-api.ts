@@ -1,11 +1,11 @@
-import { UploadFaceImagesResponse } from "./data/face-response";
+import { UploadFaceImagesResponse, ValidateStudentFaceResponse } from "./data/face-response";
 
 // Validate single face image
 export async function validateFaceImage(
   courseId: string,
   courseScheduleId: string,
   imageFile: File | Blob
-): Promise<void> {
+): Promise<ValidateStudentFaceResponse> {
   const formData = new FormData();
   formData.append('file', imageFile, `face-validation-${Date.now()}.jpg`);
 
@@ -17,13 +17,15 @@ export async function validateFaceImage(
     },
   });
 
+  const resData = await response.json();
 
   if (!response.ok) {
-    const resData = await response.json().catch(() => ({}));
     const errorMessage = resData?.message || resData?.code || "Unknown error occurred";
     throw new Error(errorMessage);
+    }
+  
+    return resData;
   }
-}
 
 // Upload multiple face images (4 images required)
 export async function uploadFaceImages(
