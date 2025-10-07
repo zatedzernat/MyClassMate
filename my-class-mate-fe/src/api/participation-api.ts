@@ -4,7 +4,10 @@ import {
     ParticipationListResponse,
     ParticipationStatus,
     CreateParticipationRequest,
-    CreateParticipationResponse
+    CreateParticipationResponse,
+    ParticipationRequestRequest,
+    ParticipationRequestResponse,
+    CreateParticipationRequestResponse
 } from './data/participation-response';
 
 // API Configuration
@@ -163,10 +166,131 @@ export async function createParticipation(participationData: CreateParticipation
     }
 }
 
+/**
+ * Close a participation by participation ID
+ */
+export async function closeParticipation(participationId: number): Promise<CreateParticipationResponse> {
+    try {
+        logger.debug('[ParticipationAPI]: Closing participation with ID:', participationId);
+
+        const response = await fetch(`${BASE_URL}/${API_VERSION}/participations/${encodeURIComponent(participationId)}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-role': localStorage.getItem('user-role') || '',
+            }
+        });
+
+        logger.debug(`[ParticipationAPI]: Close participation response status: ${response.status}`);
+
+        const resData = await response.json();
+        logger.debug('[ParticipationAPI]: Close participation raw response data:', resData);
+
+        if (!response.ok) {
+            const errorMessage = resData?.message || resData?.code || 'Unknown error occurred';
+            throw new Error(errorMessage);
+        }
+
+        // Map the response to ParticipationResponse format
+        const closedParticipation: ParticipationResponse = {
+            participationId: resData.participationId,
+            courseScheduleId: resData.courseScheduleId,
+            round: resData.round,
+            topic: resData.topic,
+            status: resData.status as ParticipationStatus,
+            createdBy: resData.createdBy,
+            createdAt: resData.createdAt,
+            closedAt: resData.closedAt
+        };
+
+        logger.debug(`[ParticipationAPI]: Successfully closed participation with ID: ${closedParticipation.participationId}`);
+
+        return {
+            success: true,
+            data: closedParticipation,
+            message: `ปิดการมีส่วนร่วมสำเร็จ: ${closedParticipation.topic}`
+        };
+
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการปิดการมีส่วนร่วม';
+        logger.error('[ParticipationAPI]: Error closing participation:', error);
+
+        // Handle network errors
+        if (error instanceof TypeError && error.message.includes('fetch')) {
+            throw new Error('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต');
+        }
+
+        throw new Error(errorMessage);
+    }
+}
+
+/**
+ * Request participation as a student
+ */
+export async function requestParticipation(requestData: ParticipationRequestRequest): Promise<CreateParticipationRequestResponse> {
+    try {
+        logger.debug('[ParticipationAPI]: Requesting participation with data:', requestData);
+
+        const response = await fetch(`${BASE_URL}/${API_VERSION}/participations/requests`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-role': localStorage.getItem('user-role') || '',
+            },
+            body: JSON.stringify(requestData)
+        });
+
+        logger.debug(`[ParticipationAPI]: Request participation response status: ${response.status}`);
+
+        const resData = await response.json();
+        logger.debug('[ParticipationAPI]: Request participation raw response data:', resData);
+
+        if (!response.ok) {
+            const errorMessage = resData?.message || resData?.code || 'Unknown error occurred';
+            throw new Error(errorMessage);
+        }
+
+        // Map the response to ParticipationRequestResponse format
+        const participationRequest: ParticipationRequestResponse = {
+            participationRequestId: resData.participationRequestId,
+            participationId: resData.participationId,
+            studentId: resData.studentId,
+            studentNo: resData.studentNo,
+            studentNameTh: resData.studentNameTh,
+            studentNameEn: resData.studentNameEn,
+            createdAt: resData.createdAt,
+            isScored: resData.isScored,
+            score: resData.score
+        };
+
+        logger.debug(`[ParticipationAPI]: Successfully requested participation with ID: ${participationRequest.participationRequestId}`);
+
+        return {
+            success: true,
+            data: participationRequest,
+            message: `ส่งคำขอเข้าร่วมสำเร็จ: ${participationRequest.studentNameTh}`
+        };
+
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการส่งคำขอเข้าร่วม';
+        logger.error('[ParticipationAPI]: Error requesting participation:', error);
+
+        // Handle network errors
+        if (error instanceof TypeError && error.message.includes('fetch')) {
+            throw new Error('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต');
+        }
+
+        throw new Error(errorMessage);
+    }
+}
+
 // Export types for convenience
 export type { 
     ParticipationResponse, 
     ParticipationStatus, 
     CreateParticipationRequest, 
-    CreateParticipationResponse 
+    CreateParticipationResponse,
+    ParticipationRequestRequest,
+    ParticipationRequestResponse,
+    CreateParticipationRequestResponse
 } from './data/participation-response';

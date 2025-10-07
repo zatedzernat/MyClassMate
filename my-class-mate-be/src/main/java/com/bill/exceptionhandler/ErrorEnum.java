@@ -31,7 +31,7 @@ public enum ErrorEnum {
     ERROR_USER_NOT_LECTURER("ERR024", "user is not lecturer, can not perform this action"),
     ERROR_PARTICIPATION_NOT_FOUND("ERR025", "participation not found"),
     ERROR_PARTICIPATION_CLOSED("ERR026", "this participation already closed"),
-    ERROR_STUDENT_ATTENDANCE_NOT_FOUND("ERR027", "attendance not found for studentId: %s, courseScheduleId: %s"),
+    ERROR_STUDENT_ATTENDANCE_NOT_FOUND("ERR027", "ไม่สามารถส่งคำขอได้เนื่องจากไม่มีข้อมูลการเช็คชื่อเข้าเรียน (studentId: %s, courseScheduleId: %s)"),
     ERROR_PARTICIPATION_REQUEST_NOT_FOUND("ERR028", "participation request not found, participationRequestId: %s"),
     ;
 

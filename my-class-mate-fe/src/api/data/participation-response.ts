@@ -29,3 +29,27 @@ export interface CreateParticipationResponse {
     data: ParticipationResponse;
     message: string;
 }
+
+export interface ParticipationRequestRequest {
+    participationId: number;
+    studentId: number;
+    courseScheduleId: number;
+}
+
+export interface ParticipationRequestResponse {
+    participationRequestId: number;
+    participationId: number;
+    studentId: number;
+    studentNo: string;
+    studentNameTh: string;
+    studentNameEn: string;
+    createdAt: string;
+    isScored: boolean;
+    score: number;
+}
+
+export interface CreateParticipationRequestResponse {
+    success: boolean;
+    data: ParticipationRequestResponse;
+    message: string;
+}

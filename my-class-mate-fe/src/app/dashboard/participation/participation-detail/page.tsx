@@ -26,16 +26,23 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  TextField
+  TextField,
+  Snackbar
 } from '@mui/material';
 import { ArrowLeftIcon } from '@phosphor-icons/react/dist/ssr/ArrowLeft';
 import { CalendarIcon } from '@phosphor-icons/react/dist/ssr/Calendar';
 import { PlusIcon } from '@phosphor-icons/react/dist/ssr/Plus';
-import { getParticipationsByCourseScheduleId, createParticipation } from '@/api/participation-api';
-import { ParticipationResponse, CreateParticipationRequest } from '@/api/data/participation-response';
+import { getParticipationsByCourseScheduleId, createParticipation, closeParticipation, requestParticipation } from '@/api/participation-api';
+import { ParticipationResponse, CreateParticipationRequest, ParticipationRequestRequest } from '@/api/data/participation-response';
 import ErrorDialog from '@/components/error/error-dialog';
 import { paths } from '@/paths';
 import { Role } from '@/util/role-enum';
+
+interface ToastState {
+  open: boolean;
+  message: string;
+  severity: 'success' | 'error' | 'warning' | 'info';
+}
 
 // Helper functions moved to outer scope
 const getStatusColor = (status: string): 'success' | 'error' | 'warning' | 'info' => {
@@ -111,6 +118,17 @@ export default function ParticipationDetailPage(): React.JSX.Element {
     courseScheduleId: 0,
     lecturerId: 0,
     topic: ''
+  });
+
+  // Close participation confirmation dialog state
+  const [openCloseDialog, setOpenCloseDialog] = useState(false);
+  const [participationToClose, setParticipationToClose] = useState<ParticipationResponse | null>(null);
+
+  // Toast notification state
+  const [toast, setToast] = useState<ToastState>({
+    open: false,
+    message: '',
+    severity: 'success'
   });
 
   // Fetch participations
@@ -192,6 +210,62 @@ export default function ParticipationDetailPage(): React.JSX.Element {
     }
   };
 
+  // Handle close participation functions
+  const handleOpenCloseDialog = (participation: ParticipationResponse) => {
+    setParticipationToClose(participation);
+    setOpenCloseDialog(true);
+  };
+
+  const handleCloseCloseDialog = () => {
+    setOpenCloseDialog(false);
+    setParticipationToClose(null);
+  };
+
+  const handleConfirmCloseParticipation = async () => {
+    if (!participationToClose) return;
+
+    try {
+      const response = await closeParticipation(participationToClose.participationId);
+      if (response.success) {
+        fetchParticipations(); // Refresh the list
+        handleCloseCloseDialog();
+      } else {
+        setErrorDialogMessage(response.message || 'เกิดข้อผิดพลาดในการปิดการมีส่วนร่วม');
+      }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการปิดการมีส่วนร่วม';
+      setErrorDialogMessage(errorMessage);
+    }
+  };
+
+  // Handle request participation function
+  const handleRequestParticipation = async (participation: ParticipationResponse) => {
+    if (!userData?.userId || !courseScheduleId) return;
+
+    const requestData: ParticipationRequestRequest = {
+      participationId: participation.participationId,
+      studentId: Number.parseInt(userData.userId),
+      courseScheduleId: Number.parseInt(courseScheduleId)
+    };
+
+    try {
+      const response = await requestParticipation(requestData);
+      if (response.success) {
+        setToast({
+          open: true,
+          message: `ส่งคำขอการมีส่วนร่วมสำเร็จ: ${participation.topic}`,
+          severity: 'success'
+        });
+        // Note: No need to refresh participations list as the backend handles duplicate requests
+      } else {
+        setErrorDialogMessage(response.message || 'เกิดข้อผิดพลาดในการส่งคำขอการมีส่วนร่วม');
+      }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการส่งคำขอการมีส่วนร่วม';
+      setErrorDialogMessage(errorMessage);
+    }
+  };
+
   // Handle back button
   const handleBack = () => {
     router.push(paths.dashboard.participation);
@@ -199,6 +273,13 @@ export default function ParticipationDetailPage(): React.JSX.Element {
 
   const handleCloseErrorDialog = () => {
     setErrorDialogMessage('');
+  };
+
+  const handleCloseToast = (event?: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setToast(prev => ({ ...prev, open: false }));
   };
 
   return (
@@ -298,12 +379,15 @@ export default function ParticipationDetailPage(): React.JSX.Element {
                       <TableCell sx={{ fontWeight: 600, textAlign: 'center', minWidth: 150 }}>
                         ปิดเมื่อ
                       </TableCell>
+                      <TableCell sx={{ fontWeight: 600, textAlign: 'center', minWidth: 120 }}>
+                        การดำเนินการ
+                      </TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {participations.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
+                        <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
                           <Typography color="text.secondary">
                             ไม่พบข้อมูลการมีส่วนร่วมสำหรับคาบเรียนนี้
                           </Typography>
@@ -341,6 +425,28 @@ export default function ParticipationDetailPage(): React.JSX.Element {
                                 : '-'
                               }
                             </Typography>
+                          </TableCell>
+                          <TableCell align="center">
+                            {participation.status === 'OPEN' && userData?.role !== Role.STUDENT && (
+                              <Button
+                                variant="outlined"
+                                color="error"
+                                size="small"
+                                onClick={() => handleOpenCloseDialog(participation)}
+                              >
+                                ปิดการมีส่วนร่วม
+                              </Button>
+                            )}
+                            {participation.status === 'OPEN' && userData?.role === Role.STUDENT && (
+                              <Button
+                                variant="contained"
+                                color="primary"
+                                size="small"
+                                onClick={() => handleRequestParticipation(participation)}
+                              >
+                                ส่งคำขอการมีส่วนร่วม
+                              </Button>
+                            )}
                           </TableCell>
                         </TableRow>
                       ))
@@ -380,6 +486,76 @@ export default function ParticipationDetailPage(): React.JSX.Element {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Close Participation Confirmation Dialog */}
+      <Dialog open={openCloseDialog} onClose={handleCloseCloseDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>ยืนยันการปิดการมีส่วนร่วม</DialogTitle>
+        <DialogContent>
+          <Typography variant="body1">
+            คุณแน่ใจหรือไม่ที่จะปิดการมีส่วนร่วม?
+          </Typography>
+          {participationToClose && (
+            <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+              <Typography variant="body2" color="text.secondary">
+                รอบที่: {participationToClose.round}
+              </Typography>
+              <Typography variant="body2">
+                หัวข้อ: {participationToClose.topic}
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseCloseDialog}>ยกเลิก</Button>
+          <Button 
+            variant="contained" 
+            color="error"
+            onClick={handleConfirmCloseParticipation}
+          >
+            ยืนยันปิดการมีส่วนร่วม
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Toast Notification */}
+      <Snackbar
+        open={toast.open}
+        autoHideDuration={6000}
+        onClose={handleCloseToast}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          severity={toast.severity}
+          onClose={handleCloseToast}
+          sx={{
+            '&.MuiAlert-filledSuccess': {
+              backgroundColor: '#388e3c',
+              color: '#ffffff',
+              fontWeight: 500,
+            },
+            '&.MuiAlert-filledError': {
+              backgroundColor: '#f44336',
+              color: '#ffffff',
+              fontWeight: 500,
+            },
+            '&.MuiAlert-filledWarning': {
+              backgroundColor: '#ff9800',
+              color: '#ffffff',
+              fontWeight: 500,
+            },
+            '&.MuiAlert-filledInfo': {
+              backgroundColor: '#2196f3',
+              color: '#ffffff',
+              fontWeight: 500,
+            },
+            fontSize: '0.95rem',
+            borderRadius: '8px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          }}
+        >
+          {toast.message}
+        </Alert>
+      </Snackbar>
 
       {/* Error Dialog */}
       <ErrorDialog

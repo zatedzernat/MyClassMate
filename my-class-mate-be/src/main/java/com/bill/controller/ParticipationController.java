@@ -38,7 +38,7 @@ public class ParticipationController {
         return participationService.closeParticipation(participationId);
     }
 
-    @RequireRole({RoleEnum.ADMIN, RoleEnum.LECTURER, RoleEnum.STAFF})
+    @RequireRole({RoleEnum.ADMIN, RoleEnum.LECTURER, RoleEnum.STAFF, RoleEnum.STUDENT})
     @GetMapping(value = "/course-schedule/{courseScheduleId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public List<ParticipationResponse> getParticipations(@PathVariable Long courseScheduleId) {
         return participationService.getParticipations(courseScheduleId);
