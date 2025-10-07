@@ -15,6 +15,7 @@ export const navItemsForAdmin = [
 ] satisfies NavItemConfig[];
 
 export const navItemsForStudent = [
+  { key: 'course', title: 'ข้อมูลรายวิชา', href: paths.dashboard.course, icon: 'course' },
   { key: 'student', title: 'รายละเอียดนักศึกษา', href: paths.dashboard.student, icon: 'users' },
   { key: 'participation', title: 'การมีส่วนร่วม', href: paths.dashboard.participation, icon: 'calendarStarIcon' },
 ] satisfies NavItemConfig[];

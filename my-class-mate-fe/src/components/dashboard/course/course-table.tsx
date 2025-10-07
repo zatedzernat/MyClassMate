@@ -23,19 +23,21 @@ import { CourseResponse, DayOfWeek } from '@/api/data/course-response';
 import { useRouter } from 'next/navigation';
 import { deleteCourse } from '@/api/course-api';
 import { paths } from '@/paths';
+import { Role } from '@/util/role-enum';
 
 function noop(): void {
   // do nothing
 }
 
-interface CoursesTableProps {
+export interface CoursesTableProps {
   count?: number;
   page?: number;
   rows?: CourseResponse[];
   rowsPerPage?: number;
   onUpdated?: () => void;
   onError?: (message: string) => void;
-  onShowToast?: (message: string, severity: 'success' | 'error') => void;
+  onShowToast?: (message: string, severity: 'success' | 'error' | 'warning' | 'info') => void;
+  userRole?: string | null;
 }
 
 export function CoursesTable({
@@ -45,7 +47,8 @@ export function CoursesTable({
   rowsPerPage = 0,
   onUpdated: onUpdated,
   onError: onError,
-  onShowToast: onShowToast = noop
+  onShowToast: onShowToast = noop,
+  userRole
 }: CoursesTableProps): React.JSX.Element {
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState<CourseResponse | null>(null);
@@ -170,7 +173,7 @@ export function CoursesTable({
               <TableCell>ภาคเรียน</TableCell>
               <TableCell>วันเเละเวลาที่มีการเรียนการสอน</TableCell>
               <TableCell>ห้องเรียน</TableCell>
-              <TableCell align="center">จัดการ</TableCell>
+              <TableCell align="center">การดำเนินการ</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -201,51 +204,53 @@ export function CoursesTable({
                   </TableCell>
                   <TableCell>{row.room}</TableCell>
                   <TableCell align="center">
-                    <Stack direction="row" spacing={1} justifyContent="center">
-                      <IconButton
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleAddStudent(row);
-                          console.log('Add student to course:', row.courseId);
-                        }}
-                        title="เพิ่มนักเรียน"
-                      >
-                        <img
-                          src="/assets/add-user.png"
-                          alt="Add Student"
-                          style={{ width: 20, height: 20 }}
-                        />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditCourse(Number(row.courseId)); // Changed from handleOpenEditDialog
-                        }}
-                        title="แก้ไข"
-                      >
-                        <img
-                          src="/assets/edit.png"
-                          alt="Edit"
-                          style={{ width: 20, height: 20 }}
-                        />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteDialogOpen(row);
-                        }}
-                        title="ลบ"
-                      >
-                        <img
-                          src="/assets/delete.png"
-                          alt="Delete"
-                          style={{ width: 20, height: 20 }}
-                        />
-                      </IconButton>
-                    </Stack>
+                    {userRole !== Role.STUDENT && (
+                      <Stack direction="row" spacing={1} justifyContent="center">
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAddStudent(row);
+                            console.log('Add student to course:', row.courseId);
+                          }}
+                          title="เพิ่มนักเรียน"
+                        >
+                          <img
+                            src="/assets/add-user.png"
+                            alt="Add Student"
+                            style={{ width: 20, height: 20 }}
+                          />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditCourse(Number(row.courseId)); // Changed from handleOpenEditDialog
+                          }}
+                          title="แก้ไข"
+                        >
+                          <img
+                            src="/assets/edit.png"
+                            alt="Edit"
+                            style={{ width: 20, height: 20 }}
+                          />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteDialogOpen(row);
+                          }}
+                          title="ลบ"
+                        >
+                          <img
+                            src="/assets/delete.png"
+                            alt="Delete"
+                            style={{ width: 20, height: 20 }}
+                          />
+                        </IconButton>
+                      </Stack>
+                    )}
                   </TableCell>
                 </TableRow>
               );

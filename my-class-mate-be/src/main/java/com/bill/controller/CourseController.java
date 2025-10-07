@@ -41,7 +41,7 @@ public class CourseController {
         return courseService.createCourse(request);
     }
 
-    @RequireRole({RoleEnum.ADMIN, RoleEnum.LECTURER, RoleEnum.STAFF})
+    @RequireRole({RoleEnum.ADMIN, RoleEnum.LECTURER, RoleEnum.STAFF, RoleEnum.STUDENT})
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public List<CourseResponse> getCourses(@RequestParam(required = false) Integer academicYear,
                                            @RequestParam(required = false) Integer semester) {

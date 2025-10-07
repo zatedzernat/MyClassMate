@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Metadata } from 'next';
 import Button from '@mui/material/Button';
@@ -25,10 +25,11 @@ import MuiAlert, { AlertColor } from "@mui/material/Alert";
 import CircularProgress from '@mui/material/CircularProgress';
 
 import { getCourses} from '@/api/course-api';
-import { CourseResponse, CourseFilter, DayOfWeek } from '@/api/data/course-response';
+import { CourseResponse, CourseFilter } from '@/api/data/course-response';
 import { CoursesTable } from '@/components/dashboard/course/course-table';
 import ErrorDialog from '@/components/error/error-dialog';
 import { paths } from '@/paths';
+import { Role } from '@/util/role-enum';
 
 export default function Page(): React.JSX.Element {
   const router = useRouter();
@@ -57,8 +58,11 @@ export default function Page(): React.JSX.Element {
     severity: "success",
   });
 
+  // User role state
+  const [userRole, setUserRole] = useState<string | null>(null);
+
   // Fetch courses function
-  const fetchCourses = async () => {
+  const fetchCourses = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -88,12 +92,18 @@ export default function Page(): React.JSX.Element {
     } finally {
       setLoading(false);
     }
-  };
+  }, [academicYear, semester]);
 
   // Initial load and when filters change
   useEffect(() => {
     fetchCourses();
   }, [academicYear, semester]);
+
+  // Load user role from localStorage
+  useEffect(() => {
+    const role = localStorage.getItem('user-role');
+    setUserRole(role);
+  }, []);
 
   // Handle filter changes
   const handleAcademicYearChange = (event: SelectChangeEvent<number>) => {
@@ -118,20 +128,6 @@ export default function Page(): React.JSX.Element {
     setToast((prev) => ({ ...prev, open: false }));
   };
 
-  // Get day labels in Thai
-  const getDayLabel = (day: DayOfWeek): string => {
-    const dayLabels = {
-      [DayOfWeek.MONDAY]: 'จันทร์',
-      [DayOfWeek.TUESDAY]: 'อังคาร',
-      [DayOfWeek.WEDNESDAY]: 'พุธ',
-      [DayOfWeek.THURSDAY]: 'พฤหัสบดี',
-      [DayOfWeek.FRIDAY]: 'ศุกร์',
-      [DayOfWeek.SATURDAY]: 'เสาร์',
-      [DayOfWeek.SUNDAY]: 'อาทิตย์'
-    };
-    return dayLabels[day] || day;
-  };
-
   const Alert = React.forwardRef<HTMLDivElement, { severity: AlertColor; children: React.ReactNode }>(
     function Alert(props, ref) {
       return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
@@ -145,15 +141,17 @@ export default function Page(): React.JSX.Element {
         <Stack spacing={1} sx={{ flex: '1 1 auto' }}>
           <Typography variant="h4">ข้อมูลรายวิชา</Typography>
         </Stack>
-        <div>
-          <Button
-            startIcon={<PlusIcon fontSize="var(--icon-fontSize-md)" />}
-            variant="contained"
-            onClick={handleCreateCourse}
-          >
-            เพิ่มรายวิชา
-          </Button>
-        </div>
+        {userRole !== Role.STUDENT && (
+          <div>
+            <Button
+              startIcon={<PlusIcon fontSize="var(--icon-fontSize-md)" />}
+              variant="contained"
+              onClick={handleCreateCourse}
+            >
+              เพิ่มรายวิชา
+            </Button>
+          </div>
+        )}
       </Stack>
 
       {/* Filters */}
@@ -210,6 +208,7 @@ export default function Page(): React.JSX.Element {
           onUpdated={fetchCourses}
           onError={setErrorMessage}
           onShowToast={(message, severity) => setToast({ open: true, message, severity })}
+          userRole={userRole}
         />
       )}
 
