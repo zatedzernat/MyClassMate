@@ -327,7 +327,7 @@ export default function AddStudentToCoursePage(): React.JSX.Element {
                     <CardContent>
                         <Stack spacing={2}>
                             <Typography variant="h6">
-                                รายชื่อนักเรียน ({students.length} คน)
+                                รายชื่อผู้เรียน ({students.length} คน)
                             </Typography>
                             <TableContainer component={Paper} variant="outlined">
                                 <Table>
@@ -340,10 +340,10 @@ export default function AddStudentToCoursePage(): React.JSX.Element {
                                                 รหัสนักศึกษา
                                             </TableCell>
                                             <TableCell sx={{ fontWeight: 600 }}>
-                                                ชื่อ - นามสกุลภาษาไทย
+                                                ชื่อ - นามสกุล (ภาษาไทย)
                                             </TableCell>
                                             <TableCell sx={{ fontWeight: 600 }}>
-                                                ชื่อ - นามสกุลภาษาอังกฤษ
+                                                ชื่อ - นามสกุล (ภาษาอังกฤษ)
                                             </TableCell>
                                         </TableRow>
                                     </TableHead>
@@ -367,17 +367,17 @@ export default function AddStudentToCoursePage(): React.JSX.Element {
                                                             </Typography>
                                                         </TableCell>
                                                         <TableCell>
-                                                            <Typography variant="body2" sx={{ color: 'success.main' }}>
+                                                            <Typography variant="body2">
                                                                 {student.studentNo}
                                                             </Typography>
                                                         </TableCell>
                                                         <TableCell>
-                                                            <Typography variant="body2" sx={{ color: 'success.main' }}>
+                                                            <Typography variant="body2">
                                                                 {student.studentNameTh}
                                                             </Typography>
                                                         </TableCell>
                                                         <TableCell>
-                                                            <Typography variant="body2" sx={{ color: 'success.main' }}>
+                                                            <Typography variant="body2">
                                                                 {student.studentNameEn}
                                                             </Typography>
                                                         </TableCell>

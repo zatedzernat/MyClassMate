@@ -24,6 +24,7 @@ import { useRouter } from 'next/navigation';
 import { deleteCourse } from '@/api/course-api';
 import { paths } from '@/paths';
 import { Role } from '@/util/role-enum';
+import { ChartBar } from '@phosphor-icons/react/dist/ssr/ChartBar';
 
 function noop(): void {
   // do nothing
@@ -152,6 +153,14 @@ export function CoursesTable({
     router.push(`${paths.dashboard.course}/add-student-to-course?${courseParams}`);
   };
 
+  const handleViewReport = (course: CourseResponse) => {
+    const courseParams = new URLSearchParams({
+      courseId: course.courseId.toString(),
+      courseName: `${course.courseCode}: ${course.courseName}`
+    });
+    router.push(`${paths.dashboard.course}/course-report?${courseParams}`);
+  };
+
 
   // Format date display with day of week
   const formatDateWithDay = (date: string): string => {
@@ -199,58 +208,72 @@ export function CoursesTable({
                   <TableCell>{row.semester}</TableCell>
                   <TableCell>
                     <Typography variant="body2">
-                      {getDayLabel(row.dayOfWeek)} {formatTime(row.startTime)} - {formatTime(row.endTime)}
+                      {getDayLabel(row.dayOfWeek)} {formatTime(row.startTime)} - {formatTime(row.endTime)} น.
                     </Typography>
                   </TableCell>
                   <TableCell>{row.room}</TableCell>
                   <TableCell align="center">
-                    {userRole !== Role.STUDENT && (
-                      <Stack direction="row" spacing={1} justifyContent="center">
-                        <IconButton
-                          size="small"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleAddStudent(row);
-                            console.log('Add student to course:', row.courseId);
-                          }}
-                          title="เพิ่มนักเรียน"
-                        >
-                          <img
-                            src="/assets/add-user.png"
-                            alt="Add Student"
-                            style={{ width: 20, height: 20 }}
-                          />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditCourse(Number(row.courseId)); // Changed from handleOpenEditDialog
-                          }}
-                          title="แก้ไข"
-                        >
-                          <img
-                            src="/assets/edit.png"
-                            alt="Edit"
-                            style={{ width: 20, height: 20 }}
-                          />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteDialogOpen(row);
-                          }}
-                          title="ลบ"
-                        >
-                          <img
-                            src="/assets/delete.png"
-                            alt="Delete"
-                            style={{ width: 20, height: 20 }}
-                          />
-                        </IconButton>
-                      </Stack>
-                    )}
+                    <Stack direction="row" spacing={1} justifyContent="center">
+                      {/* Report button - visible to all roles */}
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewReport(row);
+                        }}
+                        title="ดูรายงาน"
+                      >
+                        <ChartBar size={20} />
+                      </IconButton>
+                      {/* Management buttons - only for non-students */}
+                      {userRole !== Role.STUDENT && (
+                        <>
+                          <IconButton
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAddStudent(row);
+                              console.log('Add student to course:', row.courseId);
+                            }}
+                            title="เพิ่มนักเรียน"
+                          >
+                            <img
+                              src="/assets/add-user.png"
+                              alt="Add Student"
+                              style={{ width: 20, height: 20 }}
+                            />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditCourse(Number(row.courseId)); // Changed from handleOpenEditDialog
+                            }}
+                            title="แก้ไข"
+                          >
+                            <img
+                              src="/assets/edit.png"
+                              alt="Edit"
+                              style={{ width: 20, height: 20 }}
+                            />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteDialogOpen(row);
+                            }}
+                            title="ลบ"
+                          >
+                            <img
+                              src="/assets/delete.png"
+                              alt="Delete"
+                              style={{ width: 20, height: 20 }}
+                            />
+                          </IconButton>
+                        </>
+                      )}
+                    </Stack>
                   </TableCell>
                 </TableRow>
               );

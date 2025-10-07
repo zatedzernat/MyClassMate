@@ -1005,7 +1005,7 @@ export default function Page(): React.JSX.Element {
                                         }
                                     </Typography>
                                     <Typography variant="body2">
-                                        เวลา: {editScheduleDialog.schedule.startTime?.substring(0, 5)} - {editScheduleDialog.schedule.endTime?.substring(0, 5)}
+                                        เวลา: {editScheduleDialog.schedule.startTime?.substring(0, 5)} - {editScheduleDialog.schedule.endTime?.substring(0, 5)} น.
                                     </Typography>
                                     <Typography variant="body2">
                                         ห้อง: {editScheduleDialog.schedule.room}

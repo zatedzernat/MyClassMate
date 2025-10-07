@@ -102,8 +102,6 @@ export default function Page(): React.JSX.Element {
 
         if (!formData.courseCode.trim()) {
             newErrors.courseCode = 'กรุณากรอกรหัสวิชา';
-        } else if (!/^[A-Z]{2}[0-9]{4}$/.test(formData.courseCode)) {
-            newErrors.courseCode = 'รหัสวิชาต้องเป็นรูปแบบ XX0000 (เช่น CU0001)';
         }
 
         if (!formData.courseName.trim()) {
@@ -919,7 +917,7 @@ export default function Page(): React.JSX.Element {
                                         }
                                     </Typography>
                                     <Typography variant="body2">
-                                        เวลา: {editScheduleDialog.schedule.startTime?.substring(0, 5)} - {editScheduleDialog.schedule.endTime?.substring(0, 5)}
+                                        เวลา: {editScheduleDialog.schedule.startTime?.substring(0, 5)} - {editScheduleDialog.schedule.endTime?.substring(0, 5)} น.
                                     </Typography>
                                     <Typography variant="body2">
                                         ห้อง: {editScheduleDialog.schedule.room}
