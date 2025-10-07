@@ -54,7 +54,7 @@ public class ParticipationService {
 
         // validate lecturerId
         var user = userService.getUser(request.getLecturerId(), false);
-        if (!RoleEnum.LECTURER.equals(user.getRole())) {
+        if (!List.of(RoleEnum.LECTURER, RoleEnum.ADMIN).contains(user.getRole())) {
             throw new AppException(ERROR_USER_NOT_LECTURER.getCode(), ERROR_USER_NOT_LECTURER.getMessage());
         }
 
