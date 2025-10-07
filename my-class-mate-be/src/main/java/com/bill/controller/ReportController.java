@@ -27,7 +27,7 @@ public class ReportController {
         return reportService.getReports(courseId, courseScheduleId);
     }
 
-    @RequireRole({RoleEnum.ADMIN, RoleEnum.LECTURER, RoleEnum.STAFF})
+    @RequireRole({RoleEnum.ADMIN, RoleEnum.LECTURER, RoleEnum.STAFF, RoleEnum.STUDENT})
     @GetMapping(value = "/course/{courseId}/export", produces = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     public ResponseEntity<byte[]> exportReports(@PathVariable Long courseId, @RequestParam(required = false) Long courseScheduleId) {
         byte[] excelFile = reportService.exportReports(courseId, courseScheduleId);

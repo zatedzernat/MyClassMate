@@ -287,7 +287,7 @@ export function UsersTable({
               disabled // Username should not be editable
             />
             <TextField
-              label="ชื่อ (ไทย)"
+              label="ชื่อ (ภาษาไทย)"
               value={selectedUser?.nameTh || ''}
               onChange={(e) =>
                 setSelectedUser((prev) => (prev ? { ...prev, nameTh: e.target.value } : null))
@@ -296,7 +296,7 @@ export function UsersTable({
               sx={{ marginTop: '8px' }}
             />
             <TextField
-              label="นามสกุล (ไทย)"
+              label="นามสกุล (ภาษาไทย)"
               value={selectedUser?.surnameTh || ''}
               onChange={(e) =>
                 setSelectedUser((prev) => (prev ? { ...prev, surnameTh: e.target.value } : null))
@@ -305,7 +305,7 @@ export function UsersTable({
               sx={{ marginTop: '8px' }}
             />
             <TextField
-              label="ชื่อ (อังกฤษ)"
+              label="ชื่อ (ภาษาอังกฤษ)"
               value={selectedUser?.nameEn || ''}
               onChange={(e) =>
                 setSelectedUser((prev) => (prev ? { ...prev, nameEn: e.target.value } : null))
@@ -314,7 +314,7 @@ export function UsersTable({
               sx={{ marginTop: '8px' }}
             />
             <TextField
-              label="นามสกุล (อังกฤษ)"
+              label="นามสกุล (ภาษาอังกฤษ)"
               value={selectedUser?.surnameEn || ''}
               onChange={(e) =>
                 setSelectedUser((prev) => (prev ? { ...prev, surnameEn: e.target.value } : null))

@@ -271,7 +271,7 @@ export default function AddStudentToCoursePage(): React.JSX.Element {
                     <CardContent>
                         <Stack spacing={3}>
                             <Typography variant="h6">
-                                นำเข้า/ส่งออกข้อมูลนักเรียน
+                                นำเข้า/ส่งออกข้อมูลผู้เรียน
                             </Typography>
 
                             <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
@@ -362,7 +362,7 @@ export default function AddStudentToCoursePage(): React.JSX.Element {
                                                 .map((student, index) => (
                                                     <TableRow key={student.studentId} hover>
                                                         <TableCell align="center">
-                                                            <Typography variant="body2" sx={{ color: 'primary.main', fontWeight: 500 }}>
+                                                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
                                                             {index + 1}
                                                             </Typography>
                                                         </TableCell>

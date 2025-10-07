@@ -239,25 +239,25 @@ export default function Page(): React.JSX.Element {
               fullWidth
             />
             <TextField
-              label="ชื่อ (ไทย)"
+              label="ชื่อ (ภาษาไทย)"
               value={newUser.nameTh}
               onChange={(e) => setNewUser({ ...newUser, nameTh: e.target.value })}
               fullWidth
             />
             <TextField
-              label="นามสกุล (ไทย)"
+              label="นามสกุล (ภาษาไทย)"
               value={newUser.surnameTh}
               onChange={(e) => setNewUser({ ...newUser, surnameTh: e.target.value })}
               fullWidth
             />
             <TextField
-              label="ชื่อ (อังกฤษ)"
+              label="ชื่อ (ภาษาอังกฤษ)"
               value={newUser.nameEn}
               onChange={(e) => setNewUser({ ...newUser, nameEn: e.target.value })}
               fullWidth
             />
             <TextField
-              label="นามสกุล (อังกฤษ)"
+              label="นามสกุล (ภาษาอังกฤษ)"
               value={newUser.surnameEn}
               onChange={(e) => setNewUser({ ...newUser, surnameEn: e.target.value })}
               fullWidth
