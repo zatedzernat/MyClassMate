@@ -8,7 +8,9 @@ import {
     ParticipationRequestRequest,
     ParticipationRequestResponse,
     CreateParticipationRequestResponse,
-    ParticipationRequestListResponse
+    ParticipationRequestListResponse,
+    EvaluateParticipationRequestsRequest,
+    EvaluateParticipationRequestsResponse
 } from './data/participation-response';
 
 // API Configuration
@@ -369,6 +371,62 @@ export async function getParticipationRequests(participationId: number): Promise
     }
 }
 
+/**
+ * Evaluate participation requests by assigning scores
+ */
+export async function evaluateParticipationRequests(requestData: EvaluateParticipationRequestsRequest): Promise<EvaluateParticipationRequestsResponse> {
+    try {
+        logger.debug('[ParticipationAPI]: Evaluating participation requests with data:', requestData);
+
+        const response = await fetch(`${BASE_URL}/${API_VERSION}/participations/requests/evaluate`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-role': localStorage.getItem('user-role') || '',
+            },
+            body: JSON.stringify(requestData)
+        });
+
+        logger.debug(`[ParticipationAPI]: Evaluate participation requests response status: ${response.status}`);
+
+        if (!response.ok) {
+            // For non-200 status, try to get error message from response
+            const resData = await response.json().catch(() => null);
+            const errorMessage = resData?.message || resData?.code || `HTTP Error: ${response.status}`;
+            throw new Error(errorMessage);
+        }
+
+        // For successful responses, the API returns 200 status
+        // We may or may not have a response body, so handle both cases
+        let resData = null;
+        try {
+            resData = await response.json();
+            logger.debug('[ParticipationAPI]: Evaluate participation requests raw response data:', resData);
+        } catch {
+            // If no JSON response body, that's fine for a 200 status
+            logger.debug('[ParticipationAPI]: No JSON response body for evaluation request');
+        }
+
+        logger.debug(`[ParticipationAPI]: Successfully evaluated ${requestData.evaluates.length} participation requests`);
+
+        return {
+            success: true,
+            message: `ประเมินการมีส่วนร่วมสำเร็จ ${requestData.evaluates.length} รายการ`
+        };
+
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการประเมินการมีส่วนร่วม';
+        logger.error('[ParticipationAPI]: Error evaluating participation requests:', error);
+
+        // Handle network errors
+        if (error instanceof TypeError && error.message.includes('fetch')) {
+            throw new Error('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต');
+        }
+
+        throw new Error(errorMessage);
+    }
+}
+
 // Export types for convenience
 export type { 
     ParticipationResponse, 
@@ -378,5 +436,7 @@ export type {
     ParticipationRequestRequest,
     ParticipationRequestResponse,
     CreateParticipationRequestResponse,
-    ParticipationRequestListResponse
+    ParticipationRequestListResponse,
+    EvaluateParticipationRequestsRequest,
+    EvaluateParticipationRequestsResponse
 } from './data/participation-response';

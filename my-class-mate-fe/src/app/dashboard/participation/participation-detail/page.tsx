@@ -32,8 +32,8 @@ import {
 import { ArrowLeftIcon } from '@phosphor-icons/react/dist/ssr/ArrowLeft';
 import { CalendarIcon } from '@phosphor-icons/react/dist/ssr/Calendar';
 import { PlusIcon } from '@phosphor-icons/react/dist/ssr/Plus';
-import { getParticipationsByCourseScheduleId, createParticipation, closeParticipation, requestParticipation, getParticipationRequests } from '@/api/participation-api';
-import { ParticipationResponse, CreateParticipationRequest, ParticipationRequestRequest, ParticipationRequestResponse } from '@/api/data/participation-response';
+import { getParticipationsByCourseScheduleId, createParticipation, closeParticipation, requestParticipation, getParticipationRequests, evaluateParticipationRequests } from '@/api/participation-api';
+import { ParticipationResponse, CreateParticipationRequest, ParticipationRequestRequest, ParticipationRequestResponse, EvaluateParticipationRequestsRequest } from '@/api/data/participation-response';
 import ErrorDialog from '@/components/error/error-dialog';
 import { paths } from '@/paths';
 import { Role } from '@/util/role-enum';
@@ -136,6 +136,10 @@ export default function ParticipationDetailPage(): React.JSX.Element {
   const [participationToEvaluate, setParticipationToEvaluate] = useState<ParticipationResponse | null>(null);
   const [participationRequests, setParticipationRequests] = useState<ParticipationRequestResponse[]>([]);
   const [loadingRequests, setLoadingRequests] = useState(false);
+  
+  // Score tracking state
+  const [scoreChanges, setScoreChanges] = useState<Record<number, number>>({});
+  const [submittingEvaluation, setSubmittingEvaluation] = useState(false);
 
   // Fetch participations
   const fetchParticipations = React.useCallback(async () => {
@@ -315,6 +319,57 @@ export default function ParticipationDetailPage(): React.JSX.Element {
     setOpenEvaluationDialog(false);
     setParticipationToEvaluate(null);
     setParticipationRequests([]);
+    setScoreChanges({});
+  };
+
+  // Handle score input change
+  const handleScoreChange = (participationRequestId: number, score: number) => {
+    setScoreChanges(prev => ({
+      ...prev,
+      [participationRequestId]: score
+    }));
+  };
+
+  // Handle submit evaluation
+  const handleSubmitEvaluation = async () => {
+    if (Object.keys(scoreChanges).length === 0) return;
+
+    setSubmittingEvaluation(true);
+    try {
+      const evaluationData: EvaluateParticipationRequestsRequest = {
+        evaluates: Object.entries(scoreChanges).map(([participationRequestId, score]) => ({
+          participationRequestId: Number(participationRequestId),
+          score: score
+        }))
+      };
+
+      const response = await evaluateParticipationRequests(evaluationData);
+      if (response.success) {
+        setToast({
+          open: true,
+          message: response.message,
+          severity: 'success'
+        });
+        
+        // Refresh the participation requests to show updated scores
+        if (participationToEvaluate) {
+          const refreshResponse = await getParticipationRequests(participationToEvaluate.participationId);
+          if (refreshResponse.success) {
+            setParticipationRequests(refreshResponse.data);
+          }
+        }
+        
+        // Clear score changes
+        setScoreChanges({});
+      } else {
+        setErrorDialogMessage(response.message || 'เกิดข้อผิดพลาดในการประเมินการมีส่วนร่วม');
+      }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการประเมินการมีส่วนร่วม';
+      setErrorDialogMessage(errorMessage);
+    } finally {
+      setSubmittingEvaluation(false);
+    }
   };
 
   return (
@@ -593,6 +648,7 @@ export default function ParticipationDetailPage(): React.JSX.Element {
                         <TableCell sx={{ fontWeight: 600, width: '200px' }}>ชื่อนักศึกษา</TableCell>
                         <TableCell sx={{ fontWeight: 600, textAlign: 'center', width: '120px' }}>ส่งคำขอเมื่อ</TableCell>
                         <TableCell sx={{ fontWeight: 600, textAlign: 'center', width: '60px' }}>คะแนน</TableCell>
+                        <TableCell sx={{ fontWeight: 600, textAlign: 'center', width: '80px' }}>ให้คะแนน</TableCell>
                         <TableCell sx={{ fontWeight: 600, textAlign: 'center', width: '120px' }}>สถานะการให้คะแนน</TableCell>
                       </TableRow>
                     </TableHead>
@@ -648,6 +704,29 @@ export default function ParticipationDetailPage(): React.JSX.Element {
                             </Typography>
                           </TableCell>
                           <TableCell align="center">
+                            {request.isScored === false ? (
+                              <TextField
+                                select
+                                size="small"
+                                value={scoreChanges[request.participationRequestId] ?? request.score}
+                                onChange={(e) => handleScoreChange(request.participationRequestId, Number(e.target.value))}
+                                SelectProps={{
+                                  native: true,
+                                }}
+                                sx={{ minWidth: 60 }}
+                              >
+                                <option value={0}>0</option>
+                                <option value={1}>1</option>
+                                <option value={2}>2</option>
+                                <option value={3}>3</option>
+                              </TextField>
+                            ) : (
+                              <Typography variant="body2" color="text.secondary">
+                                -
+                              </Typography>
+                            )}
+                          </TableCell>
+                          <TableCell align="center">
                             <Chip
                               label={request.isScored ? 'ให้คะแนนแล้ว' : 'ยังไม่ได้ให้คะแนน'}
                               color={request.isScored ? 'success' : 'warning'}
@@ -664,6 +743,17 @@ export default function ParticipationDetailPage(): React.JSX.Element {
           )}
         </DialogContent>
         <DialogActions>
+          {Object.keys(scoreChanges).length > 0 && (
+            <Button 
+              variant="contained" 
+              color="primary"
+              onClick={handleSubmitEvaluation}
+              disabled={submittingEvaluation}
+              sx={{ mr: 1 }}
+            >
+              {submittingEvaluation ? 'กำลังบันทึก...' : 'บันทึกคะแนน'}
+            </Button>
+          )}
           <Button onClick={handleCloseEvaluationDialog}>ปิด</Button>
         </DialogActions>
       </Dialog>

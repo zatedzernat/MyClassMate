@@ -60,3 +60,17 @@ export interface ParticipationRequestListResponse {
     total: number;
     message: string;
 }
+
+export interface EvaluationRequest {
+    participationRequestId: number;
+    score: number;
+}
+
+export interface EvaluateParticipationRequestsRequest {
+    evaluates: EvaluationRequest[];
+}
+
+export interface EvaluateParticipationRequestsResponse {
+    success: boolean;
+    message: string;
+}
