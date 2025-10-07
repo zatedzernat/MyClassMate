@@ -24,6 +24,7 @@ import {
     Skeleton
 } from '@mui/material';
 import { DownloadIcon } from '@phosphor-icons/react/dist/ssr/Download';
+import { UploadIcon } from '@phosphor-icons/react/dist/ssr/Upload';
 import { ArrowLeftIcon } from '@phosphor-icons/react/dist/ssr/ArrowLeft';
 import { paths } from '@/paths';
 import { getCourseById, importStudentToCourse, exportStudentToCourse } from '@/api/course-api';
@@ -273,35 +274,35 @@ export default function AddStudentToCoursePage(): React.JSX.Element {
                                 นำเข้า/ส่งออกข้อมูลนักเรียน
                             </Typography>
 
-                            <Stack direction="row" spacing={2}>
+                            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                                 <Button
-                                    variant="contained"
+                                    color="inherit"
                                     startIcon={
                                         uploading ? (
                                             <CircularProgress size={16} color="inherit" />
-                                        ) : null
+                                        ) : (
+                                            <UploadIcon fontSize="var(--icon-fontSize-md)" />
+                                        )
                                     }
                                     onClick={handleImportStudents}
                                     disabled={uploading || exporting}
-                                    sx={{ minWidth: 140 }}
                                 >
-                                    {uploading ? 'กำลังนำเข้า...' : 'import'}
+                                    {uploading ? 'กำลังนำเข้า...' : 'Import'}
                                 </Button>
 
                                 <Button
-                                    variant="outlined"
+                                    color="inherit"
                                     startIcon={
                                         exporting ? (
                                             <CircularProgress size={16} color="inherit" />
                                         ) : (
-                                            <DownloadIcon size={20} />
+                                            <DownloadIcon fontSize="var(--icon-fontSize-md)" />
                                         )
                                     }
                                     onClick={handleExportStudents}
                                     disabled={uploading || exporting || students.length === 0}
-                                    sx={{ minWidth: 140 }}
                                 >
-                                    {exporting ? 'กำลังส่งออก...' : 'export'}
+                                    {exporting ? 'กำลังส่งออก...' : 'Export'}
                                 </Button>
                             </Stack>
                         </Stack>
