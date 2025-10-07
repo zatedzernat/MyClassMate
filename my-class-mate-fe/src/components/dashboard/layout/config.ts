@@ -21,4 +21,5 @@ export const navItemsForAdmin = [
 
 export const navItemsForStudent = [
   { key: 'student', title: 'รายละเอียดนักศึกษา', href: paths.dashboard.student, icon: 'users' },
+  { key: 'participation', title: 'การมีส่วนร่วม', href: paths.dashboard.participation, icon: 'calendarStarIcon' },
 ] satisfies NavItemConfig[];
