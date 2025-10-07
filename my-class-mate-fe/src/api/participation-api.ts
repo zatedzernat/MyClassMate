@@ -7,7 +7,8 @@ import {
     CreateParticipationResponse,
     ParticipationRequestRequest,
     ParticipationRequestResponse,
-    CreateParticipationRequestResponse
+    CreateParticipationRequestResponse,
+    ParticipationRequestListResponse
 } from './data/participation-response';
 
 // API Configuration
@@ -284,6 +285,90 @@ export async function requestParticipation(requestData: ParticipationRequestRequ
     }
 }
 
+/**
+ * Get all participation requests for a specific participation ID
+ */
+export async function getParticipationRequests(participationId: number): Promise<ParticipationRequestListResponse> {
+    try {
+        logger.debug('[ParticipationAPI]: Fetching participation requests for participation ID:', participationId);
+
+        const response = await fetch(`${BASE_URL}/${API_VERSION}/participations/requests/${encodeURIComponent(participationId)}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-role': localStorage.getItem('user-role') || '',
+            }
+        });
+
+        logger.debug(`[ParticipationAPI]: Get participation requests response status: ${response.status}`);
+
+        const resData = await response.json();
+        logger.debug('[ParticipationAPI]: Get participation requests raw response data:', resData);
+
+        if (!response.ok) {
+            const errorMessage = resData?.message || resData?.code || 'Unknown error occurred';
+            throw new Error(errorMessage);
+        }
+
+        // Handle response - API returns array directly or empty array
+        let participationRequests: ParticipationRequestResponse[];
+        
+        if (Array.isArray(resData)) {
+            // Direct array response
+            participationRequests = resData.map((request: unknown) => {
+                const r = request as Record<string, unknown>;
+                return {
+                    participationRequestId: r.participationRequestId as number,
+                    participationId: r.participationId as number,
+                    studentId: r.studentId as number,
+                    studentNo: r.studentNo as string,
+                    studentNameTh: r.studentNameTh as string,
+                    studentNameEn: r.studentNameEn as string,
+                    createdAt: r.createdAt as string,
+                    isScored: r.isScored as boolean,
+                    score: r.score as number
+                };
+            });
+        } else if (resData.data && Array.isArray(resData.data)) {
+            // Wrapped response with data array
+            participationRequests = resData.data;
+        } else {
+            logger.error('[ParticipationAPI]: Unexpected response format:', resData);
+            throw new Error('รูปแบบข้อมูลจากเซิร์ฟเวอร์ไม่ถูกต้อง');
+        }
+
+        logger.debug(`[ParticipationAPI]: Successfully fetched ${participationRequests.length} participation requests`);
+
+        return {
+            success: true,
+            data: participationRequests,
+            total: participationRequests.length,
+            message: `พบข้อมูลคำขอเข้าร่วม ${participationRequests.length} รายการ`
+        };
+
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการดึงข้อมูลคำขอเข้าร่วม';
+        logger.error('[ParticipationAPI]: Error fetching participation requests:', error);
+
+        // Handle network errors
+        if (error instanceof TypeError && error.message.includes('fetch')) {
+            return {
+                success: false,
+                data: [],
+                total: 0,
+                message: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต'
+            };
+        }
+
+        return {
+            success: false,
+            data: [],
+            total: 0,
+            message: errorMessage
+        };
+    }
+}
+
 // Export types for convenience
 export type { 
     ParticipationResponse, 
@@ -292,5 +377,6 @@ export type {
     CreateParticipationResponse,
     ParticipationRequestRequest,
     ParticipationRequestResponse,
-    CreateParticipationRequestResponse
+    CreateParticipationRequestResponse,
+    ParticipationRequestListResponse
 } from './data/participation-response';

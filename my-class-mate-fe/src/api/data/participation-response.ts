@@ -53,3 +53,10 @@ export interface CreateParticipationRequestResponse {
     data: ParticipationRequestResponse;
     message: string;
 }
+
+export interface ParticipationRequestListResponse {
+    success: boolean;
+    data: ParticipationRequestResponse[];
+    total: number;
+    message: string;
+}

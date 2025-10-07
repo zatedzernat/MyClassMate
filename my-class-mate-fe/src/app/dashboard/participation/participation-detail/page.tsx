@@ -32,8 +32,8 @@ import {
 import { ArrowLeftIcon } from '@phosphor-icons/react/dist/ssr/ArrowLeft';
 import { CalendarIcon } from '@phosphor-icons/react/dist/ssr/Calendar';
 import { PlusIcon } from '@phosphor-icons/react/dist/ssr/Plus';
-import { getParticipationsByCourseScheduleId, createParticipation, closeParticipation, requestParticipation } from '@/api/participation-api';
-import { ParticipationResponse, CreateParticipationRequest, ParticipationRequestRequest } from '@/api/data/participation-response';
+import { getParticipationsByCourseScheduleId, createParticipation, closeParticipation, requestParticipation, getParticipationRequests } from '@/api/participation-api';
+import { ParticipationResponse, CreateParticipationRequest, ParticipationRequestRequest, ParticipationRequestResponse } from '@/api/data/participation-response';
 import ErrorDialog from '@/components/error/error-dialog';
 import { paths } from '@/paths';
 import { Role } from '@/util/role-enum';
@@ -130,6 +130,12 @@ export default function ParticipationDetailPage(): React.JSX.Element {
     message: '',
     severity: 'success'
   });
+
+  // Evaluation modal state
+  const [openEvaluationDialog, setOpenEvaluationDialog] = useState(false);
+  const [participationToEvaluate, setParticipationToEvaluate] = useState<ParticipationResponse | null>(null);
+  const [participationRequests, setParticipationRequests] = useState<ParticipationRequestResponse[]>([]);
+  const [loadingRequests, setLoadingRequests] = useState(false);
 
   // Fetch participations
   const fetchParticipations = React.useCallback(async () => {
@@ -280,6 +286,35 @@ export default function ParticipationDetailPage(): React.JSX.Element {
       return;
     }
     setToast(prev => ({ ...prev, open: false }));
+  };
+
+  // Handle evaluation modal functions
+  const handleOpenEvaluationDialog = async (participation: ParticipationResponse) => {
+    setParticipationToEvaluate(participation);
+    setOpenEvaluationDialog(true);
+    setLoadingRequests(true);
+    
+    try {
+      const response = await getParticipationRequests(participation.participationId);
+      if (response.success) {
+        setParticipationRequests(response.data);
+      } else {
+        setErrorDialogMessage(response.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูลคำขอเข้าร่วม');
+        setParticipationRequests([]);
+      }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการโหลดข้อมูลคำขอเข้าร่วม';
+      setErrorDialogMessage(errorMessage);
+      setParticipationRequests([]);
+    } finally {
+      setLoadingRequests(false);
+    }
+  };
+
+  const handleCloseEvaluationDialog = () => {
+    setOpenEvaluationDialog(false);
+    setParticipationToEvaluate(null);
+    setParticipationRequests([]);
   };
 
   return (
@@ -447,6 +482,16 @@ export default function ParticipationDetailPage(): React.JSX.Element {
                                 ส่งคำขอการมีส่วนร่วม
                               </Button>
                             )}
+                            {(participation.status === 'CLOSED' || participation.status === 'CLOSE') && userData?.role !== Role.STUDENT && (
+                              <Button
+                                variant="outlined"
+                                color="info"
+                                size="small"
+                                onClick={() => handleOpenEvaluationDialog(participation)}
+                              >
+                                ประเมินการมีส่วนร่วม
+                              </Button>
+                            )}
                           </TableCell>
                         </TableRow>
                       ))
@@ -514,6 +559,112 @@ export default function ParticipationDetailPage(): React.JSX.Element {
           >
             ยืนยันปิดการมีส่วนร่วม
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Evaluation Participation Dialog */}
+      <Dialog open={openEvaluationDialog} onClose={handleCloseEvaluationDialog} maxWidth="lg" fullWidth>
+        <DialogTitle>
+          ประเมินการมีส่วนร่วม
+          {participationToEvaluate && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              รอบที่ {participationToEvaluate.round}: {participationToEvaluate.topic}
+            </Typography>
+          )}
+        </DialogTitle>
+        <DialogContent>
+          {loadingRequests ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <Box sx={{ mt: 2 }}>
+              {participationRequests.length === 0 ? (
+                <Typography variant="body1" color="text.secondary" align="center" sx={{ py: 4 }}>
+                  ไม่มีข้อมูลการส่งคำขอการมีส่วนร่วม
+                </Typography>
+              ) : (
+                <TableContainer component={Paper} variant="outlined">
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow sx={{ bgcolor: 'grey.50' }}>
+                        <TableCell sx={{ fontWeight: 600, width: '50px' }}>ลำดับ</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '100px' }}>รหัสนักศึกษา</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '200px' }}>ชื่อนักศึกษา</TableCell>
+                        <TableCell sx={{ fontWeight: 600, textAlign: 'center', width: '120px' }}>ส่งคำขอเมื่อ</TableCell>
+                        <TableCell sx={{ fontWeight: 600, textAlign: 'center', width: '60px' }}>คะแนน</TableCell>
+                        <TableCell sx={{ fontWeight: 600, textAlign: 'center', width: '120px' }}>สถานะการให้คะแนน</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {participationRequests.map((request, index) => (
+                        <TableRow key={request.participationRequestId} hover>
+                          <TableCell>{index + 1}</TableCell>
+                          <TableCell>{request.studentNo}</TableCell>
+                          <TableCell>
+                            <Box sx={{ maxWidth: '200px' }}>
+                              <Typography 
+                                variant="body2" 
+                                sx={{ 
+                                  fontWeight: 500,
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap'
+                                }}
+                                title={request.studentNameTh}
+                              >
+                                {request.studentNameTh}
+                              </Typography>
+                              <Typography 
+                                variant="caption" 
+                                color="text.secondary"
+                                sx={{
+                                  display: 'block',
+                                  lineHeight: 1.2,
+                                  whiteSpace: 'nowrap',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis'
+                                }}
+                                title={request.studentNameEn}
+                              >
+                                {request.studentNameEn}
+                              </Typography>
+                            </Box>
+                          </TableCell>
+                          <TableCell align="center">
+                            <Typography 
+                              variant="body2" 
+                              sx={{ 
+                                whiteSpace: 'nowrap',
+                                fontSize: '0.875rem'
+                              }}
+                            >
+                              {formatThaiDateTime(request.createdAt)}
+                            </Typography>
+                          </TableCell>
+                          <TableCell align="center">
+                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                              {request.score}
+                            </Typography>
+                          </TableCell>
+                          <TableCell align="center">
+                            <Chip
+                              label={request.isScored ? 'ให้คะแนนแล้ว' : 'ยังไม่ได้ให้คะแนน'}
+                              color={request.isScored ? 'success' : 'warning'}
+                              size="small"
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseEvaluationDialog}>ปิด</Button>
         </DialogActions>
       </Dialog>
 
