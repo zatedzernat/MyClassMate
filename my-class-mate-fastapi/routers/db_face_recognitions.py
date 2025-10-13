@@ -22,6 +22,7 @@ EUCLIDEAN_THRESHOLD = 1.04      # อ้างอิงจาก DeepFace (https
 CONFIDENCE_MARGIN = 0.05        # ใช้สำหรับ confidence margin rule
 TOP_K_VOTE = 5                  # fix k = 3,5,7 to prevent tie-break
 
+ENABLE_ANTI_SPOOFING = True     # เปิด/ปิด การตรวจสอบ anti-spoofing
 SAVE_IMAGE_FILES = True         # จะ save รูปไหม
 IMAGE_SAVE_DIR = os.path.join(os.path.dirname(__file__), "..", "storage", "upload")
 
@@ -78,19 +79,33 @@ def validate_extension(filename: str):
         )
     
 def get_face_embedding(image) -> np.ndarray:
-    """Extract normalized embedding from an image using DeepFace."""
+    """Extract normalized embedding from an image using DeepFace with configurable anti-spoofing."""
     try:
         with suppress_tf_logs():
-            faces = DeepFace.extract_faces(image, detector_backend=DETECTOR, enforce_detection=False)
+            faces = DeepFace.extract_faces(image, detector_backend=DETECTOR, enforce_detection=False, anti_spoofing=ENABLE_ANTI_SPOOFING)
         if not faces:
             raise ValueError("No face detected")
-        face_img = faces[0]["face"]
+        
+        face_data = faces[0]
+        
+        # Check if face passed anti-spoofing test (only if anti-spoofing is enabled)
+        if ENABLE_ANTI_SPOOFING and "is_real" in face_data and not face_data["is_real"]:
+            logger.error("Anti-spoofing detected fake face")
+            raise HTTPException(
+                status_code=400, 
+                detail={"code": "ERR006", "message": "Spoofing detected: Face appears to be fake or not live"}
+            )
+        
+        face_img = face_data["face"]
 
         with suppress_tf_logs():
             embedding = np.array(
                 DeepFace.represent(face_img, model_name=MODEL_NAME, detector_backend="skip", enforce_detection=False)[0]["embedding"]
             )
         return normalize_embedding(embedding)
+    except HTTPException:
+        # Re-raise HTTPException as-is
+        raise
     except Exception as e:
         logger.error(f"DeepFace error: {e}")
         raise HTTPException(status_code=500, detail={"code": "ERR005", "message": "Face embedding failed"})
