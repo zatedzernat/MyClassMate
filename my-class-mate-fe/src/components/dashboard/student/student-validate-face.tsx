@@ -13,7 +13,6 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
-import ListItemText from '@mui/material/ListItemText';
 import ListItemAvatar from '@mui/material/ListItemAvatar';
 import Avatar from '@mui/material/Avatar';
 import Chip from '@mui/material/Chip';
@@ -701,45 +700,38 @@ export function StudentValidateFace({
                                 {student.name}
                               </Avatar>
                             </ListItemAvatar>
-                            <ListItemText
-                              primary={
-                                <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                                  {student.name}
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                              <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                                {student.name}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary" display="block">
+                                รหัส: {student.studentNo}
+                              </Typography>
+                              <Typography variant="caption" display="block">
+                                เช็คชื่อ: {student.checkInTime}
+                              </Typography>
+                              <Box sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 0.5,
+                                mt: 0.5
+                              }}>
+                                <UserCircleCheckIcon
+                                  size={20}
+                                  color={getStatusColor(student.status)}
+                                  style={{ flexShrink: 0 }}
+                                />
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    fontWeight: 600, 
+                                    fontSize: '0.8rem',
+                                  }}
+                                >
+                                  สถานะ: {getCheckInStatusLabel(student.status)}
                                 </Typography>
-                              }
-                              secondary={
-                                <Box>
-                                  <Typography variant="caption" color="text.secondary">
-                                    รหัส: {student.studentNo}
-                                  </Typography>
-                                  <br />
-                                  <Typography variant="caption">
-                                    เช็คชื่อ: {student.checkInTime}
-                                  </Typography>
-                                  <br />
-                                  <Box sx={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 0.5,
-                                    mt: 0.5
-                                  }}>
-                                    <UserCircleCheckIcon
-                                      size={20}
-                                      color={getStatusColor(student.status)}
-                                      style={{ flexShrink: 0 }}
-                                    />
-                                    <Typography
-                                      variant="caption"
-                                      sx={{
-                                        fontWeight: 600, fontSize: '0.8rem',
-                                      }}
-                                    >
-                                      สถานะ: {getCheckInStatusLabel(student.status)}
-                                    </Typography>
-                                  </Box>
-                                </Box>
-                              }
-                            />
+                              </Box>
+                            </Box>
                           </ListItem>
                           {index < checkedInStudents.length - 1 && <Divider />}
                         </React.Fragment>
