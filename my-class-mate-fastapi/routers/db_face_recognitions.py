@@ -22,6 +22,7 @@ EUCLIDEAN_THRESHOLD = 1.04      # อ้างอิงจาก DeepFace (https
 CONFIDENCE_MARGIN = 0.05        # ใช้สำหรับ confidence margin rule
 TOP_K_VOTE = 5                  # fix k = 3,5,7 to prevent tie-break
 
+ENFORCE_DETECTION = True        # บังคับให้ต้องเจอหน้าในรูป (True=เข้มงวด, False=ผ่อนผัน)
 ENABLE_ANTI_SPOOFING = False     # เปิด/ปิด การตรวจสอบ anti-spoofing
 SAVE_IMAGE_FILES = True         # จะ save รูปไหม
 IMAGE_SAVE_DIR = os.path.join(os.path.dirname(__file__), "..", "storage", "upload")
@@ -75,16 +76,17 @@ def validate_extension(filename: str):
     if ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(
             status_code=400,
-            detail={"code": "ERR002", "message": f"Invalid extension '{ext}'. Allowed: {ALLOWED_EXTENSIONS}"}
+            detail={"code": "ERR002", "message": f"ประเภทไฟล์ไม่ถูกต้อง '{ext}' ประเภทที่อนุญาต: {ALLOWED_EXTENSIONS}"}
         )
     
 def get_face_embedding(image) -> np.ndarray:
     """Extract normalized embedding from an image using DeepFace with configurable anti-spoofing."""
     try:
         with suppress_tf_logs():
-            faces = DeepFace.extract_faces(image, detector_backend=DETECTOR, enforce_detection=False, anti_spoofing=ENABLE_ANTI_SPOOFING)
+            faces = DeepFace.extract_faces(image, detector_backend=DETECTOR, enforce_detection=ENFORCE_DETECTION, anti_spoofing=ENABLE_ANTI_SPOOFING)
         if not faces:
-            raise ValueError("No face detected")
+            logger.error("No face detected in uploaded image")
+            raise HTTPException(status_code=400, detail={"code": "ERR003", "message": "ไม่พบใบหน้าในภาพ กรุณาใช้ภาพที่มีใบหน้าเด่นชัด"})
         
         face_data = faces[0]
         
@@ -93,7 +95,7 @@ def get_face_embedding(image) -> np.ndarray:
             logger.error("Anti-spoofing detected fake face")
             raise HTTPException(
                 status_code=400, 
-                detail={"code": "ERR006", "message": "Spoofing detected: Face appears to be fake or not live"}
+                detail={"code": "ERR006", "message": "ตรวจพบการปลอมแปลงใบหน้า (anti-spoofing) กรุณาใช้ภาพจริง"}
             )
         
         face_img = face_data["face"]
@@ -108,7 +110,7 @@ def get_face_embedding(image) -> np.ndarray:
         raise
     except Exception as e:
         logger.error(f"DeepFace error: {e}")
-        raise HTTPException(status_code=500, detail={"code": "ERR005", "message": "Face embedding failed"})
+        raise HTTPException(status_code=500, detail={"code": "ERR005", "message": "ไม่สามารถประมวลผลภาพใบหน้าได้"})
     
 def save_uploaded_file(user_id: str, file: UploadFile, image_bytes: bytes) -> str:
     """Save uploaded image to disk and return saved path."""
@@ -128,7 +130,7 @@ async def post_face_register(user_id: str = Form(...), files: List[UploadFile] =
     logger.info(f"[face-register] user_id={user_id}, files={len(files)}")
 
     if len(files) > 4:
-        raise HTTPException(status_code=400, detail={"code": "ERR001", "message": "Maximum 4 images allowed"})
+        raise HTTPException(status_code=400, detail={"code": "ERR001", "message": "อัพโหลดได้สูงสุด 4 รูปเท่านั้น"})
 
     for file in files:
         validate_extension(file.filename)
@@ -212,7 +214,7 @@ async def post_face_recognition(file: UploadFile = File(...)):
         conn.close()
 
     if not results:
-        raise HTTPException(status_code=404, detail={"code": "ERR004", "message": "No face found in DB"})
+        raise HTTPException(status_code=404, detail={"code": "ERR004", "message": "ไม่พบใบหน้าในฐานข้อมูล"})
 
     # Group distances per user
     user_distances: Dict[int, List[float]] = defaultdict(list)
@@ -250,7 +252,7 @@ async def post_face_recognition(file: UploadFile = File(...)):
 
     # Rule 3: Threshold check
     if best_distance > EUCLIDEAN_THRESHOLD:
-        raise HTTPException(status_code=404, detail={"code": "ERR004", "message": f"Best distance {best_distance:.4f} exceeds threshold"})
+        raise HTTPException(status_code=404, detail={"code": "ERR004", "message": f"ระยะห่างที่ดีที่สุด {best_distance:.4f} เกินกว่าขีดจำกัด"})
 
     # Rule 4: Confidence margin
     sorted_all = sorted([(uid, statistics.median(dists)) for uid, dists in user_distances.items()], key=lambda x: x[1])
@@ -258,7 +260,7 @@ async def post_face_recognition(file: UploadFile = File(...)):
         _, second_distance = sorted_all[1]
         margin_ratio = (second_distance - best_distance) / max(best_distance, 1e-6)
         if margin_ratio < CONFIDENCE_MARGIN and user_counts[best_user] <= 1:
-            raise HTTPException(status_code=404, detail={"code": "ERR004", "message": f"No confident match (best={best_distance:.4f}, second={second_distance:.4f})"})
+            raise HTTPException(status_code=404, detail={"code": "ERR004", "message": f"ไม่พบการจับคู่ที่เชื่อถือได้ (ดีที่สุด={best_distance:.4f}, รอง={second_distance:.4f})"})
 
     logger.info(f"[face-recognition] SUCCESS: user={best_user}, distance={best_distance:.4f}")
     return {

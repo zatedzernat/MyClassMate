@@ -10,7 +10,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -54,7 +54,7 @@ public class ApiClient {
         try {
             ResponseEntity<T> response = restTemplate.exchange(url, HttpMethod.POST, requestEntity, responseType);
             return response.getBody();
-        } catch (HttpClientErrorException e) {
+        } catch (HttpServerErrorException e) {
             log.error("FastAPI returned error: {}", e.getResponseBodyAsString());
             throw mapFastApiError(e);
         }
@@ -71,7 +71,7 @@ public class ApiClient {
         };
     }
 
-    private AppException mapFastApiError(HttpClientErrorException e) {
+    private AppException mapFastApiError(HttpServerErrorException e) {
         try {
             ObjectMapper mapper = new ObjectMapper();
             Map<String, Object> errorMap = mapper.readValue(e.getResponseBodyAsString(), Map.class);
