@@ -144,7 +144,7 @@ public class CourseService {
 
     public List<CourseResponse> getCourses(Integer academicYear, Integer semester) {
         var courses = courseJdbcRepository.findCourses(academicYear, semester);
-
+        courses.sort(Comparator.comparing(Course::getCourseCode));
         return mapToCoursesResponse(courses);
     }
 

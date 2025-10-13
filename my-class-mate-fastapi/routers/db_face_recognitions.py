@@ -22,7 +22,7 @@ EUCLIDEAN_THRESHOLD = 1.04      # อ้างอิงจาก DeepFace (https
 CONFIDENCE_MARGIN = 0.05        # ใช้สำหรับ confidence margin rule
 TOP_K_VOTE = 5                  # fix k = 3,5,7 to prevent tie-break
 
-ENABLE_ANTI_SPOOFING = True     # เปิด/ปิด การตรวจสอบ anti-spoofing
+ENABLE_ANTI_SPOOFING = False     # เปิด/ปิด การตรวจสอบ anti-spoofing
 SAVE_IMAGE_FILES = True         # จะ save รูปไหม
 IMAGE_SAVE_DIR = os.path.join(os.path.dirname(__file__), "..", "storage", "upload")
 
