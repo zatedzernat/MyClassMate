@@ -79,7 +79,14 @@ export function CoursesTable({
 
   // Format date display
   const formatDate = (date: string): string => {
-    return dayjs(date).format('DD/MM/YYYY');
+    const dayjs_date = dayjs(date);
+    const buddhistYear = dayjs_date.year() + 543;
+    const thaiMonths = [
+      'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+      'ก.ค.', 'ส.ค.', 'ก.ย.', 'ตค.', 'พ.ย.', 'ธ.ค.'
+    ];
+    const thaiMonth = thaiMonths[dayjs_date.month()];
+    return `${dayjs_date.date()} ${thaiMonth} ${buddhistYear}`;
   };
 
   // Handle course row click
@@ -167,7 +174,13 @@ export function CoursesTable({
     const dayjs_date = dayjs(date);
     const dayNames = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
     const dayName = dayNames[dayjs_date.day()];
-    return `วัน${dayName}ที่ ${dayjs_date.format('DD/MM/YYYY')}`;
+    const buddhistYear = dayjs_date.year() + 543;
+    const thaiMonths = [
+      'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+      'ก.ค.', 'ส.ค.', 'ก.ย.', 'ตค.', 'พ.ย.', 'ธ.ค.'
+    ];
+    const thaiMonth = thaiMonths[dayjs_date.month()];
+    return `วัน${dayName}ที่ ${dayjs_date.date()} ${thaiMonth} ${buddhistYear}`;
   };
 
   return (
@@ -303,10 +316,7 @@ export function CoursesTable({
               <Box>
                 <Typography variant="subtitle2" gutterBottom>ตารางเรียน</Typography>
                 <Typography variant="body2">
-                  วัน{getDayLabel(courseDetail.dayOfWeek)} เวลา {formatTime(courseDetail.startTime)} - {formatTime(courseDetail.endTime)} ห้อง {courseDetail.room}
-                </Typography>
-                <Typography variant="body2">
-                  ระยะเวลา: {formatDate(courseDetail.startDate)} - {formatDate(courseDetail.endDate)}
+                  วัน{getDayLabel(courseDetail.dayOfWeek)} เวลา {formatTime(courseDetail.startTime)} - {formatTime(courseDetail.endTime)} น. ห้อง {courseDetail.room} ตั้งแต่ {formatDate(courseDetail.startDate)} - {formatDate(courseDetail.endDate)}
                 </Typography>
               </Box>
 
@@ -323,14 +333,14 @@ export function CoursesTable({
 
               <Box>
                 <Typography variant="subtitle2" gutterBottom>
-                  ตารางสอน ({courseDetail.schedules.length} ครั้ง)
+                  ตารางเรียน ({courseDetail.schedules.length} ครั้ง)
                 </Typography>
                 <Box sx={{ maxHeight: 200, overflowY: 'auto' }}>
                   {courseDetail.schedules.map((schedule, index) => (
                     <Box key={schedule.courseScheduleId} sx={{ mb: 1 }}>
                       <Typography variant="body2">
                         ครั้งที่ {index + 1} : {formatDateWithDay(schedule.scheduleDate)}
-                        {' '}{formatTime(schedule.startTime)} - {formatTime(schedule.endTime)}
+                        {' '}{formatTime(schedule.startTime)} - {formatTime(schedule.endTime)} น.
                         {' '}ห้อง {schedule.room}
                         {schedule.remark && <em> ({schedule.remark})</em>}
                       </Typography>
@@ -351,15 +361,10 @@ export function CoursesTable({
                         variant="body2"
                         sx={{ mb: 0.5 }}
                       >
-                        • {index + 1}. {enrollment.studentNameTh}
+                        {index + 1}. <span style={{ color: '#1976d2', fontSize: '0.875rem' }}>{enrollment.studentNo}</span> {enrollment.studentNameTh}
                         {enrollment.studentNameEn && (
                           <span style={{ color: '#666', marginLeft: '8px' }}>
                             ({enrollment.studentNameEn})
-                          </span>
-                        )}
-                        {enrollment.studentNo && (
-                          <span style={{ color: '#1976d2', marginLeft: '8px', fontSize: '0.875rem' }}>
-                            รหัส: {enrollment.studentNo}
                           </span>
                         )}
                       </Typography>
@@ -397,13 +402,13 @@ export function CoursesTable({
                   • ปีการศึกษา: {courseToDelete.academicYear} ภาคเรียนที่ {courseToDelete.semester}
                 </Typography>
                 <Typography variant="body2">
-                  • ตารางเรียน: วัน{getDayLabel(courseToDelete.dayOfWeek)} {formatTime(courseToDelete.startTime)} - {formatTime(courseToDelete.endTime)}
+                  • ตารางเรียน: วัน{getDayLabel(courseToDelete.dayOfWeek)} {formatTime(courseToDelete.startTime)} - {formatTime(courseToDelete.endTime)} น.
                 </Typography>
                 <Typography variant="body2">
                   • ห้องเรียน: {courseToDelete.room}
                 </Typography>
                 <Typography variant="body2">
-                  • จำนวนตารางสอน: {courseToDelete.schedules.length} ครั้ง
+                  • จำนวนตารางเรียน: {courseToDelete.schedules.length} ครั้ง
                 </Typography>
                 <Typography variant="body2">
                   • จำนวนนักเรียนที่ลงทะเบียน: {courseToDelete.enrollments.length} คน

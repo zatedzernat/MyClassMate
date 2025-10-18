@@ -403,6 +403,7 @@ public class CourseService {
             enResponse.setStudentNameEn(studentProfile.getStudentNameEn());
             enResponses.add(enResponse);
         }
+        enResponses.sort(Comparator.comparing(CourseEnrollmentResponse::getStudentNo));
         courseResponse.setEnrollments(enResponses);
 
         return courseResponse;

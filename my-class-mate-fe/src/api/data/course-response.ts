@@ -189,7 +189,7 @@ export interface CourseValidation {
 
 export interface ImportStudentToCourseResponse {
   createdRow: number;
-  invalidStudentNos: number[];
+  invalidStudentNos: string[];
 }
 
 export interface TodayCourseResponse {

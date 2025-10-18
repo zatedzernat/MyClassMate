@@ -111,7 +111,19 @@ export default function AddStudentToCoursePage(): React.JSX.Element {
                         // Reload course data after import
                         await fetchCourse(courseId);
 
-                        setSuccess(`เพิ่มนักเรียนสำเร็จ: จำนวน ${result.createdRow} คน`);
+                        // Handle success message and invalid student numbers
+                        if (result.invalidStudentNos && result.invalidStudentNos.length > 0) {
+                            // Show error for invalid student numbers
+                            setError(`รหัสนักศึกษาที่ไม่ถูกต้อง: ${result.invalidStudentNos.join(', ')}`);
+                            
+                            // Show success only if some students were added
+                            if (result.createdRow > 0) {
+                                setSuccess(`เพิ่มนักเรียนสำเร็จ: ${result.createdRow} คน (มีรหัสนักศึกษาไม่ถูกต้อง ${result.invalidStudentNos.length} คน)`);
+                            }
+                        } else {
+                            // All students imported successfully
+                            setSuccess(`เพิ่มนักเรียนสำเร็จ: จำนวน ${result.createdRow} คน`);
+                        }
 
                     } catch (importError: any) {
                         setError(importError.message || 'เกิดข้อผิดพลาดในการนำเข้าข้อมูลนักเรียน');
