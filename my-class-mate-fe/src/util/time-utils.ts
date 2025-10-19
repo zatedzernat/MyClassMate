@@ -14,13 +14,23 @@ export const getButtonState = (startTime: string, endTime: string) => {
   const startParts = startTime.split(':');
   const endParts = endTime.split(':');
   const startMinutes = Number.parseInt(startParts[0], 10) * 60 + Number.parseInt(startParts[1], 10);
-  const endMinutes = Number.parseInt(endParts[0], 10) * 60 + Number.parseInt(endParts[1], 10);
+  let endMinutes = Number.parseInt(endParts[0], 10) * 60 + Number.parseInt(endParts[1], 10);
+  
+  // Handle midnight crossing (when end time is before start time)
+  // If end time is 00:00 and start time is late (like 22:00), treat end time as next day
+  if (endMinutes < startMinutes) {
+    endMinutes += 24 * 60; // Add 24 hours in minutes
+  }
   
   // One hour before start time in minutes
   const oneHourBeforeStart = startMinutes - 60;
   
-  // Show button only if current time is between 1 hour before start time and end time
-  return (currentTime >= oneHourBeforeStart && currentTime <= endMinutes)
+  // Show button if current time is between 1 hour before start time and end time
+  // For midnight crossing, also check if current time is in the next day range
+  const isInTimeRange = (currentTime >= oneHourBeforeStart && currentTime <= endMinutes) ||
+                       (endMinutes > 24 * 60 && currentTime <= (endMinutes - 24 * 60));
+  
+  return isInTimeRange
     ? { show: true, disabled: false }
     : { show: false, disabled: false };
 };
