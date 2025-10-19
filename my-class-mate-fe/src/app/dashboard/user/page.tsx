@@ -49,6 +49,23 @@ export default function Page(): React.JSX.Element {
   const isStudentRole = newUser.role === Role.STUDENT;
   const isStudentNoEmpty = isStudentRole && !newUser.studentNo?.trim();
 
+  // Email validation
+  const [emailError, setEmailError] = useState<string>('');
+  
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email.trim()) {
+      setEmailError('กรุณากรอกอีเมล');
+      return false;
+    }
+    if (!emailRegex.test(email)) {
+      setEmailError('รูปแบบอีเมลไม่ถูกต้อง');
+      return false;
+    }
+    setEmailError('');
+    return true;
+  };
+
   const fetchUsers = async () => {
     try {
       const response = await getUsers(selectedRole); // Call the API to fetch users
@@ -84,11 +101,17 @@ export default function Page(): React.JSX.Element {
       email: '',
       role: Role.STUDENT,
     });
+    setEmailError(''); // Reset email error
   };
 
   const handleSaveNewUser = async () => {
+    // Validate email before saving
+    if (!validateEmail(newUser.email)) {
+      return;
+    }
+    
     try {
-      const createdUser = await createUser(newUser); // Call the createUser API
+      await createUser(newUser); // Call the createUser API
       if (newUser.role !== selectedRole) {
         setSelectedRole(newUser.role); // trigger fetchUsers via useEffect
       } else {
@@ -278,8 +301,18 @@ export default function Page(): React.JSX.Element {
             <TextField
               label="อีเมล"
               value={newUser.email}
-              onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+              onChange={(e) => {
+                setNewUser({ ...newUser, email: e.target.value });
+                // Clear error when user starts typing
+                if (emailError) {
+                  setEmailError('');
+                }
+              }}
+              onBlur={() => validateEmail(newUser.email)}
               fullWidth
+              error={Boolean(emailError)}
+              helperText={emailError}
+              type="email"
             />
             <Select
               label="บทบาท"
@@ -311,7 +344,7 @@ export default function Page(): React.JSX.Element {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseCreateDialog}>ยกเลิก</Button>
-          <Button variant="contained" onClick={handleSaveNewUser} disabled={isStudentNoEmpty}>
+          <Button variant="contained" onClick={handleSaveNewUser} disabled={isStudentNoEmpty || Boolean(emailError)}>
             บันทึก
           </Button>
         </DialogActions>

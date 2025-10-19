@@ -60,6 +60,23 @@ export function UsersTable({
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [userToDelete, setUserToDelete] = useState<UserResponse | null>(null);
 
+  // Email validation
+  const [emailError, setEmailError] = useState<string>('');
+  
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email.trim()) {
+      setEmailError('กรุณากรอกอีเมล');
+      return false;
+    }
+    if (!emailRegex.test(email)) {
+      setEmailError('รูปแบบอีเมลไม่ถูกต้อง');
+      return false;
+    }
+    setEmailError('');
+    return true;
+  };
+
 
   // Calculate selectedAll and selectedSome
   const selectedAll = rows.length > 0 && selected.size === rows.length;
@@ -75,10 +92,16 @@ export function UsersTable({
   const handleEditDialogClose = () => {
     setOpenEditDialog(false);
     setSelectedUser(null);
+    setEmailError(''); // Reset email error
   };
 
   const handleSave = async () => {
     if (selectedUser) {
+      // Validate email before saving
+      if (!validateEmail(selectedUser.email)) {
+        return;
+      }
+      
       const userRequest: UserRequest = {
         userId: selectedUser.userId,
         username: selectedUser.username,
@@ -334,10 +357,18 @@ export function UsersTable({
             <TextField
               label="อีเมล"
               value={selectedUser?.email || ''}
-              onChange={(e) =>
-                setSelectedUser((prev) => (prev ? { ...prev, email: e.target.value } : null))
-              }
+              onChange={(e) => {
+                setSelectedUser((prev) => (prev ? { ...prev, email: e.target.value } : null));
+                // Clear error when user starts typing
+                if (emailError) {
+                  setEmailError('');
+                }
+              }}
+              onBlur={() => selectedUser?.email && validateEmail(selectedUser.email)}
               fullWidth
+              error={Boolean(emailError)}
+              helperText={emailError}
+              type="email"
             />
             <Select
               label="บทบาท"
@@ -395,7 +426,7 @@ export function UsersTable({
         </DialogContent>
         <DialogActions>
           <Button onClick={handleEditDialogClose}>ยกเลิก</Button>
-          <Button variant="contained" onClick={handleSave} disabled={selectedUser?.role === Role.STUDENT && !selectedUser?.studentProfile?.studentNo?.trim()}>
+          <Button variant="contained" onClick={handleSave} disabled={(selectedUser?.role === Role.STUDENT && !selectedUser?.studentProfile?.studentNo?.trim()) || Boolean(emailError)}>
             เเก้ไข
           </Button>
         </DialogActions>
