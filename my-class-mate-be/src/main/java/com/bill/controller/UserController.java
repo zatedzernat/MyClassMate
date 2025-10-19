@@ -69,8 +69,9 @@ public class UserController {
     @GetMapping(value = "/export", produces = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     public ResponseEntity<byte[]> exportUsers(@RequestParam(required = false) RoleEnum role, @RequestParam(required = false) Boolean isTemplate) {
         byte[] excelFile = userService.exportUsers(role, isTemplate);
+        var filename = Boolean.TRUE.equals(isTemplate) ? "users_template.xlsx" : "users.xlsx";
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=users.xlsx")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(excelFile);
     }
