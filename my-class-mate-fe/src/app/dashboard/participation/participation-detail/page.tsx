@@ -240,10 +240,10 @@ export default function ParticipationDetailPage(): React.JSX.Element {
         fetchParticipations(); // Refresh the list
         handleCloseCloseDialog();
       } else {
-        setErrorDialogMessage(response.message || 'เกิดข้อผิดพลาดในการปิดการมีส่วนร่วม');
+        setErrorDialogMessage(response.message || 'เกิดข้อผิดพลาดในการปิดรับการขอมีส่วนร่วม');
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการปิดการมีส่วนร่วม';
+      const errorMessage = error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการปิดรับการขอมีส่วนร่วม';
       setErrorDialogMessage(errorMessage);
     }
   };
@@ -392,7 +392,7 @@ export default function ParticipationDetailPage(): React.JSX.Element {
                 variant="contained"
                 onClick={handleOpenCreateDialog}
               >
-                เปิดการมีส่วนร่วม
+                เปิดรับการขอมีส่วนร่วม
               </Button>
             )}
           </Stack>
@@ -524,7 +524,7 @@ export default function ParticipationDetailPage(): React.JSX.Element {
                                 size="small"
                                 onClick={() => handleOpenCloseDialog(participation)}
                               >
-                                ปิดการมีส่วนร่วม
+                                ปิดรับการขอมีส่วนร่วม
                               </Button>
                             )}
                             {participation.status === 'OPEN' && userData?.role === Role.STUDENT && (
@@ -561,7 +561,7 @@ export default function ParticipationDetailPage(): React.JSX.Element {
 
       {/* Create Participation Dialog */}
       <Dialog open={openCreateDialog} onClose={handleCloseCreateDialog} fullWidth maxWidth="sm">
-        <DialogTitle>เปิดการมีส่วนร่วม</DialogTitle>
+        <DialogTitle>เปิดรับการขอมีส่วนร่วม</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
@@ -589,10 +589,10 @@ export default function ParticipationDetailPage(): React.JSX.Element {
 
       {/* Close Participation Confirmation Dialog */}
       <Dialog open={openCloseDialog} onClose={handleCloseCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>ยืนยันการปิดการมีส่วนร่วม</DialogTitle>
+        <DialogTitle>ยืนยันการปิดรับการขอมีส่วนร่วม</DialogTitle>
         <DialogContent>
           <Typography variant="body1">
-            คุณแน่ใจหรือไม่ที่จะปิดการมีส่วนร่วม?
+            คุณแน่ใจหรือไม่ที่จะปิดรับการขอมีส่วนร่วม?
           </Typography>
           {participationToClose && (
             <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
@@ -612,7 +612,7 @@ export default function ParticipationDetailPage(): React.JSX.Element {
             color="error"
             onClick={handleConfirmCloseParticipation}
           >
-            ยืนยันปิดการมีส่วนร่วม
+            ยืนยันปิดรับการขอมีส่วนร่วม
           </Button>
         </DialogActions>
       </Dialog>

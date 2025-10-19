@@ -211,11 +211,11 @@ export async function closeParticipation(participationId: number): Promise<Creat
         return {
             success: true,
             data: closedParticipation,
-            message: `ปิดการมีส่วนร่วมสำเร็จ: ${closedParticipation.topic}`
+            message: `ปิดรับการขอมีส่วนร่วมสำเร็จ: ${closedParticipation.topic}`
         };
 
     } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการปิดการมีส่วนร่วม';
+        const errorMessage = error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการปิดรับการขอมีส่วนร่วม';
         logger.error('[ParticipationAPI]: Error closing participation:', error);
 
         // Handle network errors

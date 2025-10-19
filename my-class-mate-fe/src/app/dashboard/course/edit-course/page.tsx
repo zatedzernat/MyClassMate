@@ -224,8 +224,6 @@ export default function Page(): React.JSX.Element {
 
         if (!formData.courseCode.trim()) {
             newErrors.courseCode = 'กรุณากรอกรหัสวิชา';
-        } else if (!/^[A-Z]{2}[0-9]{4}$/.test(formData.courseCode)) {
-            newErrors.courseCode = 'รหัสวิชาต้องเป็นรูปแบบ XX0000 (เช่น CU0001)';
         }
 
         if (!formData.courseName.trim()) {
@@ -642,11 +640,11 @@ export default function Page(): React.JSX.Element {
                                         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                                             <TextField
                                                 label="รหัสวิชา"
-                                                placeholder="เช่น CU0001"
+                                                placeholder="เช่น 2602614"
                                                 value={formData.courseCode}
                                                 onChange={handleInputChange('courseCode')}
                                                 error={Boolean(errors.courseCode)}
-                                                helperText={errors.courseCode || 'รูปแบบ: XX0000 (ตัวอักษร 2 ตัว + ตัวเลข 4 ตัว)'}
+                                                helperText={errors.courseCode || 'รูปแบบ: XXXXXXX'}
                                                 fullWidth
                                                 required
                                                 inputProps={{ style: { textTransform: 'uppercase' } }}
