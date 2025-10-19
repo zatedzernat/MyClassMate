@@ -118,9 +118,6 @@ export default function TodayCoursesPage(): React.JSX.Element {
                 <Table>
                   <TableHead>
                     <TableRow sx={{ bgcolor: 'grey.50' }}>
-                      <TableCell sx={{ fontWeight: 600, minWidth: 120 }}>
-                        วันที่มีการเรียนการสอน
-                      </TableCell>
                       <TableCell sx={{ fontWeight: 600, minWidth: 100 }}>
                         รหัสวิชา
                       </TableCell>
@@ -146,7 +143,7 @@ export default function TodayCoursesPage(): React.JSX.Element {
                   <TableBody>
                     {courses.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
+                        <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
                           <Typography color="text.secondary">
                             วันนี้ไม่มีรายวิชาที่ต้องเรียน
                           </Typography>
@@ -155,11 +152,6 @@ export default function TodayCoursesPage(): React.JSX.Element {
                     ) : (
                       courses.map((course) => (
                         <TableRow key={course.courseId} hover>
-                          <TableCell>
-                            <Typography variant="body2">
-                              {getCurrentDate()}
-                            </Typography>
-                          </TableCell>
                           <TableCell>
                             <Typography variant="body2" sx={{ fontWeight: 500 }}>
                               {course.courseCode}
