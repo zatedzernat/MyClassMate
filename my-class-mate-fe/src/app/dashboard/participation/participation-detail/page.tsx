@@ -32,6 +32,7 @@ import {
 import { ArrowLeftIcon } from '@phosphor-icons/react/dist/ssr/ArrowLeft';
 import { CalendarIcon } from '@phosphor-icons/react/dist/ssr/Calendar';
 import { PlusIcon } from '@phosphor-icons/react/dist/ssr/Plus';
+import { ArrowClockwiseIcon } from '@phosphor-icons/react/dist/ssr/ArrowClockwise';
 import { getParticipationsByCourseScheduleId, createParticipation, closeParticipation, requestParticipation, getParticipationRequests, evaluateParticipationRequests } from '@/api/participation-api';
 import { ParticipationResponse, CreateParticipationRequest, ParticipationRequestRequest, ParticipationRequestResponse, EvaluateParticipationRequestsRequest } from '@/api/data/participation-response';
 import ErrorDialog from '@/components/error/error-dialog';
@@ -136,6 +137,7 @@ export default function ParticipationDetailPage(): React.JSX.Element {
   const [participationToEvaluate, setParticipationToEvaluate] = useState<ParticipationResponse | null>(null);
   const [participationRequests, setParticipationRequests] = useState<ParticipationRequestResponse[]>([]);
   const [loadingRequests, setLoadingRequests] = useState(false);
+  const [isReadOnlyMode, setIsReadOnlyMode] = useState(false); // New state for read-only mode
   
   // Score tracking state
   const [scoreChanges, setScoreChanges] = useState<Record<number, number>>({});
@@ -293,8 +295,9 @@ export default function ParticipationDetailPage(): React.JSX.Element {
   };
 
   // Handle evaluation modal functions
-  const handleOpenEvaluationDialog = async (participation: ParticipationResponse) => {
+  const handleOpenEvaluationDialog = async (participation: ParticipationResponse, readOnly: boolean = false) => {
     setParticipationToEvaluate(participation);
+    setIsReadOnlyMode(readOnly);
     setOpenEvaluationDialog(true);
     setLoadingRequests(true);
     
@@ -315,11 +318,37 @@ export default function ParticipationDetailPage(): React.JSX.Element {
     }
   };
 
+  // Handle refresh participation requests (for read-only mode)
+  const handleRefreshParticipationRequests = async () => {
+    if (!participationToEvaluate) return;
+    
+    setLoadingRequests(true);
+    try {
+      const response = await getParticipationRequests(participationToEvaluate.participationId);
+      if (response.success) {
+        setParticipationRequests(response.data);
+        setToast({
+          open: true,
+          message: 'รีเฟรชข้อมูลสำเร็จ',
+          severity: 'success'
+        });
+      } else {
+        setErrorDialogMessage(response.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูลคำขอเข้าร่วม');
+      }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการโหลดข้อมูลคำขอเข้าร่วม';
+      setErrorDialogMessage(errorMessage);
+    } finally {
+      setLoadingRequests(false);
+    }
+  };
+
   const handleCloseEvaluationDialog = () => {
     setOpenEvaluationDialog(false);
     setParticipationToEvaluate(null);
     setParticipationRequests([]);
     setScoreChanges({});
+    setIsReadOnlyMode(false);
   };
 
   // Handle score input change
@@ -369,6 +398,13 @@ export default function ParticipationDetailPage(): React.JSX.Element {
       setErrorDialogMessage(errorMessage);
     } finally {
       setSubmittingEvaluation(false);
+    }
+  };
+
+  // Handle participation row click for non-students
+  const handleParticipationRowClick = (participation: ParticipationResponse) => {
+    if (userData?.role !== Role.STUDENT) {
+      handleOpenEvaluationDialog(participation, true); // Open in read-only mode
     }
   };
 
@@ -485,7 +521,17 @@ export default function ParticipationDetailPage(): React.JSX.Element {
                       </TableRow>
                     ) : (
                       participations.map((participation) => (
-                        <TableRow key={participation.participationId} hover>
+                        <TableRow 
+                          key={participation.participationId} 
+                          hover
+                          onClick={() => handleParticipationRowClick(participation)}
+                          sx={{
+                            cursor: userData?.role !== Role.STUDENT ? 'pointer' : 'default',
+                            '&:hover': userData?.role !== Role.STUDENT ? {
+                              backgroundColor: 'action.hover',
+                            } : {}
+                          }}
+                        >
                           <TableCell>
                             <Typography variant="body2" sx={{ fontWeight: 500 }}>
                               {participation.round}
@@ -522,7 +568,10 @@ export default function ParticipationDetailPage(): React.JSX.Element {
                                 variant="outlined"
                                 color="error"
                                 size="small"
-                                onClick={() => handleOpenCloseDialog(participation)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenCloseDialog(participation);
+                                }}
                               >
                                 ปิดรับการขอมีส่วนร่วม
                               </Button>
@@ -532,7 +581,10 @@ export default function ParticipationDetailPage(): React.JSX.Element {
                                 variant="contained"
                                 color="primary"
                                 size="small"
-                                onClick={() => handleRequestParticipation(participation)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRequestParticipation(participation);
+                                }}
                               >
                                 ส่งคำขอการมีส่วนร่วม
                               </Button>
@@ -542,7 +594,10 @@ export default function ParticipationDetailPage(): React.JSX.Element {
                                 variant="outlined"
                                 color="info"
                                 size="small"
-                                onClick={() => handleOpenEvaluationDialog(participation)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenEvaluationDialog(participation, false);
+                                }}
                               >
                                 ประเมินการขอมีส่วนร่วม
                               </Button>
@@ -620,12 +675,26 @@ export default function ParticipationDetailPage(): React.JSX.Element {
       {/* Evaluation Participation Dialog */}
       <Dialog open={openEvaluationDialog} onClose={handleCloseEvaluationDialog} maxWidth="lg" fullWidth>
         <DialogTitle>
-          ประเมินการขอมีส่วนร่วม
-          {participationToEvaluate && (
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              รอบที่ {participationToEvaluate.round}: {participationToEvaluate.topic}
-            </Typography>
-          )}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box>
+              {isReadOnlyMode ? 'รายการผู้ส่งคำขอการมีส่วนร่วม' : 'ประเมินการขอมีส่วนร่วม'}
+              {participationToEvaluate && (
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                  รอบที่ {participationToEvaluate.round}: {participationToEvaluate.topic}
+                </Typography>
+              )}
+            </Box>
+            {isReadOnlyMode && (
+              <IconButton 
+                onClick={handleRefreshParticipationRequests}
+                disabled={loadingRequests}
+                size="small"
+                sx={{ ml: 1 }}
+              >
+                <ArrowClockwiseIcon size={20} />
+              </IconButton>
+            )}
+          </Box>
         </DialogTitle>
         <DialogContent>
           {loadingRequests ? (
@@ -648,13 +717,18 @@ export default function ParticipationDetailPage(): React.JSX.Element {
                         <TableCell sx={{ fontWeight: 600, width: '200px' }}>ชื่อนักศึกษา</TableCell>
                         <TableCell sx={{ fontWeight: 600, textAlign: 'center', width: '120px' }}>ส่งคำขอเมื่อ</TableCell>
                         <TableCell sx={{ fontWeight: 600, textAlign: 'center', width: '60px' }}>คะแนน</TableCell>
-                        <TableCell sx={{ fontWeight: 600, textAlign: 'center', width: '80px' }}>ให้คะแนน</TableCell>
+                        {!isReadOnlyMode && (
+                          <TableCell sx={{ fontWeight: 600, textAlign: 'center', width: '80px' }}>ให้คะแนน</TableCell>
+                        )}
                         <TableCell sx={{ fontWeight: 600, textAlign: 'center', width: '120px' }}>สถานะการให้คะแนน</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {participationRequests.map((request, index) => (
-                        <TableRow key={request.participationRequestId} hover>
+                        <TableRow 
+                          key={request.participationRequestId} 
+                          hover
+                        >
                           <TableCell>{index + 1}</TableCell>
                           <TableCell>{request.studentNo}</TableCell>
                           <TableCell>
@@ -703,29 +777,32 @@ export default function ParticipationDetailPage(): React.JSX.Element {
                               {request.score}
                             </Typography>
                           </TableCell>
-                          <TableCell align="center">
-                            {request.isScored === false ? (
-                              <TextField
-                                select
-                                size="small"
-                                value={scoreChanges[request.participationRequestId] ?? request.score}
-                                onChange={(e) => handleScoreChange(request.participationRequestId, Number(e.target.value))}
-                                SelectProps={{
-                                  native: true,
-                                }}
-                                sx={{ minWidth: 60 }}
-                              >
-                                <option value={0}>0</option>
-                                <option value={1}>1</option>
-                                <option value={2}>2</option>
-                                <option value={3}>3</option>
-                              </TextField>
-                            ) : (
-                              <Typography variant="body2" color="text.secondary">
-                                -
-                              </Typography>
-                            )}
-                          </TableCell>
+                          {!isReadOnlyMode && (
+                            <TableCell align="center">
+                              {request.isScored === false ? (
+                                <TextField
+                                  select
+                                  size="small"
+                                  value={scoreChanges[request.participationRequestId] ?? request.score}
+                                  onChange={(e) => handleScoreChange(request.participationRequestId, Number(e.target.value))}
+                                  onClick={(e) => e.stopPropagation()}
+                                  SelectProps={{
+                                    native: true,
+                                  }}
+                                  sx={{ minWidth: 60 }}
+                                >
+                                  <option value={0}>0</option>
+                                  <option value={1}>1</option>
+                                  <option value={2}>2</option>
+                                  <option value={3}>3</option>
+                                </TextField>
+                              ) : (
+                                <Typography variant="body2" color="text.secondary">
+                                  -
+                                </Typography>
+                              )}
+                            </TableCell>
+                          )}
                           <TableCell align="center">
                             <Chip
                               label={request.isScored ? 'ให้คะแนนแล้ว' : 'ยังไม่ได้ให้คะแนน'}
