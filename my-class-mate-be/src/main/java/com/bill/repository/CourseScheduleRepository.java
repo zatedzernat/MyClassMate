@@ -47,7 +47,10 @@ public interface CourseScheduleRepository extends JpaRepository<CourseSchedule, 
             e.student_no,
             concat(d.name_th, ' ', d.surname_th) as studentNameTh,
             concat(d.name_en, ' ', d.surname_en) as studentNameEn,
-            coalesce(c.status, 'ABSENT') as status,
+            CASE
+               WHEN a.schedule_date < :targetDate THEN COALESCE(c.status, 'ABSENT')
+               ELSE c.status
+            END AS status,
             c.created_at as attendedAt
             from course_schedules a
             left join enrollments b on a.course_id = b.course_id
