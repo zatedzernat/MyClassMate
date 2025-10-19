@@ -13,6 +13,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.modelmapper.ModelMapper;
@@ -314,7 +315,7 @@ public class CourseService {
                 if (cell == null) continue;
 
                 String studentNo = getCellValue(cell);
-                if (studentNo.isEmpty()) continue;
+                if (StringUtils.isBlank(studentNo)) continue;
 
                 // check student exist?
                 var studentProfile = studentProfileService.getStudentProfile(studentNo).orElse(null);
