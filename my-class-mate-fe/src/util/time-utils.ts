@@ -19,16 +19,10 @@ export const getButtonState = (startTime: string, endTime: string) => {
   // One hour before start time in minutes
   const oneHourBeforeStart = startMinutes - 60;
   
-  if (currentTime < oneHourBeforeStart) {
-    // Before 1 hour of start time - hide button
-    return { show: false, disabled: false };
-  } else if (currentTime >= oneHourBeforeStart && currentTime <= endMinutes) {
-    // Between 1 hour before start and end time - show enabled button
-    return { show: true, disabled: false };
-  } else {
-    // After end time - hide button
-    return { show: false, disabled: false };
-  }
+  // Show button only if current time is between 1 hour before start time and end time
+  return (currentTime >= oneHourBeforeStart && currentTime <= endMinutes)
+    ? { show: true, disabled: false }
+    : { show: false, disabled: false };
 };
 
 /**

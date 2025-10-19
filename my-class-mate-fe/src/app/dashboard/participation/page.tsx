@@ -110,7 +110,7 @@ export default function ParticipationPage(): React.JSX.Element {
                   </Typography>
                 </Stack>
                 <Typography variant="body2" color="text.secondary">
-                  พบรายวิชาที่มีเรียนวันนี้ {courses.length} วิชา
+                  พบรายวิชาที่มีเรียนวันนี้ {courses.length} วิชา (สามารถดูข้อมูลการมีส่วนร่วมได้เฉพาะรายวิชาที่อยู่ในช่วงเวลาที่กำหนด หรือก่อนหน้า 1 ชั่วโมง)
                 </Typography>
               </Box>
 
