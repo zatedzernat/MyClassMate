@@ -24,7 +24,6 @@ import { UsersTable } from '@/components/dashboard/user/users-table';
 import ErrorDialog from '@/components/error/error-dialog';
 import { getRoleLabel, Role } from '@/util/role-enum';
 import { UploadIcon } from '@phosphor-icons/react';
-import Papa from 'papaparse';
 import { UserRequest, UserResponse } from '@/api/data/user-response';
 
 export default function Page(): React.JSX.Element {

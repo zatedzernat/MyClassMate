@@ -24,21 +24,7 @@ import { getTodayCourses } from '@/api/course-api';
 import { TodayCourseResponse } from '@/api/data/course-response';
 import ErrorDialog from '@/components/error/error-dialog';
 import { paths } from '@/paths';
-
-// Helper functions moved to outer scope
-const formatTime = (time: string): string => {
-  if (!time) return '';
-  return time.slice(0, 5); // Display as HH:MM
-};
-
-const getCurrentDate = (): string => {
-  const today = new Date();
-  return today.toLocaleDateString('th-TH', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric'
-  });
-};
+import { getButtonState, formatTime, getCurrentDate } from '@/util/time-utils';
 
 export default function ParticipationPage(): React.JSX.Element {
   const router = useRouter();
@@ -205,22 +191,28 @@ export default function ParticipationPage(): React.JSX.Element {
                             </Typography>
                           </TableCell>
                           <TableCell align="center">
-                            <Button
-                              variant="contained"
-                              size="small"
-                              onClick={() => handleViewParticipation(course)}
-                              sx={{ 
-                                minWidth: 120,
-                                fontSize: '0.75rem',
-                                py: 0.5,
-                                backgroundColor: 'primary.main',
-                                '&:hover': {
-                                  backgroundColor: 'primary.dark',
-                                }
-                              }}
-                            >
-                              ดูข้อมูลการมีส่วนร่วม
-                            </Button>
+                            {(() => {
+                              const buttonState = getButtonState(course.startTime, course.endTime);
+                              return buttonState.show ? (
+                                <Button
+                                  variant="contained"
+                                  size="small"
+                                  onClick={() => handleViewParticipation(course)}
+                                  disabled={buttonState.disabled}
+                                  sx={{ 
+                                    minWidth: 120,
+                                    fontSize: '0.75rem',
+                                    py: 0.5,
+                                    backgroundColor: 'primary.main',
+                                    '&:hover': {
+                                      backgroundColor: 'primary.dark',
+                                    }
+                                  }}
+                                >
+                                  ดูข้อมูลการมีส่วนร่วม
+                                </Button>
+                              ) : (null);
+                            })()}
                           </TableCell>
                         </TableRow>
                       ))

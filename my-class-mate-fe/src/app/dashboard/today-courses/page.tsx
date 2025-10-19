@@ -17,14 +17,14 @@ import {
   Card,
   CardContent,
   CircularProgress,
-  Alert,
-  Chip
+  Alert
 } from '@mui/material';
 import { CalendarIcon } from '@phosphor-icons/react/dist/ssr/Calendar';
 import { getTodayCourses } from '@/api/course-api';
 import { TodayCourseResponse } from '@/api/data/course-response';
 import ErrorDialog from '@/components/error/error-dialog';
 import { paths } from '@/paths';
+import { getButtonState, formatTime, getCurrentDate } from '@/util/time-utils';
 
 export default function TodayCoursesPage(): React.JSX.Element {
   const router = useRouter();
@@ -42,10 +42,11 @@ export default function TodayCoursesPage(): React.JSX.Element {
       const todayCourses = await getTodayCourses();
       setCourses(todayCourses);
       console.log('Today\'s courses:', todayCourses);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการโหลดตารางเรียนวันนี้';
       console.error('Error fetching today\'s courses:', error);
-      setError(error.message || 'เกิดข้อผิดพลาดในการโหลดตารางเรียนวันนี้');
-      setErrorDialogMessage(error.message || 'เกิดข้อผิดพลาดในการโหลดตารางเรียนวันนี้');
+      setError(errorMessage);
+      setErrorDialogMessage(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -54,33 +55,6 @@ export default function TodayCoursesPage(): React.JSX.Element {
   useEffect(() => {
     fetchTodayCourses();
   }, []);
-
-  // Format time display
-  const formatTime = (time: string): string => {
-    if (!time) return '';
-    return time.substring(0, 5); // Display as HH:MM
-  };
-
-  // Format date display
-  const formatDate = (date: string): string => {
-    if (!date) return '';
-    const dateObj = new Date(date);
-    return dateObj.toLocaleDateString('th-TH', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
-  };
-
-  // Get current date
-  const getCurrentDate = (): string => {
-    const today = new Date();
-    return today.toLocaleDateString('th-TH', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
-  };
 
   // Handle attendance check button - navigate to student check-in page
   const handleAttendanceCheck = (course: TodayCourseResponse) => {
@@ -217,22 +191,28 @@ export default function TodayCoursesPage(): React.JSX.Element {
                             </Typography>
                           </TableCell>
                           <TableCell align="center">
-                            <Button
-                              variant="contained"
-                              size="small"
-                              onClick={() => handleAttendanceCheck(course)}
-                              sx={{ 
-                                minWidth: 100,
-                                fontSize: '0.75rem',
-                                py: 0.5,
-                                backgroundColor: 'primary.main',
-                                '&:hover': {
-                                  backgroundColor: 'primary.dark',
-                                }
-                              }}
-                            >
-                              เช็คชื่อเข้าเรียน
-                            </Button>
+                            {(() => {
+                              const buttonState = getButtonState(course.startTime, course.endTime);
+                              return buttonState.show ? (
+                                <Button
+                                  variant="contained"
+                                  size="small"
+                                  onClick={() => handleAttendanceCheck(course)}
+                                  disabled={buttonState.disabled}
+                                  sx={{ 
+                                    minWidth: 100,
+                                    fontSize: '0.75rem',
+                                    py: 0.5,
+                                    backgroundColor: 'primary.main',
+                                    '&:hover': {
+                                      backgroundColor: 'primary.dark',
+                                    }
+                                  }}
+                                >
+                                  เช็คชื่อเข้าเรียน
+                                </Button>
+                              ) : (null);
+                            })()}
                           </TableCell>
                         </TableRow>
                       ))
