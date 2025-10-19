@@ -12,6 +12,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -150,6 +151,7 @@ public class ReportService {
                 cell.setCellStyle(cyanHeaderStyle);
             }
             attendanceSheet.createFreezePane(0, 1);
+            attendanceSheet.setAutoFilter(new CellRangeAddress(0, 0, 0, attendanceHeaders.length - 1));
 
             // Data
             int rowNum = 1;
@@ -196,6 +198,7 @@ public class ReportService {
                 cell.setCellStyle(cyanHeaderStyle);
             }
             participationSheet.createFreezePane(0, 1);
+            participationSheet.setAutoFilter(new CellRangeAddress(0, 0, 0, partHeaders.length - 1));
 
             // Data
             rowNum = 1;
