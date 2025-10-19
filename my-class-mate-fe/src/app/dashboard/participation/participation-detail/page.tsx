@@ -362,10 +362,10 @@ export default function ParticipationDetailPage(): React.JSX.Element {
         // Clear score changes
         setScoreChanges({});
       } else {
-        setErrorDialogMessage(response.message || 'เกิดข้อผิดพลาดในการประเมินการมีส่วนร่วม');
+        setErrorDialogMessage(response.message || 'เกิดข้อผิดพลาดในการประเมินการขอมีส่วนร่วม');
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการประเมินการมีส่วนร่วม';
+      const errorMessage = error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการประเมินการขอมีส่วนร่วม';
       setErrorDialogMessage(errorMessage);
     } finally {
       setSubmittingEvaluation(false);
@@ -544,7 +544,7 @@ export default function ParticipationDetailPage(): React.JSX.Element {
                                 size="small"
                                 onClick={() => handleOpenEvaluationDialog(participation)}
                               >
-                                ประเมินการมีส่วนร่วม
+                                ประเมินการขอมีส่วนร่วม
                               </Button>
                             )}
                           </TableCell>
@@ -620,7 +620,7 @@ export default function ParticipationDetailPage(): React.JSX.Element {
       {/* Evaluation Participation Dialog */}
       <Dialog open={openEvaluationDialog} onClose={handleCloseEvaluationDialog} maxWidth="lg" fullWidth>
         <DialogTitle>
-          ประเมินการมีส่วนร่วม
+          ประเมินการขอมีส่วนร่วม
           {participationToEvaluate && (
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
               รอบที่ {participationToEvaluate.round}: {participationToEvaluate.topic}

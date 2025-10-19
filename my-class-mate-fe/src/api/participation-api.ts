@@ -411,11 +411,11 @@ export async function evaluateParticipationRequests(requestData: EvaluatePartici
 
         return {
             success: true,
-            message: `ประเมินการมีส่วนร่วมสำเร็จ ${requestData.evaluates.length} รายการ`
+            message: `ประเมินการขอมีส่วนร่วมสำเร็จ ${requestData.evaluates.length} รายการ`
         };
 
     } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการประเมินการมีส่วนร่วม';
+        const errorMessage = error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการประเมินการขอมีส่วนร่วม';
         logger.error('[ParticipationAPI]: Error evaluating participation requests:', error);
 
         // Handle network errors
