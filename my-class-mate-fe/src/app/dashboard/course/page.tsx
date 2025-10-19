@@ -46,7 +46,7 @@ export default function Page(): React.JSX.Element {
   const currentYear = currentDate.getFullYear() + 543;
 
   const [academicYear, setAcademicYear] = useState<number>(currentYear);
-  const [semester, setSemester] = useState<number>(currentMonth <= 6 ? 1 : 2);
+  const [semester, setSemester] = useState<number>((currentMonth >= 8 && currentMonth <= 12) ? 1 : 2);
 
   // Dialog state
   const [errorMessage, setErrorMessage] = useState<string | null>(null);

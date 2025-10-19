@@ -54,7 +54,7 @@ export default function Page(): React.JSX.Element {
         courseCode: '',
         courseName: '',
         academicYear: currentYear,
-        semester: currentMonth <= 6 ? 1 : 2,
+        semester: (currentMonth >= 8 && currentMonth <= 12) ? 1 : 2,
         room: '',
         startTime: '09:00:00',
         endTime: '12:00:00',
