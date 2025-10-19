@@ -119,15 +119,15 @@ export default function AddStudentToCoursePage(): React.JSX.Element {
                             
                             // Show success only if some students were added
                             if (result.createdRow > 0) {
-                                setSuccess(`เพิ่มนักเรียนสำเร็จ: ${result.createdRow} คน (มีรหัสนักศึกษาไม่ถูกต้อง ${result.invalidStudentNos.length} คน)`);
+                                setSuccess(`เพิ่มนักศึกษาสำเร็จ: ${result.createdRow} คน (มีรหัสนักศึกษาไม่ถูกต้อง ${result.invalidStudentNos.length} คน)`);
                             }
                         } else {
                             // All students imported successfully
-                            setSuccess(`เพิ่มนักเรียนสำเร็จ: จำนวน ${result.createdRow} คน`);
+                            setSuccess(`เพิ่มนักศึกษาสำเร็จ: จำนวน ${result.createdRow} คน`);
                         }
 
                     } catch (importError: any) {
-                        setError(importError.message || 'เกิดข้อผิดพลาดในการนำเข้าข้อมูลนักเรียน');
+                        setError(importError.message || 'เกิดข้อผิดพลาดในการนำเข้าข้อมูลนักศึกษา');
                     }
                 }
             };
@@ -158,10 +158,10 @@ export default function AddStudentToCoursePage(): React.JSX.Element {
                 throw new Error('ไม่พบข้อมูลรายวิชา');
             }
 
-            setSuccess('ส่งออกข้อมูลนักเรียนสำเร็จ');
+            setSuccess('ส่งออกข้อมูลนักศึกษาสำเร็จ');
 
         } catch (error: any) {
-            setError(error.message || 'เกิดข้อผิดพลาดในการส่งออกข้อมูลนักเรียน');
+            setError(error.message || 'เกิดข้อผิดพลาดในการส่งออกข้อมูลนักศึกษา');
         } finally {
             setExporting(false);
         }
@@ -258,7 +258,7 @@ export default function AddStudentToCoursePage(): React.JSX.Element {
                             <ArrowLeftIcon size={20} />
                         </IconButton>
                         <Typography variant="h4">
-                            จัดการนักเรียนในรายวิชา
+                            จัดการนักศึกษาในรายวิชา
                         </Typography>
                     </Stack>
 
@@ -274,7 +274,7 @@ export default function AddStudentToCoursePage(): React.JSX.Element {
                         >
                             จัดการรายวิชา
                         </Link>
-                        <Typography color="text.primary">เพิ่มนักเรียน</Typography>
+                        <Typography color="text.primary">เพิ่มนักศึกษา</Typography>
                     </Breadcrumbs>
                 </Box>
 
@@ -399,7 +399,7 @@ export default function AddStudentToCoursePage(): React.JSX.Element {
                                             <TableRow>
                                                 <TableCell colSpan={3} align="center" sx={{ py: 4 }}>
                                                     <Typography color="text.secondary">
-                                                        ยังไม่มีข้อมูลนักเรียน
+                                                        ยังไม่มีข้อมูลนักศึกษา
                                                     </Typography>
                                                 </TableCell>
                                             </TableRow>
