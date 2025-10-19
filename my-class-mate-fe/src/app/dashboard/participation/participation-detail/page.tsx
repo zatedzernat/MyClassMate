@@ -27,7 +27,10 @@ import {
   DialogContent,
   DialogTitle,
   TextField,
-  Snackbar
+  Snackbar,
+  FormControl,
+  Select,
+  MenuItem
 } from '@mui/material';
 import { ArrowLeftIcon } from '@phosphor-icons/react/dist/ssr/ArrowLeft';
 import { CalendarIcon } from '@phosphor-icons/react/dist/ssr/Calendar';
@@ -790,23 +793,32 @@ export default function ParticipationDetailPage(): React.JSX.Element {
                           {!isReadOnlyMode && (
                             <TableCell align="center">
                               {request.isScored === false ? (
-                                <TextField
-                                  select
-                                  size="small"
-                                  value={request.participationRequestId in scoreChanges ? scoreChanges[request.participationRequestId].toString() : "-"}
-                                  onChange={(e) => handleScoreChange(request.participationRequestId, e.target.value)}
-                                  onClick={(e) => e.stopPropagation()}
-                                  SelectProps={{
-                                    native: true,
-                                  }}
-                                  sx={{ minWidth: 70 }}
-                                >
-                                  <option value="-">-</option>
-                                  <option value={0}>0</option>
-                                  <option value={1}>1</option>
-                                  <option value={2}>2</option>
-                                  <option value={3}>3</option>
-                                </TextField>
+                                <FormControl size="small" sx={{ minWidth: 70 }}>
+                                  <Select
+                                    value={request.participationRequestId in scoreChanges ? scoreChanges[request.participationRequestId].toString() : "-"}
+                                    onChange={(e) => handleScoreChange(request.participationRequestId, e.target.value)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    displayEmpty
+                                    sx={{
+                                      backgroundColor: 'white',
+                                      '& .MuiOutlinedInput-notchedOutline': {
+                                        borderColor: 'rgba(0, 0, 0, 0.23)',
+                                      },
+                                      '&:hover .MuiOutlinedInput-notchedOutline': {
+                                        borderColor: 'rgba(0, 0, 0, 0.87)',
+                                      },
+                                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                        borderColor: 'primary.main',
+                                      }
+                                    }}
+                                  >
+                                    <MenuItem value="-">-</MenuItem>
+                                    <MenuItem value="0">0</MenuItem>
+                                    <MenuItem value="1">1</MenuItem>
+                                    <MenuItem value="2">2</MenuItem>
+                                    <MenuItem value="3">3</MenuItem>
+                                  </Select>
+                                </FormControl>
                               ) : (
                                 <Typography variant="body2" color="text.secondary">
                                   -
