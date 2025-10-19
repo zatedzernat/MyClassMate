@@ -27,7 +27,7 @@ import { DownloadIcon } from '@phosphor-icons/react/dist/ssr/Download';
 import { UploadIcon } from '@phosphor-icons/react/dist/ssr/Upload';
 import { ArrowLeftIcon } from '@phosphor-icons/react/dist/ssr/ArrowLeft';
 import { paths } from '@/paths';
-import { getCourseById, importStudentToCourse, exportStudentToCourse } from '@/api/course-api';
+import { getCourseById, importStudentToCourse, exportStudentToCourse, downloadStudentTemplate } from '@/api/course-api';
 import { CourseResponse } from '@/api/data/course-response';
 import ErrorDialog from '@/components/error/error-dialog';
 
@@ -48,6 +48,7 @@ export default function AddStudentToCoursePage(): React.JSX.Element {
     const [loadingCourse, setLoadingCourse] = useState(true);
     const [uploading, setUploading] = useState(false);
     const [exporting, setExporting] = useState(false);
+    const [downloadingTemplate, setDownloadingTemplate] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [errorDialogMessage, setErrorDialogMessage] = useState<string>('');
@@ -163,6 +164,25 @@ export default function AddStudentToCoursePage(): React.JSX.Element {
             setError(error.message || 'เกิดข้อผิดพลาดในการส่งออกข้อมูลนักเรียน');
         } finally {
             setExporting(false);
+        }
+    };
+
+    const handleDownloadTemplate = async () => {
+        setDownloadingTemplate(true);
+        setError(null);
+        try {
+            if (!courseId) {
+                throw new Error('ไม่พบรหัสรายวิชา');
+            }
+
+            console.log('Download template for course:', courseId);
+            await downloadStudentTemplate(courseId);
+            setSuccess('ดาวน์โหลดเทมเพลตสำเร็จ');
+
+        } catch (error: any) {
+            setError(error.message || 'เกิดข้อผิดพลาดในการดาวน์โหลดเทมเพลต');
+        } finally {
+            setDownloadingTemplate(false);
         }
     };
 
@@ -290,6 +310,21 @@ export default function AddStudentToCoursePage(): React.JSX.Element {
                                 <Button
                                     color="inherit"
                                     startIcon={
+                                        downloadingTemplate ? (
+                                            <CircularProgress size={16} color="inherit" />
+                                        ) : (
+                                            <DownloadIcon fontSize="var(--icon-fontSize-md)" />
+                                        )
+                                    }
+                                    onClick={handleDownloadTemplate}
+                                    disabled={uploading || exporting || downloadingTemplate}
+                                >
+                                    {downloadingTemplate ? 'กำลังดาวน์โหลด...' : 'Download Template'}
+                                </Button>
+
+                                <Button
+                                    color="inherit"
+                                    startIcon={
                                         uploading ? (
                                             <CircularProgress size={16} color="inherit" />
                                         ) : (
@@ -297,7 +332,7 @@ export default function AddStudentToCoursePage(): React.JSX.Element {
                                         )
                                     }
                                     onClick={handleImportStudents}
-                                    disabled={uploading || exporting}
+                                    disabled={uploading || exporting || downloadingTemplate}
                                 >
                                     {uploading ? 'กำลังนำเข้า...' : 'Import'}
                                 </Button>
@@ -312,7 +347,7 @@ export default function AddStudentToCoursePage(): React.JSX.Element {
                                         )
                                     }
                                     onClick={handleExportStudents}
-                                    disabled={uploading || exporting || students.length === 0}
+                                    disabled={uploading || exporting || downloadingTemplate || students.length === 0}
                                 >
                                     {exporting ? 'กำลังส่งออก...' : 'Export'}
                                 </Button>

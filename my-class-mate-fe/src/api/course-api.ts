@@ -404,6 +404,47 @@ export async function exportStudentToCourse(courseId: string, courseCode: string
     window.URL.revokeObjectURL(url);
 }
 
+export async function downloadStudentTemplate(courseId: string): Promise<void> {
+    const role = localStorage.getItem("user-role") || "";
+
+    const response = await fetch(`/api/my-class-mate/v1/courses/${encodeURIComponent(courseId)}/export-student-to-course?isTemplate=true`, {
+        method: "GET",
+        headers: {
+            "x-role": role,
+        },
+    });
+
+    if (!response.ok) {
+        const resData = await response.json().catch(() => ({}));
+        const errorMessage = resData?.message || resData?.code || "Unknown error occurred";
+        throw new Error(errorMessage);
+    }
+
+    // Get the file blob
+    const blob = await response.blob();
+
+    // Create a link and trigger download
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+
+    // Get filename from backend Content-Disposition header
+    const contentDisposition = response.headers.get("Content-Disposition");
+    let fileName = "students_template.xlsx"; // fallback filename
+    if (contentDisposition) {
+        const match = contentDisposition.match(/filename="?(.+)"?/);
+        if (match?.[1]) fileName = match[1];
+    }
+
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+
+    // Cleanup
+    a.remove();
+    window.URL.revokeObjectURL(url);
+}
+
 export async function getTodayCourses(): Promise<TodayCourseResponse[]> {
     try {
         logger.debug('[CourseAPI]: Fetching today\'s course schedules');

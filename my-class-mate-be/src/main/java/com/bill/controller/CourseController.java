@@ -75,10 +75,11 @@ public class CourseController {
 
     @RequireRole({RoleEnum.ADMIN, RoleEnum.LECTURER, RoleEnum.STAFF})
     @GetMapping(value = "/{courseId}/export-student-to-course", produces = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-    public ResponseEntity<byte[]> exportStudentToCourse(@PathVariable Long courseId) {
-        byte[] excelFile = courseService.exportStudentToCourse(courseId);
+    public ResponseEntity<byte[]> exportStudentToCourse(@PathVariable Long courseId, @RequestParam(required = false) Boolean isTemplate) {
+        byte[] excelFile = courseService.exportStudentToCourse(courseId, isTemplate);
+        var filename = Boolean.TRUE.equals(isTemplate) ? "students_template.xlsx" : "students.xlsx";
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=students.xlsx")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(excelFile);
     }

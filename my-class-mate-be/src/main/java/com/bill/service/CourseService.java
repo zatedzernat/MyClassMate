@@ -234,7 +234,7 @@ public class CourseService {
         return mapToCourseResponse(course);
     }
 
-    public byte[] exportStudentToCourse(Long courseId) {
+    public byte[] exportStudentToCourse(Long courseId, Boolean isTemplate) {
         try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             Sheet sheet = workbook.createSheet("ผู้เรียน");
 
@@ -264,17 +264,19 @@ public class CourseService {
                 cell.setCellStyle(headerStyle);
             }
 
-            var enrollments = enrollmentRepository.findByCourseIdOrderByCreatedAtAsc(courseId);
+            if (!Boolean.TRUE.equals(isTemplate)) {
+                var enrollments = enrollmentRepository.findByCourseIdOrderByCreatedAtAsc(courseId);
+                int rowIdx = 1;
 
-            int rowIdx = 1;
-            for (var enrollment : enrollments) {
-                var studentId = enrollment.getStudentId();
-                var studentProfile = studentProfileService.getStudentProfile(studentId);
-                String studentNo = studentProfile.getStudentNo();
+                for (var enrollment : enrollments) {
+                    var studentId = enrollment.getStudentId();
+                    var studentProfile = studentProfileService.getStudentProfile(studentId);
+                    String studentNo = studentProfile.getStudentNo();
 
-                Row row = sheet.createRow(rowIdx++);
-                row.createCell(0).setCellValue(studentNo);
-                row.getCell(0).setCellStyle(dataStyle);
+                    Row row = sheet.createRow(rowIdx++);
+                    row.createCell(0).setCellValue(studentNo);
+                    row.getCell(0).setCellStyle(dataStyle);
+                }
             }
 
             // Auto size
