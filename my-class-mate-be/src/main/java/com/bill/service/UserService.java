@@ -162,7 +162,7 @@ public class UserService {
         return mapToUserResponse(user, true);
     }
 
-    public byte[] exportUsers(RoleEnum role) {
+    public byte[] exportUsers(RoleEnum role, Boolean isTemplate) {
         var users = userRepository.findAll();
         users.sort(Comparator.comparing(User::getId));
 
@@ -244,30 +244,30 @@ public class UserService {
             }
 
             // Data rows
-            int rowIdx = 1;
-            for (User user : users) {
-                Row row = sheet.createRow(rowIdx++);
-                int col = 0;
+            if (!Boolean.TRUE.equals(isTemplate)) {
+                int rowIdx = 1;
+                for (User user : users) {
+                    Row row = sheet.createRow(rowIdx++);
+                    int col = 0;
+                    row.createCell(col++).setCellValue(user.getId());
+                    row.createCell(col++).setCellValue(user.getUsername());
+                    row.createCell(col++).setCellValue(user.getNameTh());
+                    row.createCell(col++).setCellValue(user.getSurnameTh());
+                    row.createCell(col++).setCellValue(user.getNameEn());
+                    row.createCell(col++).setCellValue(user.getSurnameEn());
+                    row.createCell(col++).setCellValue(user.getEmail());
+                    row.createCell(col++).setCellValue(Boolean.TRUE.equals(user.getIsDeleted()) ? "Y" : "N");
+                    row.createCell(col++).setCellValue(user.getRole().name());
 
-                row.createCell(col++).setCellValue(user.getId());
-                row.createCell(col++).setCellValue(user.getUsername());
-                row.createCell(col++).setCellValue(user.getNameTh());
-                row.createCell(col++).setCellValue(user.getSurnameTh());
-                row.createCell(col++).setCellValue(user.getNameEn());
-                row.createCell(col++).setCellValue(user.getSurnameEn());
-                row.createCell(col++).setCellValue(user.getEmail());
-                row.createCell(col++).setCellValue(Boolean.TRUE.equals(user.getIsDeleted()) ? "Y" : "N");
-                row.createCell(col++).setCellValue(user.getRole().name());
+                    var sp = studentProfileRepository.findById(user.getId()).orElse(null);
+                    row.createCell(col++).setCellValue(sp != null ? sp.getStudentNo() : "");
+                    row.createCell(col++).setCellValue(sp != null ? sp.getAddress() : "");
+                    row.createCell(col++).setCellValue(sp != null ? sp.getPhoneNumber() : "");
+                    row.createCell(col++).setCellValue(sp != null ? sp.getRemark() : "");
 
-                var sp = studentProfileRepository.findById(user.getId()).orElse(null);
-                row.createCell(col++).setCellValue(sp != null ? sp.getStudentNo() : "");
-                row.createCell(col++).setCellValue(sp != null ? sp.getAddress() : "");
-                row.createCell(col++).setCellValue(sp != null ? sp.getPhoneNumber() : "");
-                row.createCell(col++).setCellValue(sp != null ? sp.getRemark() : "");
-
-                // apply data style ทุก cell
-                for (int i = 0; i < headers.length; i++) {
-                    row.getCell(i).setCellStyle(dataStyle);
+                    for (int i = 0; i < headers.length; i++) {
+                        row.getCell(i).setCellStyle(dataStyle);
+                    }
                 }
             }
 

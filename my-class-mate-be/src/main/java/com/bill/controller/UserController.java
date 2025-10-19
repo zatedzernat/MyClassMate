@@ -67,8 +67,8 @@ public class UserController {
 
     @RequireRole({RoleEnum.ADMIN})
     @GetMapping(value = "/export", produces = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-    public ResponseEntity<byte[]> exportUsers(@RequestParam(required = false) RoleEnum role) {
-        byte[] excelFile = userService.exportUsers(role);
+    public ResponseEntity<byte[]> exportUsers(@RequestParam(required = false) RoleEnum role, @RequestParam(required = false) Boolean isTemplate) {
+        byte[] excelFile = userService.exportUsers(role, isTemplate);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=users.xlsx")
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))

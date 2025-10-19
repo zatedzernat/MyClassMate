@@ -18,7 +18,7 @@ import Snackbar from "@mui/material/Snackbar";
 import MuiAlert, { AlertColor } from "@mui/material/Alert";
 
 
-import { createUser, exportUsers, getUsers, importUsers } from '@/api/user-api'; // Import the API function
+import { createUser, exportUsers, getUsers, importUsers, downloadUserTemplate } from '@/api/user-api'; // Import the API function
 import { UsersFilters } from '@/components/dashboard/user/users-filters';
 import { UsersTable } from '@/components/dashboard/user/users-table';
 import ErrorDialog from '@/components/error/error-dialog';
@@ -156,6 +156,20 @@ export default function Page(): React.JSX.Element {
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
             <Button
               color="inherit"
+              startIcon={<DownloadIcon fontSize="var(--icon-fontSize-md)" />}
+              onClick={async () => {
+                try {
+                  await downloadUserTemplate();
+                } catch (err: any) {
+                  console.error("Error downloading template:", err.message);
+                  setErrorMessage(err.message);
+                }
+              }}
+            >
+              Download Template
+            </Button>
+            <Button
+              color="inherit"
               startIcon={<UploadIcon fontSize="var(--icon-fontSize-md)" />}
               onClick={handleImportClick}
             >
@@ -166,7 +180,7 @@ export default function Page(): React.JSX.Element {
               startIcon={<DownloadIcon fontSize="var(--icon-fontSize-md)" />}
               onClick={async () => {
                 try {
-                  await exportUsers();
+                  await exportUsers(selectedRole);
                 } catch (err: any) {
                   console.error("Error exporting users:", err.message);
                   setErrorMessage(err.message);

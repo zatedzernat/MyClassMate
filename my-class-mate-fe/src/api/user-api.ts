@@ -174,10 +174,17 @@ export async function importUsers(file: File): Promise<ImportResponse> {
 
 }
 
-export async function exportUsers(): Promise<void> {
+export async function exportUsers(selectedRole?: Role): Promise<void> {
     const role = localStorage.getItem("user-role") || "";
+    
+    const url = new URL('/api/my-class-mate/v1/users/export', window.location.origin);
+    
+    // Add role parameter if provided and not "all"
+    if (selectedRole && selectedRole.toLowerCase() !== 'all') {
+        url.searchParams.append('role', selectedRole);
+    }
   
-    const response = await fetch("/api/my-class-mate/v1/users/export", {
+    const response = await fetch(url.toString(), {
       method: "GET",
       headers: {
         "x-role": role,
@@ -194,13 +201,15 @@ export async function exportUsers(): Promise<void> {
     const blob = await response.blob();
   
     // Create a link and trigger download
-    const url = window.URL.createObjectURL(blob);
+    const url_obj = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url;
+    a.href = url_obj;
   
-    // File name: try backend Content-Disposition, fallback to default
+    // File name: try backend Content-Disposition, fallback to default with role
     const contentDisposition = response.headers.get("Content-Disposition");
-    let fileName = "users_export.xlsx";
+    let fileName = selectedRole && selectedRole.toLowerCase() !== 'all' 
+        ? `users_${selectedRole.toLowerCase()}_export.xlsx`
+        : "users_export.xlsx";
     if (contentDisposition) {
       const match = contentDisposition.match(/filename="?(.+)"?/);
       if (match?.[1]) fileName = match[1];
@@ -212,6 +221,50 @@ export async function exportUsers(): Promise<void> {
   
     // Cleanup
     a.remove();
-    window.URL.revokeObjectURL(url);
-  }
+    window.URL.revokeObjectURL(url_obj);
+}
+
+export async function downloadUserTemplate(): Promise<void> {
+    const role = localStorage.getItem("user-role") || "";
+    
+    const url = new URL('/api/my-class-mate/v1/users/export', window.location.origin);
+    url.searchParams.append('isTemplate', 'true');
+  
+    const response = await fetch(url.toString(), {
+      method: "GET",
+      headers: {
+        "x-role": role,
+      },
+    });
+  
+    if (!response.ok) {
+      const resData = await response.json().catch(() => ({}));
+      const errorMessage = resData?.message || resData?.code || "Unknown error occurred";
+      throw new Error(errorMessage);
+    }
+  
+    // Get the file blob
+    const blob = await response.blob();
+  
+    // Create a link and trigger download
+    const url_obj = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url_obj;
+  
+    // File name: template file
+    const contentDisposition = response.headers.get("Content-Disposition");
+    let fileName = "user_import_template.xlsx";
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename="?(.+)"?/);
+      if (match?.[1]) fileName = match[1];
+    }
+  
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+  
+    // Cleanup
+    a.remove();
+    window.URL.revokeObjectURL(url_obj);
+}
   
