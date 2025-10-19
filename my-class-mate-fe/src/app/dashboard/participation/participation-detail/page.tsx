@@ -352,11 +352,21 @@ export default function ParticipationDetailPage(): React.JSX.Element {
   };
 
   // Handle score input change
-  const handleScoreChange = (participationRequestId: number, score: number) => {
-    setScoreChanges(prev => ({
-      ...prev,
-      [participationRequestId]: score
-    }));
+  const handleScoreChange = (participationRequestId: number, value: string) => {
+    if (value === "-") {
+      // Remove the score change entry when "-" is selected (no score)
+      setScoreChanges(prev => {
+        const newChanges = { ...prev };
+        delete newChanges[participationRequestId];
+        return newChanges;
+      });
+    } else {
+      const score = Number(value);
+      setScoreChanges(prev => ({
+        ...prev,
+        [participationRequestId]: score
+      }));
+    }
   };
 
   // Handle submit evaluation
@@ -783,14 +793,15 @@ export default function ParticipationDetailPage(): React.JSX.Element {
                                 <TextField
                                   select
                                   size="small"
-                                  value={scoreChanges[request.participationRequestId] ?? request.score}
-                                  onChange={(e) => handleScoreChange(request.participationRequestId, Number(e.target.value))}
+                                  value={request.participationRequestId in scoreChanges ? scoreChanges[request.participationRequestId].toString() : "-"}
+                                  onChange={(e) => handleScoreChange(request.participationRequestId, e.target.value)}
                                   onClick={(e) => e.stopPropagation()}
                                   SelectProps={{
                                     native: true,
                                   }}
-                                  sx={{ minWidth: 60 }}
+                                  sx={{ minWidth: 70 }}
                                 >
+                                  <option value="-">-</option>
                                   <option value={0}>0</option>
                                   <option value={1}>1</option>
                                   <option value={2}>2</option>
