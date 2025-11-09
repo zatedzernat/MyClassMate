@@ -66,7 +66,7 @@ public interface CourseScheduleRepository extends JpaRepository<CourseSchedule, 
             END AS status,
             c.created_at as attendedAt
             from course_schedules a
-            left join enrollments b on a.course_id = b.course_id
+            inner join enrollments b on a.course_id = b.course_id
             left join attendances c on b.student_id = c.student_id and a.id = c.course_schedule_id and a.course_id = c.course_id
             left join users d on b.student_id = d.id
             left join student_profiles e on b.student_id = e.student_id
