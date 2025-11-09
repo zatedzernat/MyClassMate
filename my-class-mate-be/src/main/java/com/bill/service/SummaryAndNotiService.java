@@ -80,14 +80,17 @@ public class SummaryAndNotiService {
 
     private void insertAttendanceWhenAbsent(CourseScheduleAttendanceProjection todayAttendance, Long studentId, Long courseId, Long courseScheduleId, LocalDateTime now) {
         if (AttendanceStatusEnum.ABSENT.equals(todayAttendance.getStatus())) {
-            // insert attendance for absent
-            attendanceRepository.save(Attendance.builder()
-                    .studentId(studentId)
-                    .courseId(courseId)
-                    .courseScheduleId(courseScheduleId)
-                    .status(AttendanceStatusEnum.ABSENT)
-                    .createdAt(now)
-                    .build());
+            var attendance = attendanceRepository.findFirstByStudentIdAndCourseScheduleIdOrderByIdDesc(studentId, courseScheduleId);
+            if (attendance == null) {
+                // insert first attendance for absent
+                attendanceRepository.save(Attendance.builder()
+                        .studentId(studentId)
+                        .courseId(courseId)
+                        .courseScheduleId(courseScheduleId)
+                        .status(AttendanceStatusEnum.ABSENT)
+                        .createdAt(now)
+                        .build());
+            }
         }
     }
 
