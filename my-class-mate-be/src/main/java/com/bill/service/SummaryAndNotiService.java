@@ -41,6 +41,8 @@ public class SummaryAndNotiService {
         var now = LocalDateTime.now();
         var todayCourseSchedules = courseService.getTodayCourses();
 
+        log.info("SummaryAndNotiService todayCourseSchedules size = {}", todayCourseSchedules.size());
+
         for (var courseSchedule : todayCourseSchedules) {
             var courseScheduleId = courseSchedule.getCourseScheduleId();
             var courseId = courseSchedule.getCourseId();
