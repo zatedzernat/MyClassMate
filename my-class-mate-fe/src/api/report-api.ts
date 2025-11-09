@@ -58,7 +58,7 @@ export async function getCourseReport(courseId: number | string): Promise<Course
 /**
  * Export course report as Excel file
  */
-export async function exportCourseReport(courseId: number | string): Promise<void> {
+export async function exportCourseReport(courseId: number | string, courseName?: string): Promise<void> {
     try {
         logger.debug('[ReportAPI]: Exporting course report for course ID:', courseId);
 
@@ -88,7 +88,7 @@ export async function exportCourseReport(courseId: number | string): Promise<voi
 
         // File name: try backend Content-Disposition, fallback to default
         const contentDisposition = response.headers.get('Content-Disposition');
-        let fileName = `course_report_${courseId}.xlsx`;
+        let fileName = `course_report_${courseName}.xlsx`;
         if (contentDisposition) {
             const match = contentDisposition.match(/filename="?(.+)"?/);
             if (match?.[1]) fileName = match[1];

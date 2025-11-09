@@ -47,4 +47,4 @@ app:
 
   scheduler:
     cron: "0 0 23 * * *" # default at 23:00
-    #cron: "0 48 22 * * *" # for test at 22:48
+    #cron: "0 15 15 * * *" # for test at 15:15

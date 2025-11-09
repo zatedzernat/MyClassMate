@@ -86,7 +86,7 @@ export default function CourseReportPage(): React.JSX.Element {
 
     try {
       setExporting(true);
-      await exportCourseReport(Number.parseInt(courseId, 10));
+      await exportCourseReport(Number.parseInt(courseId, 10), courseName);
     } catch (error_: unknown) {
       console.error('Error exporting report:', error_);
       const errorMessage = error_ instanceof Error ? error_.message : 'เกิดข้อผิดพลาดในการส่งออกรายงาน';
