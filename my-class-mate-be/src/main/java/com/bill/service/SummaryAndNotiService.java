@@ -141,6 +141,9 @@ public class SummaryAndNotiService {
             // set today participation
             var todayParticipation = courseScheduleRepository.findTotalParticipationsByStudentIdAndCourseScheduleId(studentId, courseScheduleId);
 
+            // set total participation
+            var totalParticipation = courseScheduleRepository.findTotalParticipationsAndScoreByStudentIdAndCourseId(studentId, course.getCourseId());
+
             // set absent percentage
             var totalCourseSchedule = course.getSchedules().size();
             var absentPercent = (attendanceSummary.getTotalAbsent() * 100.0 / totalCourseSchedule);
@@ -159,7 +162,9 @@ public class SummaryAndNotiService {
                     attendanceSummary.getTotalPresent(),
                     attendanceSummary.getTotalLate(),
                     attendanceSummary.getTotalAbsent(),
-                    absentNote
+                    absentNote,
+                    totalParticipation.getTotalParticipations(),
+                    totalParticipation.getTotalScore()
             );
 
             emailService.sendEmail(studentEmail, subject, body);

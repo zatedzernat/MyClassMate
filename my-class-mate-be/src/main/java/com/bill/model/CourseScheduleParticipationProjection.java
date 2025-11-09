@@ -1,6 +1,8 @@
 package com.bill.model;
 
 public interface CourseScheduleParticipationProjection {
+    Long getCourseId();
+
     Long getCourseScheduleId();
 
     Integer getRound();

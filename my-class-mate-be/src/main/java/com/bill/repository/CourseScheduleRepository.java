@@ -42,6 +42,19 @@ public interface CourseScheduleRepository extends JpaRepository<CourseSchedule, 
 
     @Query(value = """
             select
+                a.course_id as courseId,
+                count(c.id) as totalParticipations,
+                coalesce(sum(c.score), 0) as totalScore
+            from course_schedules a
+            left join participations b on a.id = b.course_schedule_id
+            left join participation_requests c on b.id = c.participation_id and c.student_id = :studentId
+            where a.course_id = :courseId
+            group by a.course_id;
+            """, nativeQuery = true)
+    CourseScheduleParticipationProjection findTotalParticipationsAndScoreByStudentIdAndCourseId(Long studentId, Long courseId);
+
+    @Query(value = """
+            select
             a.id as courseScheduleId,
             b.student_id,
             e.student_no,

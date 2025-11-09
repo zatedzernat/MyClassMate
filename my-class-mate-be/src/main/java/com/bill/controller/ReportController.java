@@ -21,13 +21,13 @@ import org.springframework.web.bind.annotation.*;
 public class ReportController {
     ReportService reportService;
 
-    @RequireRole({RoleEnum.ADMIN, RoleEnum.LECTURER, RoleEnum.STAFF, RoleEnum.STUDENT})
+    @RequireRole({RoleEnum.ADMIN, RoleEnum.LECTURER, RoleEnum.STAFF})
     @GetMapping(value = "/course/{courseId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ReportResponse getReports(@PathVariable Long courseId, @RequestParam(required = false) Long courseScheduleId) {
         return reportService.getReports(courseId, courseScheduleId);
     }
 
-    @RequireRole({RoleEnum.ADMIN, RoleEnum.LECTURER, RoleEnum.STAFF, RoleEnum.STUDENT})
+    @RequireRole({RoleEnum.ADMIN, RoleEnum.LECTURER, RoleEnum.STAFF})
     @GetMapping(value = "/course/{courseId}/export", produces = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     public ResponseEntity<byte[]> exportReports(@PathVariable Long courseId, @RequestParam(required = false) Long courseScheduleId) {
         byte[] excelFile = reportService.exportReports(courseId, courseScheduleId);
