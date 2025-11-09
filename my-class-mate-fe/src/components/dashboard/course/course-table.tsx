@@ -227,20 +227,19 @@ export function CoursesTable({
                   <TableCell>{row.room}</TableCell>
                   <TableCell align="center">
                     <Stack direction="row" spacing={1} justifyContent="center">
-                      {/* Report button - visible to all roles */}
-                      <IconButton
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleViewReport(row);
-                        }}
-                        title="ดูรายงาน"
-                      >
-                        <ChartBar size={20} />
-                      </IconButton>
                       {/* Management buttons - only for non-students */}
                       {userRole !== Role.STUDENT && (
                         <>
+                          <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewReport(row);
+                          }}
+                          title="ดูรายงาน"
+                          >
+                            <ChartBar size={20} />
+                          </IconButton>
                           <IconButton
                             size="small"
                             onClick={(e) => {
