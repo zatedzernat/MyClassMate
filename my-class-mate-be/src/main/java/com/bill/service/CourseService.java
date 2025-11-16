@@ -5,10 +5,7 @@ import com.bill.exceptionhandler.AppException;
 import com.bill.model.request.*;
 import com.bill.model.response.*;
 import com.bill.repository.*;
-import com.bill.repository.entity.Course;
-import com.bill.repository.entity.CourseLecturer;
-import com.bill.repository.entity.CourseSchedule;
-import com.bill.repository.entity.Enrollment;
+import com.bill.repository.entity.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -29,6 +26,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.bill.exceptionhandler.ErrorEnum.*;
 import static com.bill.service.AppUtils.getCellValue;
@@ -49,6 +47,7 @@ public class CourseService {
     AttendanceRepository attendanceRepository;
     AttendanceSummaryRepository attendanceSummaryRepository;
     ParticipationRepository participationRepository;
+    ParticipationRequestRepository participationRequestRepository;
 
     public List<InitCourseResponse> initCourse(InitCourseRequest request) {
         var dayOfWeek = request.getDayOfWeek();
@@ -151,12 +150,21 @@ public class CourseService {
 
     @Transactional
     public void deleteCourse(Long courseId) {
+        // query for delete
+        var courseSchedules = courseScheduleRepository.findByCourseIdOrderByScheduleDateAsc(courseId);
+        var courseScheduleIds = courseSchedules.stream().map(CourseSchedule::getCourseId).collect(Collectors.toSet());
+        var participations = participationRepository.findByCourseScheduleIdIn(courseScheduleIds);
+        var participationIds = participations.stream().map(Participation::getId).collect(Collectors.toSet());
+
+        // delete all data
         courseRepository.deleteById(courseId);
         courseScheduleRepository.deleteByCourseId(courseId);
         courseLecturerRepository.deleteByCourseId(courseId);
         enrollmentRepository.deleteByCourseId(courseId);
         attendanceRepository.deleteByCourseId(courseId);
         attendanceSummaryRepository.deleteByCourseId(courseId);
+        participationRepository.deleteByCourseScheduleIdIn(courseScheduleIds);
+        participationRequestRepository.deleteByParticipationIdIn(participationIds);
     }
 
     @Transactional
