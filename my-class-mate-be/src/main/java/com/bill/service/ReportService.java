@@ -1,5 +1,6 @@
 package com.bill.service;
 
+import com.bill.constant.AttendanceStatusEnum;
 import com.bill.exceptionhandler.AppException;
 import com.bill.model.CourseScheduleAttendanceProjection;
 import com.bill.model.CourseScheduleParticipationProjection;
@@ -70,7 +71,7 @@ public class ReportService {
                                         .studentNameEn(attendance.getStudentNameEn())
                                         .status(attendance.getStatus())
                                         .statusDesc(attendance.getStatus() != null ? attendance.getStatus().getDesc() : null)
-                                        .attendedAt(attendance.getAttendedAt())
+                                        .attendedAt(AttendanceStatusEnum.ABSENT != attendance.getStatus() ? attendance.getAttendedAt() : null)
                                         .build())
                         .toList());
             }
