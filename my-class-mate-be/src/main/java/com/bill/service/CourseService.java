@@ -152,7 +152,7 @@ public class CourseService {
     public void deleteCourse(Long courseId) {
         // query for delete
         var courseSchedules = courseScheduleRepository.findByCourseIdOrderByScheduleDateAsc(courseId);
-        var courseScheduleIds = courseSchedules.stream().map(CourseSchedule::getCourseId).collect(Collectors.toSet());
+        var courseScheduleIds = courseSchedules.stream().map(CourseSchedule::getId).collect(Collectors.toSet());
         var participations = participationRepository.findByCourseScheduleIdIn(courseScheduleIds);
         var participationIds = participations.stream().map(Participation::getId).collect(Collectors.toSet());
 
