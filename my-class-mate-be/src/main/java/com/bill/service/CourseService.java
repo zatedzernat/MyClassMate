@@ -306,6 +306,10 @@ public class CourseService {
 
     @Transactional
     public ImportStudentToCourseExcelResponse importStudentToCourse(Long courseId, MultipartFile file) {
+        // delete old enrollment
+        enrollmentRepository.deleteByCourseId(courseId);
+
+        // insert new enrollment
         List<String> invalidStudentNos = new ArrayList<>();
         int createdRow = 0;
         var now = LocalDateTime.now();
