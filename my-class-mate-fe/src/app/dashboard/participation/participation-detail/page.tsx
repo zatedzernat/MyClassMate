@@ -30,7 +30,8 @@ import {
   Snackbar,
   FormControl,
   Select,
-  MenuItem
+  MenuItem,
+  Autocomplete
 } from '@mui/material';
 import { ArrowLeftIcon } from '@phosphor-icons/react/dist/ssr/ArrowLeft';
 import { CalendarIcon } from '@phosphor-icons/react/dist/ssr/Calendar';
@@ -109,13 +110,13 @@ export default function ParticipationDetailPage(): React.JSX.Element {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [errorDialogMessage, setErrorDialogMessage] = useState<string>('');
-  
+
   // User data from localStorage
   const [userData, setUserData] = useState<{
     userId: string;
     role: string;
   } | null>(null);
-  
+
   // Create participation modal state
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [newParticipation, setNewParticipation] = useState<CreateParticipationRequest>({
@@ -141,9 +142,9 @@ export default function ParticipationDetailPage(): React.JSX.Element {
   const [participationRequests, setParticipationRequests] = useState<ParticipationRequestResponse[]>([]);
   const [loadingRequests, setLoadingRequests] = useState(false);
   const [isReadOnlyMode, setIsReadOnlyMode] = useState(false); // New state for read-only mode
-  
+
   // Score tracking state
-  const [scoreChanges, setScoreChanges] = useState<Record<number, number>>({});
+  const [scoreChanges, setScoreChanges] = useState<Record<number, string>>({});
   const [submittingEvaluation, setSubmittingEvaluation] = useState(false);
 
   // Fetch participations
@@ -184,7 +185,7 @@ export default function ParticipationDetailPage(): React.JSX.Element {
   useEffect(() => {
     const userId = localStorage.getItem('user-id') || '';
     const role = localStorage.getItem('user-role') || '';
-    
+
     setUserData({
       userId,
       role
@@ -303,7 +304,7 @@ export default function ParticipationDetailPage(): React.JSX.Element {
     setIsReadOnlyMode(readOnly);
     setOpenEvaluationDialog(true);
     setLoadingRequests(true);
-    
+
     try {
       const response = await getParticipationRequests(participation.participationId);
       if (response.success) {
@@ -324,7 +325,7 @@ export default function ParticipationDetailPage(): React.JSX.Element {
   // Handle refresh participation requests (for read-only mode)
   const handleRefreshParticipationRequests = async () => {
     if (!participationToEvaluate) return;
-    
+
     setLoadingRequests(true);
     try {
       const response = await getParticipationRequests(participationToEvaluate.participationId);
@@ -356,7 +357,7 @@ export default function ParticipationDetailPage(): React.JSX.Element {
 
   // Handle score input change
   const handleScoreChange = (participationRequestId: number, value: string) => {
-    if (value === "-") {
+    if (value === "-" || value === null) {
       // Remove the score change entry when "-" is selected (no score)
       setScoreChanges(prev => {
         const newChanges = { ...prev };
@@ -364,10 +365,10 @@ export default function ParticipationDetailPage(): React.JSX.Element {
         return newChanges;
       });
     } else {
-      const score = Number(value);
+      // Store as string to allow typing decimals (e.g. "1.")
       setScoreChanges(prev => ({
         ...prev,
-        [participationRequestId]: score
+        [participationRequestId]: value
       }));
     }
   };
@@ -381,7 +382,7 @@ export default function ParticipationDetailPage(): React.JSX.Element {
       const evaluationData: EvaluateParticipationRequestsRequest = {
         evaluates: Object.entries(scoreChanges).map(([participationRequestId, score]) => ({
           participationRequestId: Number(participationRequestId),
-          score: score
+          score: Number(score)
         }))
       };
 
@@ -392,7 +393,7 @@ export default function ParticipationDetailPage(): React.JSX.Element {
           message: response.message,
           severity: 'success'
         });
-        
+
         // Refresh the participation requests to show updated scores
         if (participationToEvaluate) {
           const refreshResponse = await getParticipationRequests(participationToEvaluate.participationId);
@@ -400,7 +401,7 @@ export default function ParticipationDetailPage(): React.JSX.Element {
             setParticipationRequests(refreshResponse.data);
           }
         }
-        
+
         // Clear score changes
         setScoreChanges({});
       } else {
@@ -534,8 +535,8 @@ export default function ParticipationDetailPage(): React.JSX.Element {
                       </TableRow>
                     ) : (
                       participations.map((participation) => (
-                        <TableRow 
-                          key={participation.participationId} 
+                        <TableRow
+                          key={participation.participationId}
                           hover
                           onClick={() => handleParticipationRowClick(participation)}
                           sx={{
@@ -569,7 +570,7 @@ export default function ParticipationDetailPage(): React.JSX.Element {
                           </TableCell>
                           <TableCell align="center">
                             <Typography variant="body2">
-                              {participation.closedAt 
+                              {participation.closedAt
                                 ? formatThaiDateTime(participation.closedAt)
                                 : '-'
                               }
@@ -645,8 +646,8 @@ export default function ParticipationDetailPage(): React.JSX.Element {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseCreateDialog}>ยกเลิก</Button>
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             onClick={handleSaveNewParticipation}
             disabled={!newParticipation.topic.trim()}
           >
@@ -675,8 +676,8 @@ export default function ParticipationDetailPage(): React.JSX.Element {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseCloseDialog}>ยกเลิก</Button>
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             color="error"
             onClick={handleConfirmCloseParticipation}
           >
@@ -698,7 +699,7 @@ export default function ParticipationDetailPage(): React.JSX.Element {
               )}
             </Box>
             {isReadOnlyMode && (
-              <IconButton 
+              <IconButton
                 onClick={handleRefreshParticipationRequests}
                 disabled={loadingRequests}
                 size="small"
@@ -738,17 +739,17 @@ export default function ParticipationDetailPage(): React.JSX.Element {
                     </TableHead>
                     <TableBody>
                       {participationRequests.map((request, index) => (
-                        <TableRow 
-                          key={request.participationRequestId} 
+                        <TableRow
+                          key={request.participationRequestId}
                           hover
                         >
                           <TableCell>{index + 1}</TableCell>
                           <TableCell>{request.studentNo}</TableCell>
                           <TableCell>
                             <Box sx={{ maxWidth: '200px' }}>
-                              <Typography 
-                                variant="body2" 
-                                sx={{ 
+                              <Typography
+                                variant="body2"
+                                sx={{
                                   fontWeight: 500,
                                   overflow: 'hidden',
                                   textOverflow: 'ellipsis',
@@ -758,8 +759,8 @@ export default function ParticipationDetailPage(): React.JSX.Element {
                               >
                                 {request.studentNameTh}
                               </Typography>
-                              <Typography 
-                                variant="caption" 
+                              <Typography
+                                variant="caption"
                                 color="text.secondary"
                                 sx={{
                                   display: 'block',
@@ -775,9 +776,9 @@ export default function ParticipationDetailPage(): React.JSX.Element {
                             </Box>
                           </TableCell>
                           <TableCell align="center">
-                            <Typography 
-                              variant="body2" 
-                              sx={{ 
+                            <Typography
+                              variant="body2"
+                              sx={{
                                 whiteSpace: 'nowrap',
                                 fontSize: '0.875rem'
                               }}
@@ -793,32 +794,42 @@ export default function ParticipationDetailPage(): React.JSX.Element {
                           {!isReadOnlyMode && (
                             <TableCell align="center">
                               {request.isScored === false ? (
-                                <FormControl size="small" sx={{ minWidth: 70 }}>
-                                  <Select
-                                    value={request.participationRequestId in scoreChanges ? scoreChanges[request.participationRequestId].toString() : "-"}
-                                    onChange={(e) => handleScoreChange(request.participationRequestId, e.target.value)}
-                                    onClick={(e) => e.stopPropagation()}
-                                    displayEmpty
-                                    sx={{
-                                      backgroundColor: 'white',
-                                      '& .MuiOutlinedInput-notchedOutline': {
-                                        borderColor: 'rgba(0, 0, 0, 0.23)',
-                                      },
-                                      '&:hover .MuiOutlinedInput-notchedOutline': {
-                                        borderColor: 'rgba(0, 0, 0, 0.87)',
-                                      },
-                                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                                        borderColor: 'primary.main',
-                                      }
-                                    }}
-                                  >
-                                    <MenuItem value="-">-</MenuItem>
-                                    <MenuItem value="0">0</MenuItem>
-                                    <MenuItem value="1">1</MenuItem>
-                                    <MenuItem value="2">2</MenuItem>
-                                    <MenuItem value="3">3</MenuItem>
-                                  </Select>
-                                </FormControl>
+                                <Autocomplete
+                                  freeSolo
+                                  options={["-", "0", "0.5", "1", "1.5", "2", "2.5", "3"]}
+                                  value={request.participationRequestId in scoreChanges ? scoreChanges[request.participationRequestId].toString() : null}
+                                  onChange={(event, newValue) => {
+                                    // newValue can be null if cleared
+                                    handleScoreChange(request.participationRequestId, newValue || "-");
+                                  }}
+                                  onInputChange={(event, newInputValue) => {
+                                    // Handle typing custom values
+                                    // Only update if it's a valid number or empty
+                                    if (newInputValue === "" || !isNaN(Number(newInputValue))) {
+                                      handleScoreChange(request.participationRequestId, newInputValue === "" ? "-" : newInputValue);
+                                    }
+                                  }}
+                                  renderInput={(params) => (
+                                    <TextField
+                                      {...params}
+                                      size="small"
+                                      placeholder="-"
+                                      sx={{
+                                        backgroundColor: 'white',
+                                        '& .MuiOutlinedInput-notchedOutline': {
+                                          borderColor: 'rgba(0, 0, 0, 0.23)',
+                                        },
+                                        '&:hover .MuiOutlinedInput-notchedOutline': {
+                                          borderColor: 'rgba(0, 0, 0, 0.87)',
+                                        },
+                                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                          borderColor: 'primary.main',
+                                        }
+                                      }}
+                                    />
+                                  )}
+                                  sx={{ minWidth: 50 }}
+                                />
                               ) : (
                                 <Typography variant="body2" color="text.secondary">
                                   -
@@ -844,8 +855,8 @@ export default function ParticipationDetailPage(): React.JSX.Element {
         </DialogContent>
         <DialogActions>
           {Object.keys(scoreChanges).length > 0 && (
-            <Button 
-              variant="contained" 
+            <Button
+              variant="contained"
               color="primary"
               onClick={handleSubmitEvaluation}
               disabled={submittingEvaluation}
