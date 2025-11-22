@@ -726,8 +726,8 @@ export default function ParticipationDetailPage(): React.JSX.Element {
                     <TableHead>
                       <TableRow sx={{ bgcolor: 'grey.50' }}>
                         <TableCell sx={{ fontWeight: 600, width: '50px' }}>ลำดับ</TableCell>
-                        <TableCell sx={{ fontWeight: 600, width: '100px' }}>รหัสนักศึกษา</TableCell>
-                        <TableCell sx={{ fontWeight: 600, width: '200px' }}>ชื่อนักศึกษา</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '100px' }}>รหัสผู้เรียน</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '200px' }}>ชื่อผู้เรียน</TableCell>
                         <TableCell sx={{ fontWeight: 600, textAlign: 'center', width: '120px' }}>ส่งคำขอเมื่อ</TableCell>
                         <TableCell sx={{ fontWeight: 600, textAlign: 'center', width: '60px' }}>คะแนน</TableCell>
                         {!isReadOnlyMode && (

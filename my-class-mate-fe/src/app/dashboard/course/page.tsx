@@ -170,6 +170,7 @@ export default function Page(): React.JSX.Element {
           <Select value={semester} onChange={handleSemesterChange} label="ภาคเรียน">
             <MenuItem value={1}>ภาคเรียนที่ 1</MenuItem>
             <MenuItem value={2}>ภาคเรียนที่ 2</MenuItem>
+            <MenuItem value={3}>ภาคเรียนที่ 3 (ฤดูร้อน)</MenuItem>
           </Select>
         </FormControl>
 

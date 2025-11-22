@@ -115,19 +115,19 @@ export default function AddStudentToCoursePage(): React.JSX.Element {
                         // Handle success message and invalid student numbers
                         if (result.invalidStudentNos && result.invalidStudentNos.length > 0) {
                             // Show error for invalid student numbers
-                            setError(`รหัสนักศึกษาที่ไม่ถูกต้อง: ${result.invalidStudentNos.join(', ')}`);
+                            setError(`รหัสผู้เรียนที่ไม่ถูกต้อง: ${result.invalidStudentNos.join(', ')}`);
                             
                             // Show success only if some students were added
                             if (result.createdRow > 0) {
-                                setSuccess(`เพิ่มนักศึกษาสำเร็จ: ${result.createdRow} คน (มีรหัสนักศึกษาไม่ถูกต้อง ${result.invalidStudentNos.length} คน)`);
+                                setSuccess(`เพิ่มผู้เรียนสำเร็จ: ${result.createdRow} คน (มีรหัสผู้เรียนไม่ถูกต้อง ${result.invalidStudentNos.length} คน)`);
                             }
                         } else {
                             // All students imported successfully
-                            setSuccess(`เพิ่มนักศึกษาสำเร็จ: จำนวน ${result.createdRow} คน`);
+                            setSuccess(`เพิ่มผู้เรียนสำเร็จ: จำนวน ${result.createdRow} คน`);
                         }
 
                     } catch (importError: any) {
-                        setError(importError.message || 'เกิดข้อผิดพลาดในการนำเข้าข้อมูลนักศึกษา');
+                        setError(importError.message || 'เกิดข้อผิดพลาดในการนำเข้าข้อมูลผู้เรียน');
                     }
                 }
             };
@@ -158,10 +158,10 @@ export default function AddStudentToCoursePage(): React.JSX.Element {
                 throw new Error('ไม่พบข้อมูลรายวิชา');
             }
 
-            setSuccess('ส่งออกข้อมูลนักศึกษาสำเร็จ');
+            setSuccess('ส่งออกข้อมูลผู้เรียนสำเร็จ');
 
         } catch (error: any) {
-            setError(error.message || 'เกิดข้อผิดพลาดในการส่งออกข้อมูลนักศึกษา');
+            setError(error.message || 'เกิดข้อผิดพลาดในการส่งออกข้อมูลผู้เรียน');
         } finally {
             setExporting(false);
         }
@@ -258,7 +258,7 @@ export default function AddStudentToCoursePage(): React.JSX.Element {
                             <ArrowLeftIcon size={20} />
                         </IconButton>
                         <Typography variant="h4">
-                            จัดการนักศึกษาในรายวิชา
+                            จัดการผู้เรียนในรายวิชา
                         </Typography>
                     </Stack>
 
@@ -274,7 +274,7 @@ export default function AddStudentToCoursePage(): React.JSX.Element {
                         >
                             จัดการรายวิชา
                         </Link>
-                        <Typography color="text.primary">เพิ่มนักศึกษา</Typography>
+                        <Typography color="text.primary">เพิ่มผู้เรียน</Typography>
                     </Breadcrumbs>
                 </Box>
 
@@ -384,7 +384,7 @@ export default function AddStudentToCoursePage(): React.JSX.Element {
                                                 ลำดับที่
                                             </TableCell>
                                             <TableCell sx={{ fontWeight: 600 }}>
-                                                รหัสนักศึกษา
+                                                รหัสผู้เรียน
                                             </TableCell>
                                             <TableCell sx={{ fontWeight: 600 }}>
                                                 ชื่อ - นามสกุล (ภาษาไทย)
@@ -399,7 +399,7 @@ export default function AddStudentToCoursePage(): React.JSX.Element {
                                             <TableRow>
                                                 <TableCell colSpan={3} align="center" sx={{ py: 4 }}>
                                                     <Typography color="text.secondary">
-                                                        ยังไม่มีข้อมูลนักศึกษา
+                                                        ยังไม่มีข้อมูลผู้เรียน
                                                     </Typography>
                                                 </TableCell>
                                             </TableRow>

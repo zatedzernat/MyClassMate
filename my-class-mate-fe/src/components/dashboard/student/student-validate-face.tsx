@@ -663,7 +663,7 @@ export function StudentValidateFace({
                 {/* Header */}
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    นักศึกษาที่เช็คชื่อแล้ว
+                    ผู้เรียนที่เช็คชื่อแล้ว
                   </Typography>
                   <Chip
                     label={`${checkedInStudents.length} คน`}
@@ -684,7 +684,7 @@ export function StudentValidateFace({
                   {checkedInStudents.length === 0 ? (
                     <Box sx={{ p: 3, textAlign: 'center' }}>
                       <Typography color="text.secondary" variant="body2">
-                        ยังไม่มีนักศึกษาที่เช็คชื่อ
+                        ยังไม่มีผู้เรียนที่เช็คชื่อ
                       </Typography>
                     </Box>
                   ) : (

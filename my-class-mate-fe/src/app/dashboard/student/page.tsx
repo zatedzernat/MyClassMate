@@ -46,7 +46,7 @@ export default function Page(): React.JSX.Element {
 
         } catch (error: any) {
           console.error('Error fetching student profile:', error);
-          setError(error.message || 'เกิดข้อผิดพลาดในการดึงข้อมูลนักศึกษา');
+          setError(error.message || 'เกิดข้อผิดพลาดในการดึงข้อมูลผู้เรียน');
         } finally {
           setLoading(false);
         }
@@ -88,13 +88,13 @@ export default function Page(): React.JSX.Element {
       // Show error toast
       setToast({
         open: true,
-        message: 'เเก้ไขข้อมูลนักศึกษาเรียบร้อยแล้ว',
+        message: 'เเก้ไขข้อมูลผู้เรียนเรียบร้อยแล้ว',
         severity: 'success'
       });
 
     } catch (error: any) {
       console.error('Error refreshing student data:', error);
-      setError(error.message || 'เกิดข้อผิดพลาดในการรีเฟรชข้อมูลนักศึกษา');
+      setError(error.message || 'เกิดข้อผิดพลาดในการรีเฟรชข้อมูลผู้เรียน');
     }
   };
 
@@ -128,7 +128,7 @@ export default function Page(): React.JSX.Element {
       <Container maxWidth="lg" sx={{ px: { xs: 1, sm: 2 } }}>
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
           <Typography variant="h5" color="text.secondary">
-            ไม่พบข้อมูลนักศึกษา
+            ไม่พบข้อมูลผู้เรียน
           </Typography>
         </Box>
       </Container>
@@ -141,7 +141,7 @@ export default function Page(): React.JSX.Element {
         {/* Header - Minimal top padding */}
         <Box sx={{ textAlign: 'start', px: { xs: 1, sm: 2 }, pt: 0, pb: 0 }}>
           <Typography variant="h4" sx={{ mb: 0 }}>
-            รายละเอียดนักศึกษา
+            รายละเอียดผู้เรียน
           </Typography>
         </Box>
 

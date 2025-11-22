@@ -266,7 +266,7 @@ public class CourseService {
 
             // Header row
             Row headerRow = sheet.createRow(0);
-            String[] headers = {"รหัสนักศึกษา"};
+            String[] headers = {"รหัสผู้เรียน"};
             for (int i = 0; i < headers.length; i++) {
                 Cell cell = headerRow.createCell(i);
                 cell.setCellValue(headers[i]);

@@ -247,7 +247,7 @@ export function CoursesTable({
                               handleAddStudent(row);
                               console.log('Add student to course:', row.courseId);
                             }}
-                            title="เพิ่มนักศึกษา"
+                            title="เพิ่มผู้เรียน"
                           >
                             <img
                               src="/assets/add-user.png"
@@ -350,7 +350,7 @@ export function CoursesTable({
 
               <Box>
                 <Typography variant="subtitle2" gutterBottom>
-                  นักศึกษาที่ลงทะเบียน ({courseDetail.enrollments.length} คน)
+                  ผู้เรียนที่ลงทะเบียน ({courseDetail.enrollments.length} คน)
                 </Typography>
                 {courseDetail.enrollments.length > 0 ? (
                   <Box sx={{ maxHeight: 150, overflowY: 'auto' }}>
@@ -371,7 +371,7 @@ export function CoursesTable({
                   </Box>
                 ) : (
                   <Typography variant="body2" color="text.secondary">
-                    ยังไม่มีนักศึกษาลงทะเบียน
+                    ยังไม่มีผู้เรียนลงทะเบียน
                   </Typography>
                 )}
               </Box>
@@ -410,7 +410,7 @@ export function CoursesTable({
                   • จำนวนตารางเรียน: {courseToDelete.schedules.length} ครั้ง
                 </Typography>
                 <Typography variant="body2">
-                  • จำนวนนักศึกษาที่ลงทะเบียน: {courseToDelete.enrollments.length} คน
+                  • จำนวนผู้เรียนที่ลงทะเบียน: {courseToDelete.enrollments.length} คน
                 </Typography>
                 {courseToDelete.lecturers.length > 0 && (
                   <Typography variant="body2">
@@ -429,7 +429,7 @@ export function CoursesTable({
                 </Typography>
                 {courseToDelete.enrollments.length > 0 && (
                   <Typography variant="body2" color="error.main">
-                    • การลงทะเบียนของนักศึกษา {courseToDelete.enrollments.length} คนจะถูกลบ
+                    • การลงทะเบียนของผู้เรียน {courseToDelete.enrollments.length} คนจะถูกลบ
                   </Typography>
                 )}
                 <Typography variant="body2" color="error.main">
@@ -441,8 +441,8 @@ export function CoursesTable({
               {courseToDelete.enrollments.length > 0 && (
                 <Box sx={{ p: 2, bgcolor: 'warning.50', borderRadius: 1, border: '1px solid', borderColor: 'warning.200' }}>
                   <Typography variant="body2" color="warning.main">
-                    <strong>หมายเหตุ:</strong> รายวิชานี้มีนักศึกษาลงทะเบียนอยู่ {courseToDelete.enrollments.length} คน
-                    การลบจะส่งผลกระทบต่อนักศึกษาเหล่านั้น
+                    <strong>หมายเหตุ:</strong> รายวิชานี้มีผู้เรียนลงทะเบียนอยู่ {courseToDelete.enrollments.length} คน
+                    การลบจะส่งผลกระทบต่อผู้เรียนเหล่านั้น
                   </Typography>
                 </Box>
               )}

@@ -174,7 +174,7 @@ export function StudentInfo({
                       fontSize: { xs: '0.875rem', sm: '0.9rem' }
                     }}
                   >
-                    รหัสนักศึกษา: {studentData.studentNo}
+                    รหัสผู้เรียน: {studentData.studentNo}
                   </Typography>
                 </Box>
 
@@ -250,7 +250,7 @@ export function StudentInfo({
         }}
       >
         <DialogTitle sx={{ fontWeight: 600, pb: 2 }}>
-          ✏️ แก้ไขข้อมูลนักศึกษา
+          ✏️ แก้ไขข้อมูลผู้เรียน
         </DialogTitle>
 
         <DialogContent sx={{ pt: 1 }}>
@@ -266,7 +266,7 @@ export function StudentInfo({
               rows={3}
               variant="outlined"
               size="medium"
-              placeholder="กรุณากรอกที่อยู่ของนักศึกษา"
+              placeholder="กรุณากรอกที่อยู่ของผู้เรียน"
               sx={{ marginTop: '8px' }}
             />
 

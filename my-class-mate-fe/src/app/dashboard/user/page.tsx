@@ -329,14 +329,14 @@ export default function Page(): React.JSX.Element {
             {isStudentRole && (
               <>
                 <TextField
-                  label="รหัสนักศึกษา"
+                  label="รหัสผู้เรียน"
                   value={newUser.studentNo || ""}
                   onChange={(e) =>
                     setNewUser({ ...newUser, studentNo: e.target.value })
                   }
                   fullWidth
                   error={isStudentNoEmpty}
-                  helperText={isStudentNoEmpty ? "กรุณากรอกรหัสนักศึกษา" : ""}
+                  helperText={isStudentNoEmpty ? "กรุณากรอกรหัสผู้เรียน" : ""}
                 />
               </>
             )}

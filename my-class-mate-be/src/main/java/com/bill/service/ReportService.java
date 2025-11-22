@@ -162,7 +162,7 @@ public class ReportService {
             // ===================== Sheet 1: Attendance =====================
             var attendanceSheet = workbook.createSheet("การเข้าเรียน");
             List<String> attHeaders = new ArrayList<>();
-            attHeaders.addAll(List.of("รหัสนักศึกษา", "ชื่อ-สกุล (ไทย)", "ชื่อ-สกุล (อังกฤษ)"));
+            attHeaders.addAll(List.of("รหัสผู้เรียน", "ชื่อ-สกุล (ไทย)", "ชื่อ-สกุล (อังกฤษ)"));
             attHeaders.addAll(scheduleHeaders);
             attHeaders.add("อัตราการขาดเรียน (%)");
 
@@ -213,7 +213,7 @@ public class ReportService {
             // ===================== Sheet 2: Participation =====================
             var participationSheet = workbook.createSheet("การมีส่วนร่วม");
             List<String> partHeaders = new ArrayList<>();
-            partHeaders.addAll(List.of("รหัสนักศึกษา", "ชื่อ-สกุล (ไทย)", "ชื่อ-สกุล (อังกฤษ)"));
+            partHeaders.addAll(List.of("รหัสผู้เรียน", "ชื่อ-สกุล (ไทย)", "ชื่อ-สกุล (อังกฤษ)"));
             partHeaders.addAll(scheduleHeaders);
             partHeaders.addAll(List.of("จำนวนครั้งการมีส่วนร่วมทั้งหมด (ครั้ง)", "คะแนนการมีส่วนร่วมสะสม (คะแนน)"));
 

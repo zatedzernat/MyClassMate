@@ -208,7 +208,7 @@ export function UsersTable({
               </TableCell> */}
               <TableCell sx={{ paddingLeft: '48px' }}>ชื่อ-นามสกุล</TableCell>
               <TableCell>ชื่อบัญชีผู้ใช้</TableCell>
-              {showStudentColumn && <TableCell>รหัสนักศึกษา</TableCell>}
+              {showStudentColumn && <TableCell>รหัสผู้เรียน</TableCell>}
               <TableCell>อีเมล</TableCell>
               <TableCell>บทบาท</TableCell>
               <TableCell></TableCell>
@@ -400,7 +400,7 @@ export function UsersTable({
             {/* Show studentNo field only if role is STUDENT */}
             {selectedUser?.role === Role.STUDENT && (
               <TextField
-                label="รหัสนักศึกษา"
+                label="รหัสผู้เรียน"
                 value={selectedUser?.studentProfile?.studentNo || ''}
                 onChange={(e) =>
                   setSelectedUser((prev) =>
@@ -418,7 +418,7 @@ export function UsersTable({
                 fullWidth
                 error={!selectedUser?.studentProfile?.studentNo?.trim()}
                 helperText={
-                  !selectedUser?.studentProfile?.studentNo?.trim() ? "กรุณากรอกรหัสนักศึกษา" : ""
+                  !selectedUser?.studentProfile?.studentNo?.trim() ? "กรุณากรอกรหัสผู้เรียน" : ""
                 }
               />
             )}

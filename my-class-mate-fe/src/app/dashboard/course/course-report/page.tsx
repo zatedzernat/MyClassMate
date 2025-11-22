@@ -334,7 +334,7 @@ export default function CourseReportPage(): React.JSX.Element {
                             <Table size="small">
                               <TableHead>
                                 <TableRow>
-                                  <TableCell>รหัสนักศึกษา</TableCell>
+                                  <TableCell>รหัสผู้เรียน</TableCell>
                                   <TableCell>ชื่อ-นามสกุล (ภาษาไทย)</TableCell>
                                   <TableCell>ชื่อ-นามสกุล (ภาษาอังกฤษ)</TableCell>
                                   <TableCell align="center">สถานะการเข้าเรียน</TableCell>
@@ -384,7 +384,7 @@ export default function CourseReportPage(): React.JSX.Element {
                                   <Table size="small">
                                     <TableHead>
                                       <TableRow>
-                                        <TableCell>รหัสนักศึกษา</TableCell>
+                                        <TableCell>รหัสผู้เรียน</TableCell>
                                         <TableCell>ชื่อ (ภาษาไทย)</TableCell>
                                         <TableCell>ชื่อ (ภาษาอังกฤษ)</TableCell>
                                         <TableCell align="center">สถานะการให้คะแนน</TableCell>
