@@ -121,6 +121,7 @@ CREATE TABLE myclassmate."attendances" (
   "course_schedule_id" BIGINT NOT NULL,
   "created_at" TIMESTAMP NOT NULL,
   "status" VARCHAR(10) NOT NULL,
+  "remark" VARCHAR(255) NULL,
   PRIMARY KEY ("id")
 );
 

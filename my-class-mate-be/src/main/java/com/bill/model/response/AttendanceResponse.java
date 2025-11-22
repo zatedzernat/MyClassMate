@@ -23,4 +23,5 @@ public class AttendanceResponse {
     LocalDateTime createdAt;
     AttendanceStatusEnum status;
     String statusDesc;
+    String remark;
 }

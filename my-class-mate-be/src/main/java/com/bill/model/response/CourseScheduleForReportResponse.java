@@ -30,6 +30,7 @@ public class CourseScheduleForReportResponse extends CourseScheduleResponse {
         AttendanceStatusEnum status;
         String statusDesc;
         LocalDateTime attendedAt;
+        String remark;
     }
 
     @Data

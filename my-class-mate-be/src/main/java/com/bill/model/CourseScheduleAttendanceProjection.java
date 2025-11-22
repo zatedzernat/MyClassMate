@@ -23,4 +23,6 @@ public interface CourseScheduleAttendanceProjection {
     AttendanceStatusEnum getStatus();
 
     LocalDateTime getAttendedAt();
+
+    String getRemark();
 }

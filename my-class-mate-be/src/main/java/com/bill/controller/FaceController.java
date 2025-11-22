@@ -38,4 +38,13 @@ public class FaceController {
                                          @RequestParam("file") MultipartFile file) {
         return faceService.attendance(courseId, courseScheduleId, file);
     }
+
+    @RequireRole({RoleEnum.ADMIN, RoleEnum.LECTURER, RoleEnum.STAFF})
+    @PostMapping(value = "/v1/attendance/{courseId}/{courseScheduleId}/{studentId}")
+    public AttendanceResponse manualAttendance(@PathVariable Long courseId,
+                                               @PathVariable Long courseScheduleId,
+                                               @PathVariable Long studentId,
+                                               @RequestParam String remark) {
+        return faceService.manualAttendance(courseId, courseScheduleId, studentId, remark);
+    }
 }

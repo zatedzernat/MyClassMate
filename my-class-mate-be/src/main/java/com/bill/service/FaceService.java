@@ -119,12 +119,49 @@ public class FaceService {
                     .createdAt(attendance.getCreatedAt())
                     .status(status)
                     .statusDesc(status.getDesc())
+                    .remark(null)
                     .build();
             log.info("attendance response = {}", response);
             return response;
         } else {
             throw new AppException(ERROR_INTERNAL_API_CALL.getCode(), ERROR_INTERNAL_API_CALL.getMessage());
         }
+    }
+
+    @Transactional
+    public AttendanceResponse manualAttendance(Long courseId, Long courseScheduleId, Long studentId, String remark) {
+        log.info("manualAttendance courseId = {}, courseScheduleId = {}, studentId = {}", courseId, courseScheduleId, studentId);
+        var studentProfile = studentProfileService.getStudentProfile(studentId);
+        // validate student enrollment
+        enrollmentRepository.findByStudentIdAndCourseId(studentId, courseId)
+                .orElseThrow(() -> new AppException(
+                        ERROR_ENROLLMENT_NOT_FOUND.getCode(),
+                        ERROR_ENROLLMENT_NOT_FOUND.format(studentProfile.getStudentNo()))
+                );
+
+        var attendance = attendanceRepository.findFirstByStudentIdAndCourseScheduleIdOrderByIdDesc(studentId, courseScheduleId);
+        attendance.setRemark(remark);
+        attendanceRepository.save(attendance);
+
+        var course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new AppException(ERROR_COURSE_NOT_FOUND.getCode(), ERROR_COURSE_NOT_FOUND.getMessage()));
+
+        var response =  AttendanceResponse.builder()
+                .attendanceId(attendance.getId())
+                .studentId(studentId)
+                .studentNo(studentProfile.getStudentNo())
+                .studentNameTh(studentProfile.getStudentNameTh())
+                .studentNameEn(studentProfile.getStudentNameEn())
+                .courseId(courseId)
+                .courseScheduleId(courseScheduleId)
+                .courseCode(course.getCourseCode())
+                .createdAt(attendance.getCreatedAt())
+                .status(attendance.getStatus())
+                .statusDesc(attendance.getStatus().getDesc())
+                .remark(remark)
+                .build();
+        log.info("attendance response = {}", response);
+        return response;
     }
 
 }

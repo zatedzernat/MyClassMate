@@ -40,4 +40,7 @@ public class Attendance {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 10, nullable = false)
     AttendanceStatusEnum status;
+
+    @Column(name = "remark", nullable = true)
+    String remark;
 }

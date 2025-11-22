@@ -72,6 +72,7 @@ public class ReportService {
                                         .status(attendance.getStatus())
                                         .statusDesc(attendance.getStatus() != null ? attendance.getStatus().getDesc() : null)
                                         .attendedAt(AttendanceStatusEnum.ABSENT != attendance.getStatus() ? attendance.getAttendedAt() : null)
+                                        .remark(attendance.getRemark())
                                         .build())
                         .toList());
             }
