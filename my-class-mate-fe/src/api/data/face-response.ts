@@ -17,4 +17,5 @@ export interface ValidateStudentFaceResponse {
   studentNameEn: string;
   studentNameTh: string;
   studentNo: string;
+  remark?: string | null;
 }

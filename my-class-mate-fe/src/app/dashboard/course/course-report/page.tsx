@@ -29,13 +29,15 @@ import { ArrowLeftIcon } from '@phosphor-icons/react/dist/ssr/ArrowLeft';
 import { DownloadIcon } from '@phosphor-icons/react/dist/ssr/Download';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getCourseReport, exportCourseReport } from '@/api/report-api';
-import { 
-  CourseReportResponse, 
+import { manualCheckin } from '@/api/attendance-api';
+import {
+  CourseReportResponse,
   CourseScheduleReportResponse,
   AttendanceReportResponse,
   ParticipationReportResponse
 } from '@/api/data/report-response';
 import { CheckInStatus, getCheckInStatusLabel } from '@/util/check-in-status';
+import { TextField } from '@mui/material';
 
 export default function CourseReportPage(): React.JSX.Element {
   const router = useRouter();
@@ -61,13 +63,13 @@ export default function CourseReportPage(): React.JSX.Element {
         setLoading(true);
         const data = await getCourseReport(Number.parseInt(courseId, 10));
         setReportData(data);
-        
+
         // Set the default schedule index after data is loaded
         if (data && data.schedules && data.schedules.length > 0) {
           const defaultIndex = findDefaultScheduleIndex(data.schedules);
           setSelectedScheduleIndex(defaultIndex);
         }
-        
+
         setError(null);
       } catch (error_: unknown) {
         console.error('Error fetching report data:', error_);
@@ -135,6 +137,62 @@ export default function CourseReportPage(): React.JSX.Element {
     return latestPastIndex === -1 ? 0 : latestPastIndex;
   };
 
+  const handleManualCheckin = async (
+    studentId: number,
+    remark: string,
+    currentRemark: string | null
+  ) => {
+    // If remark hasn't changed, do nothing
+    if (remark === currentRemark) return;
+    // If remark is empty, do nothing (or handle clearing if needed, but requirement says input reason)
+    if (!remark.trim()) return;
+
+    if (!courseId || !reportData) return;
+
+    const currentSchedule = reportData.schedules[selectedScheduleIndex];
+    if (!currentSchedule) return;
+
+    try {
+      await manualCheckin(
+        Number.parseInt(courseId, 10),
+        currentSchedule.courseScheduleId,
+        studentId,
+        remark
+      );
+
+      // Update local state
+      setReportData(prevData => {
+        if (!prevData) return null;
+
+        const newSchedules = [...prevData.schedules];
+        const schedule = newSchedules[selectedScheduleIndex];
+
+        if (schedule.attendances) {
+          const newAttendances = schedule.attendances.map(att => {
+            if (att.studentId === studentId) {
+              return { ...att, remark: remark };
+            }
+            return att;
+          });
+
+          newSchedules[selectedScheduleIndex] = {
+            ...schedule,
+            attendances: newAttendances
+          };
+        }
+
+        return {
+          ...prevData,
+          schedules: newSchedules
+        };
+      });
+
+    } catch (error_: unknown) {
+      console.error('Error manual check-in:', error_);
+      // Optionally show error toast/snackbar here
+    }
+  };
+
   const getStatusChip = (status: string | null) => {
     // Handle null status
     if (!status) {
@@ -147,7 +205,7 @@ export default function CourseReportPage(): React.JSX.Element {
 
     const statusEnum = status as CheckInStatus;
     const label = getCheckInStatusLabel(statusEnum);
-    
+
     let color: 'success' | 'warning' | 'error' = 'success';
     if (status === CheckInStatus.LATE) color = 'warning';
     if (status === CheckInStatus.ABSENT) color = 'error';
@@ -324,110 +382,136 @@ export default function CourseReportPage(): React.JSX.Element {
 
                     <Stack spacing={3}>
                       {/* Attendance Table */}
-                      {reportData.schedules[selectedScheduleIndex].attendances && 
-                       reportData.schedules[selectedScheduleIndex].attendances!.length > 0 && (
-                        <Box>
-                          <Typography variant="subtitle2" sx={{ mb: 2 }}>
-                            การเข้าเรียน
-                          </Typography>
-                          <TableContainer component={Paper} variant="outlined">
-                            <Table size="small">
-                              <TableHead>
-                                <TableRow>
-                                  <TableCell>รหัสผู้เรียน</TableCell>
-                                  <TableCell>ชื่อ-นามสกุล (ภาษาไทย)</TableCell>
-                                  <TableCell>ชื่อ-นามสกุล (ภาษาอังกฤษ)</TableCell>
-                                  <TableCell align="center">สถานะการเข้าเรียน</TableCell>
-                                  <TableCell align="center">เวลาเข้าเรียน</TableCell>
-                                </TableRow>
-                              </TableHead>
-                              <TableBody>
-                                {reportData.schedules[selectedScheduleIndex].attendances!.map((attendance: AttendanceReportResponse, attendanceIndex: number) => (
-                                  <TableRow key={attendanceIndex}>
-                                    <TableCell>{attendance.studentNo}</TableCell>
-                                    <TableCell>{attendance.studentNameTh}</TableCell>
-                                    <TableCell>{attendance.studentNameEn}</TableCell>
-                                    <TableCell align="center">
-                                      {getStatusChip(attendance.status)}
-                                    </TableCell>
-                                    <TableCell align="center">
-                                      {attendance.attendedAt 
+                      {reportData.schedules[selectedScheduleIndex].attendances &&
+                        reportData.schedules[selectedScheduleIndex].attendances!.length > 0 && (
+                          <Box>
+                            <Typography variant="subtitle2" sx={{ mb: 2 }}>
+                              การเข้าเรียน
+                            </Typography>
+                            <TableContainer component={Paper} variant="outlined">
+                              <Table size="small">
+                                <TableHead>
+                                  <TableRow>
+                                    <TableCell>รหัสผู้เรียน</TableCell>
+                                    <TableCell>ชื่อ-นามสกุล (ภาษาไทย)</TableCell>
+                                    <TableCell>ชื่อ-นามสกุล (ภาษาอังกฤษ)</TableCell>
+                                    <TableCell align="center">สถานะการเข้าเรียน</TableCell>
+                                    <TableCell align="center">เวลาเข้าเรียน</TableCell>
+                                    <TableCell>หมายเหตุ</TableCell>
+                                  </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                  {reportData.schedules[selectedScheduleIndex].attendances!.map((attendance: AttendanceReportResponse, attendanceIndex: number) => (
+                                    <TableRow key={attendanceIndex}>
+                                      <TableCell>{attendance.studentNo}</TableCell>
+                                      <TableCell>{attendance.studentNameTh}</TableCell>
+                                      <TableCell>{attendance.studentNameEn}</TableCell>
+                                      <TableCell align="center">
+                                        {getStatusChip(attendance.status)}
+                                      </TableCell>
+                                      <TableCell align="center">
+                                        {attendance.attendedAt
                                           ? `${new Date(attendance.attendedAt).toLocaleTimeString('th-TH', {
-                                              hour: '2-digit',
-                                              minute: '2-digit'
+                                            hour: '2-digit',
+                                            minute: '2-digit'
                                           })} น.`
                                           : '-'
-                                      }
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </TableContainer>
-                        </Box>
-                      )}
+                                        }
+                                      </TableCell>
+                                      <TableCell>
+                                        {attendance.status === CheckInStatus.ABSENT ? (
+                                          <TextField
+                                            defaultValue={attendance.remark || ''}
+                                            placeholder="ระบุสาเหตุ"
+                                            size="small"
+                                            fullWidth
+                                            variant="outlined"
+                                            onBlur={(e) => handleManualCheckin(attendance.studentId, e.target.value, attendance.remark)}
+                                            onKeyDown={(e) => {
+                                              if (e.key === 'Enter') {
+                                                (e.target as HTMLInputElement).blur();
+                                              }
+                                            }}
+                                            sx={{
+                                              '& .MuiInputBase-input': {
+                                                py: 0.5,
+                                                fontSize: '0.875rem'
+                                              }
+                                            }}
+                                          />
+                                        ) : (
+                                          attendance.remark || '-'
+                                        )}
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </TableContainer>
+                          </Box>
+                        )}
 
                       {/* Participation Table */}
-                      {reportData.schedules[selectedScheduleIndex].participations && 
-                       reportData.schedules[selectedScheduleIndex].participations!.length > 0 && (
-                        <Box>
-                          <Typography variant="subtitle2" sx={{ mb: 2 }}>
-                            การมีส่วนร่วม
-                          </Typography>
-                          <Stack spacing={2}>
-                            {reportData.schedules[selectedScheduleIndex].participations!.map((participation: ParticipationReportResponse, participationIndex: number) => (
-                              <Box key={participationIndex}>
-                                <Typography variant="body2" fontWeight="medium" sx={{ mb: 1 }}>
-                                  รอบที่ {participation.round}: {participation.topic}
-                                </Typography>
-                                <TableContainer component={Paper} variant="outlined">
-                                  <Table size="small">
-                                    <TableHead>
-                                      <TableRow>
-                                        <TableCell>รหัสผู้เรียน</TableCell>
-                                        <TableCell>ชื่อ (ภาษาไทย)</TableCell>
-                                        <TableCell>ชื่อ (ภาษาอังกฤษ)</TableCell>
-                                        <TableCell align="center">สถานะการให้คะแนน</TableCell>
-                                        <TableCell align="center">คะแนน</TableCell>
-                                      </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                      {participation.requestParticipations.map((request, requestIndex: number) => (
-                                        <TableRow key={requestIndex}>
-                                          <TableCell>{request.studentNo}</TableCell>
-                                          <TableCell>{request.studentNameTh}</TableCell>
-                                          <TableCell>{request.studentNameEn}</TableCell>
-                                          <TableCell align="center">
-                                            <Chip
-                                              label={request.isScored ? 'ให้คะแนนแล้ว' : 'ยังไม่ให้คะแนน'}
-                                              color={request.isScored ? 'success' : 'default'}
-                                              size="small"
-                                              variant="outlined"
-                                            />
-                                          </TableCell>
-                                          <TableCell align="center">
-                                            {request.isScored ? request.score : '-'}
-                                          </TableCell>
+                      {reportData.schedules[selectedScheduleIndex].participations &&
+                        reportData.schedules[selectedScheduleIndex].participations!.length > 0 && (
+                          <Box>
+                            <Typography variant="subtitle2" sx={{ mb: 2 }}>
+                              การมีส่วนร่วม
+                            </Typography>
+                            <Stack spacing={2}>
+                              {reportData.schedules[selectedScheduleIndex].participations!.map((participation: ParticipationReportResponse, participationIndex: number) => (
+                                <Box key={participationIndex}>
+                                  <Typography variant="body2" fontWeight="medium" sx={{ mb: 1 }}>
+                                    รอบที่ {participation.round}: {participation.topic}
+                                  </Typography>
+                                  <TableContainer component={Paper} variant="outlined">
+                                    <Table size="small">
+                                      <TableHead>
+                                        <TableRow>
+                                          <TableCell>รหัสผู้เรียน</TableCell>
+                                          <TableCell>ชื่อ (ภาษาไทย)</TableCell>
+                                          <TableCell>ชื่อ (ภาษาอังกฤษ)</TableCell>
+                                          <TableCell align="center">สถานะการให้คะแนน</TableCell>
+                                          <TableCell align="center">คะแนน</TableCell>
                                         </TableRow>
-                                      ))}
-                                    </TableBody>
-                                  </Table>
-                                </TableContainer>
-                              </Box>
-                            ))}
-                          </Stack>
-                        </Box>
-                      )}
+                                      </TableHead>
+                                      <TableBody>
+                                        {participation.requestParticipations.map((request, requestIndex: number) => (
+                                          <TableRow key={requestIndex}>
+                                            <TableCell>{request.studentNo}</TableCell>
+                                            <TableCell>{request.studentNameTh}</TableCell>
+                                            <TableCell>{request.studentNameEn}</TableCell>
+                                            <TableCell align="center">
+                                              <Chip
+                                                label={request.isScored ? 'ให้คะแนนแล้ว' : 'ยังไม่ให้คะแนน'}
+                                                color={request.isScored ? 'success' : 'default'}
+                                                size="small"
+                                                variant="outlined"
+                                              />
+                                            </TableCell>
+                                            <TableCell align="center">
+                                              {request.isScored ? request.score : '-'}
+                                            </TableCell>
+                                          </TableRow>
+                                        ))}
+                                      </TableBody>
+                                    </Table>
+                                  </TableContainer>
+                                </Box>
+                              ))}
+                            </Stack>
+                          </Box>
+                        )}
 
                       {/* No data message */}
-                      {(!reportData.schedules[selectedScheduleIndex].attendances || 
+                      {(!reportData.schedules[selectedScheduleIndex].attendances ||
                         reportData.schedules[selectedScheduleIndex].attendances!.length === 0) &&
-                       (!reportData.schedules[selectedScheduleIndex].participations || 
-                        reportData.schedules[selectedScheduleIndex].participations!.length === 0) && (
-                        <Typography variant="body2" color="text.secondary" align="center">
-                          ยังไม่มีข้อมูลการเข้าเรียนหรือการมีส่วนร่วม
-                        </Typography>
-                      )}
+                        (!reportData.schedules[selectedScheduleIndex].participations ||
+                          reportData.schedules[selectedScheduleIndex].participations!.length === 0) && (
+                          <Typography variant="body2" color="text.secondary" align="center">
+                            ยังไม่มีข้อมูลการเข้าเรียนหรือการมีส่วนร่วม
+                          </Typography>
+                        )}
                     </Stack>
                   </Box>
                 )}

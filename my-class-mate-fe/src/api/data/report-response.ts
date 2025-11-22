@@ -26,6 +26,7 @@ export interface AttendanceReportResponse {
     status: 'PRESENT' | 'ABSENT' | 'LATE';
     statusDesc: string;
     attendedAt: string | null;
+    remark: string | null;
 }
 
 export interface ParticipationRequestReportResponse {
