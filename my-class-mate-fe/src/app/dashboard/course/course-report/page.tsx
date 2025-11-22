@@ -50,6 +50,7 @@ export default function CourseReportPage(): React.JSX.Element {
   const [error, setError] = React.useState<string | null>(null);
   const [exporting, setExporting] = React.useState(false);
   const [selectedScheduleIndex, setSelectedScheduleIndex] = React.useState<number>(0);
+  const [editingStudentId, setEditingStudentId] = React.useState<number | null>(null);
 
   React.useEffect(() => {
     const fetchReportData = async () => {
@@ -143,9 +144,11 @@ export default function CourseReportPage(): React.JSX.Element {
     currentRemark: string | null
   ) => {
     // If remark hasn't changed, do nothing
-    if (remark === currentRemark) return;
-    // If remark is empty, do nothing (or handle clearing if needed, but requirement says input reason)
-    if (!remark.trim()) return;
+    if (remark === currentRemark) {
+      setEditingStudentId(null);
+      return;
+    }
+    // Allow empty remark (to clear it)
 
     if (!courseId || !reportData) return;
 
@@ -187,9 +190,12 @@ export default function CourseReportPage(): React.JSX.Element {
         };
       });
 
+      setEditingStudentId(null);
+
     } catch (error_: unknown) {
       console.error('Error manual check-in:', error_);
       // Optionally show error toast/snackbar here
+      setEditingStudentId(null);
     }
   };
 
@@ -397,7 +403,7 @@ export default function CourseReportPage(): React.JSX.Element {
                                     <TableCell>ชื่อ-นามสกุล (ภาษาอังกฤษ)</TableCell>
                                     <TableCell align="center">สถานะการเข้าเรียน</TableCell>
                                     <TableCell align="center">เวลาเข้าเรียน</TableCell>
-                                    <TableCell>หมายเหตุ</TableCell>
+                                    <TableCell width="200px">หมายเหตุ</TableCell>
                                   </TableRow>
                                 </TableHead>
                                 <TableBody>
@@ -420,25 +426,48 @@ export default function CourseReportPage(): React.JSX.Element {
                                       </TableCell>
                                       <TableCell>
                                         {attendance.status === CheckInStatus.ABSENT ? (
-                                          <TextField
-                                            defaultValue={attendance.remark || ''}
-                                            placeholder="ระบุสาเหตุ"
-                                            size="small"
-                                            fullWidth
-                                            variant="outlined"
-                                            onBlur={(e) => handleManualCheckin(attendance.studentId, e.target.value, attendance.remark)}
-                                            onKeyDown={(e) => {
-                                              if (e.key === 'Enter') {
-                                                (e.target as HTMLInputElement).blur();
-                                              }
-                                            }}
-                                            sx={{
-                                              '& .MuiInputBase-input': {
-                                                py: 0.5,
-                                                fontSize: '0.875rem'
-                                              }
-                                            }}
-                                          />
+                                          editingStudentId === attendance.studentId ? (
+                                            <TextField
+                                              defaultValue={attendance.remark || ''}
+                                              placeholder="ระบุสาเหตุ"
+                                              size="small"
+                                              fullWidth
+                                              autoFocus
+                                              variant="outlined"
+                                              onBlur={(e) => handleManualCheckin(attendance.studentId, e.target.value, attendance.remark)}
+                                              onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                  (e.target as HTMLInputElement).blur();
+                                                }
+                                              }}
+                                              sx={{
+                                                '& .MuiInputBase-input': {
+                                                  py: 0.5,
+                                                  fontSize: '0.875rem'
+                                                }
+                                              }}
+                                            />
+                                          ) : (
+                                            <Box
+                                              onClick={() => setEditingStudentId(attendance.studentId)}
+                                              sx={{
+                                                cursor: 'pointer',
+                                                minHeight: '24px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                '&:hover': {
+                                                  bgcolor: 'action.hover',
+                                                  borderRadius: 0.5,
+                                                  px: 0.5,
+                                                  mx: -0.5
+                                                }
+                                              }}
+                                            >
+                                              <Typography variant="body2">
+                                                {attendance.remark || '-'}
+                                              </Typography>
+                                            </Box>
+                                          )
                                         ) : (
                                           attendance.remark || '-'
                                         )}

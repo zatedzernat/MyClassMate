@@ -12,7 +12,7 @@ export async function manualCheckin(
     courseId: number | string,
     courseScheduleId: number | string,
     studentId: number | string,
-    remark: string
+    remark: string | null
 ): Promise<ValidateStudentFaceResponse> {
     try {
         logger.debug(`[AttendanceAPI]: Manual check-in for student ${studentId} in schedule ${courseScheduleId}`);

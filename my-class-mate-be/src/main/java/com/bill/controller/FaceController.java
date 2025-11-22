@@ -44,7 +44,7 @@ public class FaceController {
     public AttendanceResponse manualAttendance(@PathVariable Long courseId,
                                                @PathVariable Long courseScheduleId,
                                                @PathVariable Long studentId,
-                                               @RequestParam String remark) {
+                                               @RequestParam(required = false) String remark) {
         return faceService.manualAttendance(courseId, courseScheduleId, studentId, remark);
     }
 }
